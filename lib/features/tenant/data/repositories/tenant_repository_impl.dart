@@ -50,4 +50,14 @@ class TenantRepositoryImpl implements ITenantRepository {
 
   @override
   Future<void> acceptInvite(String token) => remote.acceptInvite(token);
+
+  @override
+  Future<void> removeMember({required String tenantId, required String userId}) =>
+      remote.removeMember(tenantId: tenantId, userId: userId);
+
+  @override
+  Future<String> startKyb(String tenantId) => remote.startKyb(tenantId);
+
+  @override
+  Future<Map<String, dynamic>> getKybStatus(String tenantId) => remote.getKybStatus(tenantId);
 }

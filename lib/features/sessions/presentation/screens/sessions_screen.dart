@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
 import '../../domain/entities/session_entity.dart';
@@ -23,9 +24,10 @@ class _SessionsScreenState extends State<SessionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Активные сессии')),
+      appBar: AppBar(title: Text(l10n.sessions)),
       body: BlocConsumer<SessionsBloc, SessionsState>(
         listener: (context, state) {
           if (state is SessionsError) {
@@ -41,8 +43,8 @@ class _SessionsScreenState extends State<SessionsScreen> {
 
           if (state is SessionsLoaded) {
             if (state.sessions.isEmpty) {
-              return const Center(
-                child: Text('Нет активных сессий', style: TextStyle(color: AppColors.textSecondary)),
+              return Center(
+                child: Text(l10n.noSessions, style: const TextStyle(color: AppColors.textSecondary)),
               );
             }
             return RefreshIndicator(
@@ -64,6 +66,7 @@ class _SessionsScreenState extends State<SessionsScreen> {
   }
 
   Widget _buildSessionCard(BuildContext context, SessionEntity session) {
+    final l10n = AppLocalizations.of(context)!;
     return Dismissible(
       key: Key(session.id),
       direction: DismissDirection.endToStart,
@@ -81,16 +84,16 @@ class _SessionsScreenState extends State<SessionsScreen> {
           context: context,
           builder: (_) => AlertDialog(
             backgroundColor: AppColors.card,
-            title: const Text('Завершить сессию?', style: TextStyle(color: AppColors.textPrimary)),
-            content: const Text('Устройство будет выведено из аккаунта.', style: TextStyle(color: AppColors.textSecondary)),
+            title: Text(l10n.deleteSessionConfirm, style: const TextStyle(color: AppColors.textPrimary)),
+            content: Text(l10n.deviceLoggedOut, style: const TextStyle(color: AppColors.textSecondary)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Отмена', style: TextStyle(color: AppColors.textSecondary)),
+                child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Завершить', style: TextStyle(color: AppColors.error)),
+                child: Text(l10n.endSessionAction, style: const TextStyle(color: AppColors.error)),
               ),
             ],
           ),
@@ -122,7 +125,7 @@ class _SessionsScreenState extends State<SessionsScreen> {
                   Row(
                     children: [
                       Text(
-                        session.device ?? 'Неизвестное устройство',
+                        session.device ?? l10n.unknownDevice,
                         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
                       ),
                       if (session.isCurrent) ...[
@@ -133,14 +136,14 @@ class _SessionsScreenState extends State<SessionsScreen> {
                             color: AppColors.primary.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text('Текущая', style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                          child: Text(l10n.currentSessionLabel, style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${session.ip ?? 'IP неизвестен'} · ${_formatDate(session.createdAt)}',
+                    '${session.ip ?? l10n.ipUnknown} · ${_formatDate(session.createdAt, l10n)}',
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                   ),
                   if (session.location != null)
@@ -170,13 +173,13 @@ class _SessionsScreenState extends State<SessionsScreen> {
     return Icons.devices_outlined;
   }
 
-  String _formatDate(DateTime dt) {
+  String _formatDate(DateTime dt, AppLocalizations l10n) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Только что';
-    if (diff.inHours < 1) return '${diff.inMinutes} мин. назад';
-    if (diff.inDays < 1) return '${diff.inHours} ч. назад';
-    if (diff.inDays < 7) return '${diff.inDays} дн. назад';
+    if (diff.inMinutes < 1) return l10n.justNow;
+    if (diff.inHours < 1) return l10n.minutesAgo(diff.inMinutes);
+    if (diff.inDays < 1) return l10n.hoursAgo(diff.inHours);
+    if (diff.inDays < 7) return l10n.daysAgo(diff.inDays);
     return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
   }
 }

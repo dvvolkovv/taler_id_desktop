@@ -37,3 +37,42 @@ class TenantInviteAccepted extends TenantEvent {
   @override
   List<Object?> get props => [token];
 }
+
+class TenantUpdateSubmitted extends TenantEvent {
+  final String tenantId;
+  final Map<String, dynamic> data;
+  TenantUpdateSubmitted({required this.tenantId, required this.data});
+  @override
+  List<Object?> get props => [tenantId, data];
+}
+
+class TenantMemberRoleChanged extends TenantEvent {
+  final String tenantId;
+  final String memberId;
+  final TenantRole role;
+  TenantMemberRoleChanged({required this.tenantId, required this.memberId, required this.role});
+  @override
+  List<Object?> get props => [tenantId, memberId, role];
+}
+
+class TenantMemberRemoved extends TenantEvent {
+  final String tenantId;
+  final String userId;
+  TenantMemberRemoved({required this.tenantId, required this.userId});
+  @override
+  List<Object?> get props => [tenantId, userId];
+}
+
+class TenantKybStartRequested extends TenantEvent {
+  final String tenantId;
+  TenantKybStartRequested(this.tenantId);
+  @override
+  List<Object?> get props => [tenantId];
+}
+
+class TenantKybSdkCompleted extends TenantEvent {
+  final String tenantId;
+  TenantKybSdkCompleted(this.tenantId);
+  @override
+  List<Object?> get props => [tenantId];
+}

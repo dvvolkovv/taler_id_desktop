@@ -26,4 +26,7 @@ class ProfileRemoteDataSource {
 
   Future<void> deleteDocument(String documentId) =>
       client.delete('/profile/documents/$documentId');
+
+  Future<void> updatePhone(String phone) =>
+      client.put('/profile/phone', data: {'phone': phone}, fromJson: (d) => d);
 }

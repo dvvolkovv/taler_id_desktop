@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
+import 'package:flutter_idensic_mobile_sdk_plugin/flutter_idensic_mobile_sdk_plugin.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
@@ -25,10 +28,11 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Организация'),
+        title: Text(l10n.organization),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
@@ -50,6 +54,8 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
             );
+          } else if (state is TenantKybSdkReady) {
+            _launchKybSumsub(context, state.sdkToken, state.tenantId);
           }
         },
         builder: (context, state) {
@@ -59,9 +65,14 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
 
           if (state is TenantDetailLoaded) {
             final t = state.tenant;
+            final isOwner = t.myRole == TenantRole.owner;
+            final isAdmin = t.myRole == TenantRole.admin;
+            final canManage = isOwner || isAdmin;
+
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // Header card
                 AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,10 +91,30 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                               children: [
                                 Text(t.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 6),
-                                StatusBadge(label: _kybLabel(t.kybStatus), color: _kybColor(t.kybStatus)),
+                                Row(
+                                  children: [
+                                    StatusBadge(label: _kybLabel(t.kybStatus, l10n), color: _kybColor(t.kybStatus)),
+                                    if (t.myRole != null) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.secondary.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(_roleLabelForRole(t.myRole!, l10n), style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.w500)),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ],
                             ),
                           ),
+                          if (canManage)
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary, size: 20),
+                              onPressed: () => _showEditSheet(context, t),
+                            ),
                         ],
                       ),
                       if (t.description != null && t.description!.isNotEmpty) ...[
@@ -94,13 +125,53 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // KYB section
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.kybBusinessVerificationTitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(_kybIcon(t.kybStatus), color: _kybColor(t.kybStatus), size: 32),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                StatusBadge(label: _kybLabel(t.kybStatus, l10n), color: _kybColor(t.kybStatus)),
+                                const SizedBox(height: 4),
+                                Text(_kybDescription(t.kybStatus, l10n), style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isOwner && (t.kybStatus == KybStatus.none || t.kybStatus == KybStatus.rejected)) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => context.read<TenantBloc>().add(TenantKybStartRequested(widget.tenantId)),
+                            icon: const Icon(Icons.verified_user_outlined),
+                            label: Text(l10n.kybVerification),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // Contact info
                 if (t.website != null || t.email != null || t.phone != null)
                   AppCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Контакты', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                        Text(l10n.contacts, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 12),
                         if (t.website != null) _contactRow(Icons.language_outlined, t.website!),
                         if (t.email != null) _contactRow(Icons.email_outlined, t.email!),
@@ -108,7 +179,9 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                       ],
                     ),
                   ),
-                const SizedBox(height: 16),
+                if (t.website != null || t.email != null || t.phone != null)
+                  const SizedBox(height: 16),
+
                 // Members
                 AppCard(
                   child: Column(
@@ -117,27 +190,20 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Участники (${t.members.length})',
+                          Text(l10n.members(t.members.length),
                               style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
-                          GestureDetector(
-                            onTap: () => _showInviteSheet(context),
-                            child: const Text('+ Пригласить', style: TextStyle(color: AppColors.primary, fontSize: 13)),
-                          ),
+                          if (canManage)
+                            GestureDetector(
+                              onTap: () => _showInviteSheet(context),
+                              child: Text(l10n.invitePlus, style: const TextStyle(color: AppColors.primary, fontSize: 13)),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      ...t.members.map((m) => _memberRow(m)),
+                      ...t.members.map((m) => _memberRow(m, t.myRole, canManage)),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                // KYB action
-                if (t.kybStatus == KybStatus.none || t.kybStatus == KybStatus.rejected)
-                  ElevatedButton.icon(
-                    onPressed: () {/* Start KYB */},
-                    icon: const Icon(Icons.verified_user_outlined),
-                    label: const Text('Пройти KYB-верификацию'),
-                  ),
               ],
             );
           }
@@ -159,13 +225,18 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
         ),
       );
 
-  Widget _memberRow(TenantMemberEntity member) {
+  Widget _memberRow(TenantMemberEntity member, TenantRole? myRole, bool canManage) {
+    final l10n = AppLocalizations.of(context)!;
     final roleColors = {
       TenantRole.owner: AppColors.primary,
       TenantRole.admin: AppColors.secondary,
       TenantRole.operator: AppColors.warning,
       TenantRole.viewer: AppColors.textSecondary,
     };
+    final memberName = [member.firstName, member.lastName]
+        .where((s) => s != null && s.isNotEmpty)
+        .join(' ');
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -184,32 +255,209 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  [member.firstName, member.lastName].where((s) => s != null && s.isNotEmpty).join(' ').isEmpty
-                      ? member.email
-                      : [member.firstName, member.lastName].where((s) => s != null && s.isNotEmpty).join(' '),
+                  memberName.isEmpty ? member.email : memberName,
                   style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                 ),
                 Text(member.email, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: (roleColors[member.role] ?? AppColors.textSecondary).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
+          // Role badge or dropdown
+          if (canManage && member.role != TenantRole.owner)
+            PopupMenuButton<String>(
+              color: AppColors.card,
+              onSelected: (value) {
+                if (value == 'remove') {
+                  _confirmRemoveMember(context, member);
+                } else {
+                  final newRole = TenantRole.values.firstWhere((r) => r.name == value);
+                  context.read<TenantBloc>().add(TenantMemberRoleChanged(
+                    tenantId: widget.tenantId,
+                    memberId: member.userId ?? member.id,
+                    role: newRole,
+                  ));
+                }
+              },
+              itemBuilder: (_) => [
+                ...TenantRole.values
+                    .where((r) => r != TenantRole.owner)
+                    .map((r) => PopupMenuItem(
+                          value: r.name,
+                          child: Row(
+                            children: [
+                              if (r == member.role)
+                                const Icon(Icons.check, size: 16, color: AppColors.primary)
+                              else
+                                const SizedBox(width: 16),
+                              const SizedBox(width: 8),
+                              Text(_roleLabelForRole(r, l10n), style: TextStyle(
+                                color: r == member.role ? AppColors.primary : AppColors.textPrimary,
+                              )),
+                            ],
+                          ),
+                        )),
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'remove',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_remove_outlined, size: 16, color: AppColors.error),
+                      const SizedBox(width: 8),
+                      Text(l10n.delete, style: const TextStyle(color: AppColors.error)),
+                    ],
+                  ),
+                ),
+              ],
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: (roleColors[member.role] ?? AppColors.textSecondary).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _roleLabelForRole(member.role, l10n),
+                      style: TextStyle(color: roleColors[member.role] ?? AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(Icons.arrow_drop_down, size: 14, color: roleColors[member.role] ?? AppColors.textSecondary),
+                  ],
+                ),
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: (roleColors[member.role] ?? AppColors.textSecondary).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _roleLabelForRole(member.role, l10n),
+                style: TextStyle(color: roleColors[member.role] ?? AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
+              ),
             ),
-            child: Text(
-              member.role.name,
-              style: TextStyle(color: roleColors[member.role] ?? AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
-            ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRemoveMember(BuildContext context, TenantMemberEntity member) {
+    final l10n = AppLocalizations.of(context)!;
+    final name = [member.firstName, member.lastName]
+        .where((s) => s != null && s.isNotEmpty)
+        .join(' ');
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: Text(l10n.removeMember, style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+          l10n.removeMemberConfirm(name.isEmpty ? member.email : name),
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<TenantBloc>().add(TenantMemberRemoved(
+                tenantId: widget.tenantId,
+                userId: member.userId ?? member.id,
+              ));
+            },
+            child: Text(l10n.delete, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
     );
   }
 
+  void _showEditSheet(BuildContext context, TenantEntity tenant) {
+    final l10n = AppLocalizations.of(context)!;
+    final nameCtrl = TextEditingController(text: tenant.name);
+    final emailCtrl = TextEditingController(text: tenant.email ?? '');
+    final websiteCtrl = TextEditingController(text: tenant.website ?? '');
+    final addressCtrl = TextEditingController(text: tenant.address ?? '');
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 24, right: 24, top: 24,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.editOrganizationTitle,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: nameCtrl,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: l10n.orgName),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: l10n.orgEmail),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: websiteCtrl,
+                keyboardType: TextInputType.url,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: l10n.orgWebsite),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressCtrl,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: l10n.orgLegalAddress),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (nameCtrl.text.trim().isNotEmpty) {
+                      context.read<TenantBloc>().add(TenantUpdateSubmitted(
+                        tenantId: widget.tenantId,
+                        data: {
+                          'name': nameCtrl.text.trim(),
+                          if (emailCtrl.text.trim().isNotEmpty) 'contactEmail': emailCtrl.text.trim(),
+                          if (websiteCtrl.text.trim().isNotEmpty) 'website': websiteCtrl.text.trim(),
+                          if (addressCtrl.text.trim().isNotEmpty) 'legalAddress': addressCtrl.text.trim(),
+                        },
+                      ));
+                      Navigator.pop(ctx);
+                    }
+                  },
+                  child: Text(l10n.save),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showInviteSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final emailCtrl = TextEditingController();
     TenantRole selectedRole = TenantRole.viewer;
     showModalBottomSheet(
@@ -227,8 +475,8 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Пригласить участника',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
+              Text(l10n.inviteMember,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               TextField(
                 controller: emailCtrl,
@@ -241,11 +489,14 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                 value: selectedRole,
                 dropdownColor: AppColors.card,
                 style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Роль'),
-                items: TenantRole.values.map((r) => DropdownMenuItem(
-                  value: r,
-                  child: Text(r.name, style: const TextStyle(color: AppColors.textPrimary)),
-                )).toList(),
+                decoration: InputDecoration(labelText: l10n.role),
+                items: TenantRole.values
+                    .where((r) => r != TenantRole.owner)
+                    .map((r) => DropdownMenuItem(
+                          value: r,
+                          child: Text(_roleLabelForRole(r, l10n), style: const TextStyle(color: AppColors.textPrimary)),
+                        ))
+                    .toList(),
                 onChanged: (v) => setModalState(() => selectedRole = v ?? TenantRole.viewer),
               ),
               const SizedBox(height: 24),
@@ -262,7 +513,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                       Navigator.pop(ctx);
                     }
                   },
-                  child: const Text('Отправить приглашение'),
+                  child: Text(l10n.sendInvite),
                 ),
               ),
             ],
@@ -270,6 +521,59 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
         ),
       ),
     );
+  }
+
+  void _launchKybSumsub(BuildContext context, String sdkToken, String tenantId) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (kIsWeb) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: AppColors.card,
+          title: Text(l10n.kybVerificationTitle, style: const TextStyle(color: AppColors.textPrimary)),
+          content: Text(
+            l10n.kybWebOnlyBusiness,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.ok, style: const TextStyle(color: AppColors.primary)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final bloc = context.read<TenantBloc>();
+
+    final onTokenExpiration = () async {
+      return await bloc.repo.startKyb(tenantId);
+    };
+
+    final snsMobileSDK = SNSMobileSDK.init(sdkToken, onTokenExpiration)
+        .withLocale(Locale(Localizations.localeOf(context).languageCode))
+        .withDebug(true)
+        .build();
+
+    final SNSMobileSDKResult result = await snsMobileSDK.launch();
+
+    if (!mounted) return;
+
+    if (result.success) {
+      bloc.add(TenantKybSdkCompleted(tenantId));
+    }
+    bloc.add(TenantDetailRequested(tenantId));
+  }
+
+  IconData _kybIcon(KybStatus status) {
+    switch (status) {
+      case KybStatus.verified: return Icons.verified_outlined;
+      case KybStatus.pending: return Icons.hourglass_empty_outlined;
+      case KybStatus.rejected: return Icons.cancel_outlined;
+      default: return Icons.business_outlined;
+    }
   }
 
   Color _kybColor(KybStatus status) {
@@ -281,12 +585,30 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
     }
   }
 
-  String _kybLabel(KybStatus status) {
+  String _kybLabel(KybStatus status, AppLocalizations l10n) {
     switch (status) {
-      case KybStatus.verified: return 'Верифицирована';
-      case KybStatus.pending: return 'На проверке';
-      case KybStatus.rejected: return 'Отклонено';
-      default: return 'Не верифицирована';
+      case KybStatus.verified: return l10n.kybVerified;
+      case KybStatus.pending: return l10n.kybPending;
+      case KybStatus.rejected: return l10n.kybRejected;
+      default: return l10n.kybNone;
+    }
+  }
+
+  String _kybDescription(KybStatus status, AppLocalizations l10n) {
+    switch (status) {
+      case KybStatus.verified: return l10n.kybVerifiedOrgDesc;
+      case KybStatus.pending: return l10n.kybPendingOrgDesc;
+      case KybStatus.rejected: return l10n.kybRejectedOrgDesc;
+      default: return l10n.kybNoneOrgDesc;
+    }
+  }
+
+  String _roleLabelForRole(TenantRole role, AppLocalizations l10n) {
+    switch (role) {
+      case TenantRole.owner: return l10n.roleOwner;
+      case TenantRole.admin: return l10n.roleAdmin;
+      case TenantRole.operator: return l10n.roleOperator;
+      case TenantRole.viewer: return l10n.roleViewer;
     }
   }
 }

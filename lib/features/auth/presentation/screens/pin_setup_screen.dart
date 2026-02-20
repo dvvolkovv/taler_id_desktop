@@ -1,0 +1,124 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/storage/secure_storage_service.dart';
+import '../../../../core/di/service_locator.dart';
+import '../widgets/pin_keyboard.dart';
+
+class PinSetupScreen extends StatefulWidget {
+  const PinSetupScreen({super.key});
+
+  @override
+  State<PinSetupScreen> createState() => _PinSetupScreenState();
+}
+
+class _PinSetupScreenState extends State<PinSetupScreen> {
+  String _pin = '';
+  String? _firstPin;
+  bool _confirming = false;
+  String? _error;
+
+  void _onDigit(String digit) {
+    if (_pin.length >= 4) return;
+    setState(() {
+      _pin += digit;
+      _error = null;
+    });
+    if (_pin.length == 4) {
+      Future.delayed(const Duration(milliseconds: 200), _onPinComplete);
+    }
+  }
+
+  void _onDelete() {
+    if (_pin.isEmpty) return;
+    setState(() {
+      _pin = _pin.substring(0, _pin.length - 1);
+      _error = null;
+    });
+  }
+
+  Future<void> _onPinComplete() async {
+    if (!_confirming) {
+      setState(() {
+        _firstPin = _pin;
+        _pin = '';
+        _confirming = true;
+      });
+    } else {
+      if (_pin == _firstPin) {
+        final hash = sha256.convert(utf8.encode(_pin)).toString();
+        final storage = sl<SecureStorageService>();
+        await storage.savePinHash(hash);
+        await storage.setPinEnabled(true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.pinSet), backgroundColor: AppColors.primary),
+          );
+          context.pop();
+        }
+      } else {
+        setState(() {
+          _pin = '';
+          _firstPin = null;
+          _confirming = false;
+          _error = AppLocalizations.of(context)!.pinMismatch;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(l10n.setupPin),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Spacer(),
+            Icon(
+              _confirming ? Icons.lock_outlined : Icons.pin_outlined,
+              color: AppColors.primary,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _confirming ? l10n.confirmPin : l10n.setupPin,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _confirming ? l10n.confirmPin : l10n.pinCodeDesc,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
+            const SizedBox(height: 32),
+            PinDots(filled: _pin.length),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+            ],
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48),
+              child: PinKeyboard(
+                onDigit: _onDigit,
+                onDelete: _onDelete,
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}

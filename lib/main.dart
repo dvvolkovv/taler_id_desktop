@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'core/di/service_locator.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/storage/secure_storage_service.dart';
@@ -40,11 +41,40 @@ Future<void> main() async {
   // Setup DI
   await setupDependencies();
 
-  runApp(const TalerIdApp());
+  // Load saved language
+  final storage = sl<SecureStorageService>();
+  final savedLang = await storage.getLanguage();
+
+  runApp(TalerIdApp(initialLocale: savedLang));
 }
 
-class TalerIdApp extends StatelessWidget {
-  const TalerIdApp({super.key});
+class TalerIdApp extends StatefulWidget {
+  final String? initialLocale;
+  const TalerIdApp({super.key, this.initialLocale});
+
+  static void setLocale(BuildContext context, Locale locale) {
+    final state = context.findAncestorStateOfType<_TalerIdAppState>();
+    state?._setLocale(locale);
+  }
+
+  @override
+  State<TalerIdApp> createState() => _TalerIdAppState();
+}
+
+class _TalerIdAppState extends State<TalerIdApp> {
+  Locale? _locale;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialLocale != null) {
+      _locale = Locale(widget.initialLocale!);
+    }
+  }
+
+  void _setLocale(Locale locale) {
+    setState(() => _locale = locale);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +91,9 @@ class TalerIdApp extends StatelessWidget {
         theme: AppTheme.dark,
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
+        locale: _locale,
         localizationsDelegates: const [
+          AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,

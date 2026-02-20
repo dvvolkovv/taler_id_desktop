@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
@@ -34,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -59,9 +61,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Создать аккаунт',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
+                Text(
+                  l10n.register,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -80,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               controller: _firstNameController,
                               style: const TextStyle(color: AppColors.textPrimary),
                               decoration: InputDecoration(
-                                labelText: 'Имя',
+                                labelText: l10n.firstName,
                                 filled: true,
                                 fillColor: AppColors.card,
                                 border: OutlineInputBorder(
@@ -104,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               controller: _lastNameController,
                               style: const TextStyle(color: AppColors.textPrimary),
                               decoration: InputDecoration(
-                                labelText: 'Фамилия',
+                                labelText: l10n.lastName,
                                 filled: true,
                                 fillColor: AppColors.card,
                                 border: OutlineInputBorder(
@@ -130,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         keyboardType: TextInputType.emailAddress,
                         style: const TextStyle(color: AppColors.textPrimary),
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                          labelText: l10n.email,
                           filled: true,
                           fillColor: AppColors.card,
                           prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textSecondary),
@@ -167,7 +169,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         obscureText: _obscurePassword,
                         style: const TextStyle(color: AppColors.textPrimary),
                         decoration: InputDecoration(
-                          labelText: 'Пароль',
+                          labelText: l10n.password,
                           filled: true,
                           fillColor: AppColors.card,
                           prefixIcon: const Icon(Icons.lock_outlined, color: AppColors.textSecondary),
@@ -201,13 +203,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Введите пароль';
-                          if (v.length < 8) return 'Минимум 8 символов';
+                          if (v.length < 8) return l10n.passwordMinLength;
                           return null;
                         },
                       ),
                       const SizedBox(height: 24),
                       LoadingButton(
-                        text: 'Создать аккаунт',
+                        text: l10n.registerButton,
                         loading: state is AuthLoading,
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
@@ -227,7 +229,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () => context.pop(),
-                        child: const Text('Уже есть аккаунт? Войти', style: TextStyle(color: AppColors.primary)),
+                        child: Text('${l10n.haveAccount} ${l10n.signIn}', style: const TextStyle(color: AppColors.primary)),
                       ),
                     ],
                   ),

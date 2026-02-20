@@ -26,4 +26,19 @@ class TenantRemoteDataSource {
 
   Future<void> acceptInvite(String token) =>
       client.post('/tenant/invites/$token/accept', data: {});
+
+  Future<void> removeMember({required String tenantId, required String userId}) =>
+      client.delete('/tenant/$tenantId/members/$userId');
+
+  Future<String> startKyb(String tenantId) async {
+    final data = await client.post<Map<String, dynamic>>(
+      '/tenant/$tenantId/kyb/start',
+      data: {},
+      fromJson: (d) => Map<String, dynamic>.from(d),
+    );
+    return data['sdkToken'] as String;
+  }
+
+  Future<Map<String, dynamic>> getKybStatus(String tenantId) =>
+      client.get('/tenant/$tenantId/kyb/status', fromJson: (d) => Map<String, dynamic>.from(d));
 }

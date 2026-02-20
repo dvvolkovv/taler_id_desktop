@@ -4,6 +4,9 @@ class ApiConstants {
   static const refreshTokenKey = 'refresh_token';
   static const biometricEnabledKey = 'biometric_enabled';
   static const userIdKey = 'user_id';
+  static const pinHashKey = 'pin_hash';
+  static const pinEnabledKey = 'pin_enabled';
+  static const languageKey = 'app_language';
 }
 
 class RouteConstants {
@@ -22,4 +25,6 @@ class RouteConstants {
   static const sessions = '/dashboard/sessions';
   static const settings = '/dashboard/settings';
   static const invite = '/invite';
+  static const pinSetup = '/auth/pin-setup';
+  static const pinEntry = '/auth/pin-entry';
 }

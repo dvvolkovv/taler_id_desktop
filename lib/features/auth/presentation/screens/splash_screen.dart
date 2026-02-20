@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../../core/storage/secure_storage_service.dart';
@@ -42,32 +43,39 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
+    final pinEnabled = await storage.isPinEnabled;
     final biometricEnabled = await storage.isBiometricEnabled;
+
     if (biometricEnabled) {
-      await _tryBiometric(storage);
+      final success = await _tryBiometric();
+      if (success) {
+        if (mounted) context.go(RouteConstants.profile);
+        return;
+      }
+      // Biometric failed — fallback to PIN if enabled
+      if (pinEnabled) {
+        if (mounted) context.go(RouteConstants.pinEntry);
+        return;
+      }
+      if (mounted) context.go(RouteConstants.login);
+    } else if (pinEnabled) {
+      if (mounted) context.go(RouteConstants.pinEntry);
     } else {
-      // Silent token refresh and go to profile
       if (mounted) context.go(RouteConstants.profile);
     }
   }
 
-  Future<void> _tryBiometric(SecureStorageService storage) async {
+  Future<bool> _tryBiometric() async {
     final localAuth = LocalAuthentication();
     try {
       final canAuth = await localAuth.canCheckBiometrics;
-      if (!canAuth) {
-        if (mounted) context.go(RouteConstants.profile);
-        return;
-      }
-      final didAuth = await localAuth.authenticate(
+      if (!canAuth) return false;
+      return await localAuth.authenticate(
         localizedReason: 'Войдите в Taler ID',
         options: const AuthenticationOptions(biometricOnly: false),
       );
-      if (mounted) {
-        context.go(didAuth ? RouteConstants.profile : RouteConstants.login);
-      }
     } catch (_) {
-      if (mounted) context.go(RouteConstants.login);
+      return false;
     }
   }
 
@@ -79,6 +87,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: FadeTransition(
@@ -114,9 +123,9 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Единая идентификация экосистемы',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              Text(
+                l10n.appSubtitle,
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             ],
           ),

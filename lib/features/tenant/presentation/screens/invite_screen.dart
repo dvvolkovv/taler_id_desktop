@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
@@ -21,6 +22,7 @@ class _InviteScreenState extends State<InviteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: BlocConsumer<TenantBloc, TenantState>(
@@ -48,20 +50,20 @@ class _InviteScreenState extends State<InviteScreen> {
                   child: const Icon(Icons.mail_outline, color: AppColors.primary, size: 40),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Приглашение в организацию',
+                Text(
+                  l10n.acceptInvitationTitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Вас пригласили присоединиться к организации в экосистеме Taler.',
+                Text(
+                  l10n.acceptInvitationDesc,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
                 ),
                 const SizedBox(height: 40),
                 LoadingButton(
-                  text: 'Принять приглашение',
+                  text: l10n.acceptInvitation,
                   loading: state is TenantLoading,
                   onPressed: () {
                     _accepted = true;
@@ -71,7 +73,7 @@ class _InviteScreenState extends State<InviteScreen> {
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () => context.go(RouteConstants.profile),
-                  child: const Text('Отклонить', style: TextStyle(color: AppColors.textSecondary)),
+                  child: Text(l10n.reject, style: const TextStyle(color: AppColors.textSecondary)),
                 ),
               ],
             ),

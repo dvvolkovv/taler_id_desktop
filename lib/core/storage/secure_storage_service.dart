@@ -95,4 +95,48 @@ class SecureStorageService {
     final token = await getRefreshToken();
     return token != null && token.isNotEmpty;
   }
+
+  Future<bool> get isPinEnabled async {
+    if (kIsWeb) return false;
+    final val = await _storage.read(key: ApiConstants.pinEnabledKey);
+    return val == 'true';
+  }
+
+  Future<void> setPinEnabled(bool enabled) async {
+    if (kIsWeb) return;
+    await _storage.write(key: ApiConstants.pinEnabledKey, value: enabled.toString());
+  }
+
+  Future<String?> getPinHash() async {
+    if (kIsWeb) return null;
+    return _storage.read(key: ApiConstants.pinHashKey);
+  }
+
+  Future<void> savePinHash(String hash) async {
+    if (kIsWeb) return;
+    await _storage.write(key: ApiConstants.pinHashKey, value: hash);
+  }
+
+  Future<void> clearPin() async {
+    if (kIsWeb) return;
+    await Future.wait([
+      _storage.delete(key: ApiConstants.pinHashKey),
+      _storage.delete(key: ApiConstants.pinEnabledKey),
+    ]);
+  }
+
+  Future<String?> getLanguage() async {
+    if (kIsWeb) {
+      return _webBox?.get(ApiConstants.languageKey) as String?;
+    }
+    return _storage.read(key: ApiConstants.languageKey);
+  }
+
+  Future<void> saveLanguage(String lang) async {
+    if (kIsWeb) {
+      await _webBox?.put(ApiConstants.languageKey, lang);
+    } else {
+      await _storage.write(key: ApiConstants.languageKey, value: lang);
+    }
+  }
 }

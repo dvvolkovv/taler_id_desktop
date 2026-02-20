@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
@@ -19,17 +20,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _dateCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String? _selectedCountry;
+  DateTime? _dateOfBirth;
   bool _initialized = false;
 
-  static const _countries = ['Австрия', 'Германия', 'Россия', 'Украина', 'Казахстан', 'Беларусь', 'Другая'];
+  List<String> _getCountries(AppLocalizations l10n) => [
+    l10n.countryAustria,
+    l10n.countryGermany,
+    l10n.countryRussia,
+    l10n.countryUkraine,
+    l10n.countryKazakhstan,
+    l10n.countryBelarus,
+    l10n.countryOther,
+  ];
 
   @override
   void dispose() {
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _phoneCtrl.dispose();
+    _dateCtrl.dispose();
     super.dispose();
   }
 
@@ -39,15 +51,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _lastNameCtrl.text = user.lastName ?? '';
     _phoneCtrl.text = user.phone ?? '';
     _selectedCountry = user.country;
+    if (user.dateOfBirth != null) {
+      _dateOfBirth = DateTime.tryParse(user.dateOfBirth!);
+      if (_dateOfBirth != null) {
+        _dateCtrl.text = _formatDate(_dateOfBirth!);
+      }
+    }
     _initialized = true;
+  }
+
+  String _formatDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime(2000, 1, 1),
+      firstDate: DateTime(1920),
+      lastDate: now,
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.dark(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            surface: AppColors.card,
+            onSurface: AppColors.textPrimary,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _dateOfBirth = picked;
+        _dateCtrl.text = _formatDate(picked);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Редактировать профиль'),
+        title: Text(l10n.editProfile),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
@@ -57,7 +106,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         listener: (context, state) {
           if (state is ProfileLoaded && _initialized) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Профиль обновлён'), backgroundColor: AppColors.primary),
+              SnackBar(content: Text(l10n.profileUpdated), backgroundColor: AppColors.primary),
             );
             context.pop();
           } else if (state is ProfileError) {
@@ -85,22 +134,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   TextFormField(
                     controller: _firstNameCtrl,
                     style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: const InputDecoration(labelText: 'Имя'),
+                    decoration: InputDecoration(labelText: l10n.firstName),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _lastNameCtrl,
                     style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: const InputDecoration(labelText: 'Фамилия'),
+                    decoration: InputDecoration(labelText: l10n.lastName),
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: _pickDate,
+                    child: AbsorbPointer(
+                      child: TextFormField(
+                        controller: _dateCtrl,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: l10n.dateOfBirth,
+                          prefixIcon: const Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary),
+                          hintText: 'DD.MM.YYYY',
+                          hintStyle: const TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _phoneCtrl,
                     keyboardType: TextInputType.phone,
                     style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: const InputDecoration(
-                      labelText: 'Телефон',
-                      prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textSecondary),
+                    decoration: InputDecoration(
+                      labelText: l10n.phone,
+                      prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textSecondary),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -108,15 +173,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     value: _selectedCountry,
                     dropdownColor: AppColors.card,
                     style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: const InputDecoration(labelText: 'Страна'),
-                    items: _countries
+                    decoration: InputDecoration(labelText: l10n.country),
+                    items: _getCountries(l10n)
                         .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
                     onChanged: (v) => setState(() => _selectedCountry = v),
                   ),
                   const SizedBox(height: 32),
                   LoadingButton(
-                    text: 'Сохранить',
+                    text: l10n.save,
                     loading: loading,
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
@@ -125,6 +190,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           if (_lastNameCtrl.text.isNotEmpty) 'lastName': _lastNameCtrl.text.trim(),
                           if (_phoneCtrl.text.isNotEmpty) 'phone': _phoneCtrl.text.trim(),
                           if (_selectedCountry != null) 'country': _selectedCountry,
+                          if (_dateOfBirth != null) 'dateOfBirth': _dateOfBirth!.toIso8601String().split('T').first,
                         }));
                       }
                     },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
@@ -32,21 +33,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String _kycLabel(KycStatus status) {
+  String _kycLabel(KycStatus status, AppLocalizations l10n) {
     switch (status) {
-      case KycStatus.verified: return 'Верифицирован';
-      case KycStatus.pending: return 'На проверке';
-      case KycStatus.rejected: return 'Отклонён';
-      case KycStatus.unverified: return 'Не верифицирован';
+      case KycStatus.verified: return l10n.kycVerified;
+      case KycStatus.pending: return l10n.kycPending;
+      case KycStatus.rejected: return l10n.kycRejected;
+      case KycStatus.unverified: return l10n.kycUnverified;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Профиль'),
+        title: Text(l10n.profile),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
@@ -76,13 +78,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Icon(Icons.error_outline, color: AppColors.error, size: 48),
                   const SizedBox(height: 16),
                   Text(
-                    state is ProfileError ? state.message : 'Ошибка загрузки',
+                    state is ProfileError ? state.message : l10n.loadError,
                     style: const TextStyle(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => context.read<ProfileBloc>().add(ProfileLoadRequested()),
-                    child: const Text('Повторить'),
+                    child: Text(l10n.retry),
                   ),
                 ],
               ),
@@ -128,7 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Text(user.email, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                             const SizedBox(height: 8),
                             StatusBadge(
-                              label: _kycLabel(user.kycStatus),
+                              label: _kycLabel(user.kycStatus, l10n),
                               color: _kycColor(user.kycStatus),
                             ),
                           ],
@@ -143,13 +145,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Личные данные', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                      Text(l10n.personalData, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 12),
-                      _infoRow(Icons.phone_outlined, 'Телефон', user.phone ?? 'Не указан'),
+                      _infoRow(Icons.phone_outlined, l10n.phone, user.phone ?? l10n.notSpecified),
                       const Divider(color: AppColors.border, height: 1),
-                      _infoRow(Icons.flag_outlined, 'Страна', user.country ?? 'Не указана'),
+                      _infoRow(Icons.flag_outlined, l10n.country, user.country ?? l10n.notSpecifiedFemale),
                       const Divider(color: AppColors.border, height: 1),
-                      _infoRow(Icons.cake_outlined, 'Дата рождения', user.dateOfBirth ?? 'Не указана'),
+                      _infoRow(Icons.cake_outlined, l10n.dateOfBirth, user.dateOfBirth ?? l10n.notSpecifiedFemale),
                     ],
                   ),
                 ),
@@ -162,18 +164,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Документы', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                          Text(l10n.documents, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                           GestureDetector(
                             onTap: () => _showAddDocument(context),
-                            child: const Text('+ Добавить', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+                            child: Text('+ ${l10n.addDocument}', style: const TextStyle(color: AppColors.primary, fontSize: 13)),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       if (user.documents == null || user.documents!.isEmpty)
-                        const Text('Нет загруженных документов', style: TextStyle(color: AppColors.textSecondary, fontSize: 13))
+                        Text(l10n.noDocuments, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))
                       else
-                        ...user.documents!.map((doc) => _documentRow(context, doc)),
+                        ...user.documents!.map((doc) => _documentRow(context, doc, l10n)),
                     ],
                   ),
                 ),
@@ -209,14 +211,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-  Widget _documentRow(BuildContext context, DocumentEntity doc) => Padding(
+  Widget _documentRow(BuildContext context, DocumentEntity doc, AppLocalizations l10n) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
             const Icon(Icons.description_outlined, color: AppColors.secondary, size: 18),
             const SizedBox(width: 12),
             Text(
-              _docTypeName(doc.type),
+              _docTypeName(doc.type, l10n),
               style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
             ),
             const Spacer(),
@@ -230,15 +232,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-  String _docTypeName(DocumentType type) {
+  String _docTypeName(DocumentType type, AppLocalizations l10n) {
     switch (type) {
-      case DocumentType.passport: return 'Паспорт';
-      case DocumentType.drivingLicense: return 'Водительское удостоверение';
-      case DocumentType.diploma: return 'Диплом / Сертификат';
+      case DocumentType.passport: return l10n.passport;
+      case DocumentType.drivingLicense: return l10n.drivingLicense;
+      case DocumentType.diploma: return l10n.diplomaCertificate;
     }
   }
 
   void _showAddDocument(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.card,
@@ -251,11 +254,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Тип документа', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+            Text(l10n.documentType, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
-            _docTypeButton(context, 'Паспорт / ID', DocumentType.passport),
-            _docTypeButton(context, 'Водительское удостоверение', DocumentType.drivingLicense),
-            _docTypeButton(context, 'Диплом / Сертификат', DocumentType.diploma),
+            _docTypeButton(context, l10n.passportId, DocumentType.passport),
+            _docTypeButton(context, l10n.drivingLicense, DocumentType.drivingLicense),
+            _docTypeButton(context, l10n.diplomaCertificate, DocumentType.diploma),
           ],
         ),
       ),

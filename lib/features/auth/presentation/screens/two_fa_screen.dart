@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
@@ -38,6 +39,7 @@ class _TwoFAScreenState extends State<TwoFAScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -66,14 +68,14 @@ class _TwoFAScreenState extends State<TwoFAScreen> {
               children: [
                 const Icon(Icons.security, color: AppColors.primary, size: 48),
                 const SizedBox(height: 24),
-                const Text(
-                  'Двухфакторная аутентификация',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+                Text(
+                  l10n.twoFATitle,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Введите 6-значный код из приложения-аутентификатора',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                Text(
+                  l10n.twoFASubtitle,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                 ),
                 const SizedBox(height: 40),
                 TextField(
@@ -98,7 +100,7 @@ class _TwoFAScreenState extends State<TwoFAScreen> {
                 ),
                 const SizedBox(height: 32),
                 LoadingButton(
-                  text: 'Подтвердить',
+                  text: l10n.verify,
                   loading: state is AuthLoading,
                   onPressed: () => _submit(context),
                 ),

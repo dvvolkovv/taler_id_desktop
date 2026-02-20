@@ -43,11 +43,17 @@ dependencies:
   cached_network_image: ^3.4.1
   image_picker: ^1.1.2
 
+  # KYC / Sumsub
+  flutter_idensic_mobile_sdk_plugin: ^1.40.2
+
   # Deep links
   app_links: ^6.3.4
 
   # Cache
   hive_flutter: ^1.1.0
+
+  # Crypto
+  crypto: ^3.0.6
 
   # Utils
   intl: any
@@ -63,4 +69,5 @@ dev_dependencies:
   hive_generator: ^2.0.1
 
 flutter:
+  generate: true
   uses-material-design: true

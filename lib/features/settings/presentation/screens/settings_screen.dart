@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -7,6 +8,7 @@ import '../../../../core/theme/widgets.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/utils/constants.dart';
+import '../../../../main.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -21,6 +23,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _biometricEnabled = false;
   bool _biometricAvailable = false;
+  bool _pinEnabled = false;
+  String _currentLang = 'ru';
   final _storage = sl<SecureStorageService>();
 
   @override
@@ -31,21 +35,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final biometricEnabled = await _storage.isBiometricEnabled;
+    final pinEnabled = await _storage.isPinEnabled;
+    final savedLang = await _storage.getLanguage() ?? 'ru';
     final localAuth = LocalAuthentication();
     final canCheck = await localAuth.canCheckBiometrics;
     final available = canCheck && (await localAuth.getAvailableBiometrics()).isNotEmpty;
     setState(() {
       _biometricEnabled = biometricEnabled;
       _biometricAvailable = available;
+      _pinEnabled = pinEnabled;
+      _currentLang = savedLang;
     });
   }
 
   Future<void> _toggleBiometric(bool value) async {
+    final l10n = AppLocalizations.of(context)!;
     if (value) {
-      // Verify biometrics before enabling
       final localAuth = LocalAuthentication();
       final ok = await localAuth.authenticate(
-        localizedReason: 'Подтвердите биометрию для включения быстрого входа',
+        localizedReason: l10n.biometricsConfirm,
       );
       if (!ok) return;
     }
@@ -53,11 +61,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _biometricEnabled = value);
   }
 
+  Future<void> _togglePin(bool value) async {
+    if (value) {
+      await context.push(RouteConstants.pinSetup);
+      final pinEnabled = await _storage.isPinEnabled;
+      setState(() => _pinEnabled = pinEnabled);
+    } else {
+      await _storage.clearPin();
+      setState(() => _pinEnabled = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Настройки')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoggedOut) {
@@ -68,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             // Security section
-            _sectionHeader('Безопасность'),
+            _sectionHeader(l10n.security),
             AppCard(
               child: Column(
                 children: [
@@ -76,23 +96,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _switchTile(
                       icon: Icons.fingerprint,
                       iconColor: AppColors.primary,
-                      title: 'Биометрия',
-                      subtitle: 'Быстрый вход по Face ID или отпечатку',
+                      title: l10n.biometrics,
+                      subtitle: l10n.biometricsDesc,
                       value: _biometricEnabled,
                       onChanged: _toggleBiometric,
                     ),
                   if (_biometricAvailable) const Divider(color: AppColors.border, height: 1),
+                  _switchTile(
+                    icon: Icons.pin_outlined,
+                    iconColor: AppColors.primary,
+                    title: l10n.pinCode,
+                    subtitle: l10n.pinCodeDesc,
+                    value: _pinEnabled,
+                    onChanged: _togglePin,
+                  ),
+                  const Divider(color: AppColors.border, height: 1),
                   _navTile(
                     icon: Icons.lock_outlined,
                     iconColor: AppColors.secondary,
-                    title: 'Изменить пароль',
+                    title: l10n.changePassword,
                     onTap: () => _showChangePasswordSheet(context),
                   ),
                   const Divider(color: AppColors.border, height: 1),
                   _navTile(
                     icon: Icons.security_outlined,
                     iconColor: AppColors.secondary,
-                    title: 'Двухфакторная аутентификация',
+                    title: l10n.twoFactorAuth,
                     onTap: () {/* TODO: 2FA setup */},
                   ),
                 ],
@@ -101,15 +130,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             // Notifications section
-            _sectionHeader('Уведомления'),
+            _sectionHeader(l10n.notifications),
             AppCard(
               child: Column(
                 children: [
                   _switchTile(
                     icon: Icons.notifications_outlined,
                     iconColor: AppColors.warning,
-                    title: 'Push о KYC-статусе',
-                    subtitle: 'Результат верификации',
+                    title: l10n.pushKycStatus,
+                    subtitle: l10n.pushKycStatusDesc,
                     value: true,
                     onChanged: (v) {},
                   ),
@@ -117,8 +146,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _switchTile(
                     icon: Icons.login_outlined,
                     iconColor: AppColors.warning,
-                    title: 'Push о входах',
-                    subtitle: 'При входе с нового устройства',
+                    title: l10n.pushLogins,
+                    subtitle: l10n.pushLoginsDesc,
                     value: true,
                     onChanged: (v) {},
                   ),
@@ -128,29 +157,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             // Account section
-            _sectionHeader('Аккаунт'),
+            _sectionHeader(l10n.account),
             AppCard(
               child: Column(
                 children: [
                   _navTile(
                     icon: Icons.language_outlined,
                     iconColor: AppColors.textSecondary,
-                    title: 'Язык',
-                    trailing: 'Русский',
+                    title: l10n.language,
+                    trailing: _currentLang == 'ru' ? l10n.languageRussian : l10n.languageEnglish,
                     onTap: () => _showLanguagePicker(context),
                   ),
                   const Divider(color: AppColors.border, height: 1),
                   _navTile(
                     icon: Icons.download_outlined,
                     iconColor: AppColors.textSecondary,
-                    title: 'Экспорт данных (GDPR)',
+                    title: l10n.exportData,
                     onTap: () {/* TODO */},
                   ),
                   const Divider(color: AppColors.border, height: 1),
                   _navTile(
                     icon: Icons.delete_forever_outlined,
                     iconColor: AppColors.error,
-                    title: 'Удалить аккаунт',
+                    title: l10n.deleteAccount,
                     onTap: () => _showDeleteAccountDialog(context),
                     textColor: AppColors.error,
                   ),
@@ -164,7 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.logout, color: AppColors.error),
-                label: const Text('Выйти', style: TextStyle(color: AppColors.error, fontSize: 16)),
+                label: Text(l10n.logout, style: const TextStyle(color: AppColors.error, fontSize: 16)),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
                   side: const BorderSide(color: AppColors.error),
@@ -178,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Version info
             Center(
               child: Text(
-                'Taler ID v1.0.0',
+                l10n.version('1.0.0'),
                 style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
             ),
@@ -268,24 +297,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
   void _confirmLogout(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Выйти из аккаунта?', style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text('Вы будете выведены из Taler ID на этом устройстве.',
-            style: TextStyle(color: AppColors.textSecondary)),
+        title: Text(l10n.logoutConfirm, style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(l10n.logoutDesc,
+            style: const TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               context.read<AuthBloc>().add(LogoutRequested());
             },
-            child: const Text('Выйти', style: TextStyle(color: AppColors.error)),
+            child: Text(l10n.logout, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -293,6 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showChangePasswordSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final oldCtrl = TextEditingController();
     final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
@@ -310,26 +341,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Изменить пароль',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
+            Text(l10n.changePassword,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
             const SizedBox(height: 20),
             TextField(controller: oldCtrl, obscureText: true,
                 style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Текущий пароль')),
+                decoration: InputDecoration(labelText: l10n.currentPassword)),
             const SizedBox(height: 12),
             TextField(controller: newCtrl, obscureText: true,
                 style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Новый пароль')),
+                decoration: InputDecoration(labelText: l10n.newPassword)),
             const SizedBox(height: 12),
             TextField(controller: confirmCtrl, obscureText: true,
                 style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Подтвердить новый пароль')),
+                decoration: InputDecoration(labelText: l10n.confirmNewPassword)),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {/* TODO: change password API */},
-                child: const Text('Сохранить'),
+                child: Text(l10n.save),
               ),
             ),
           ],
@@ -339,6 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLanguagePicker(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.card,
@@ -348,19 +380,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Язык интерфейса',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+            Text(l10n.languageSelect,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Text('🇷🇺', style: TextStyle(fontSize: 24)),
-              title: const Text('Русский', style: TextStyle(color: AppColors.textPrimary)),
-              trailing: const Icon(Icons.check, color: AppColors.primary),
-              onTap: () => Navigator.pop(context),
+              leading: const Text('\u{1f1f7}\u{1f1fa}', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.languageRussian, style: const TextStyle(color: AppColors.textPrimary)),
+              trailing: _currentLang == 'ru' ? const Icon(Icons.check, color: AppColors.primary) : null,
+              onTap: () => _selectLanguage('ru'),
             ),
             ListTile(
-              leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
-              title: const Text('English', style: TextStyle(color: AppColors.textPrimary)),
-              onTap: () => Navigator.pop(context),
+              leading: const Text('\u{1f1ec}\u{1f1e7}', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.languageEnglish, style: const TextStyle(color: AppColors.textPrimary)),
+              trailing: _currentLang == 'en' ? const Icon(Icons.check, color: AppColors.primary) : null,
+              onTap: () => _selectLanguage('en'),
             ),
           ],
         ),
@@ -368,24 +401,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _selectLanguage(String lang) async {
+    Navigator.pop(context);
+    await _storage.saveLanguage(lang);
+    TalerIdApp.setLocale(context, Locale(lang));
+    setState(() => _currentLang = lang);
+  }
+
   void _showDeleteAccountDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Удалить аккаунт?', style: TextStyle(color: AppColors.error)),
-        content: const Text(
-          'Все ваши данные будут удалены (GDPR). Это действие необратимо.',
-          style: TextStyle(color: AppColors.textSecondary),
+        title: Text(l10n.deleteAccountConfirm, style: const TextStyle(color: AppColors.error)),
+        content: Text(
+          l10n.deleteAccountDesc,
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {/* TODO: delete account API */},
-            child: const Text('Удалить', style: TextStyle(color: AppColors.error)),
+            child: Text(l10n.delete, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),

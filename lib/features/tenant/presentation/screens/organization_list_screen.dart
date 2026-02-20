@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
@@ -25,10 +26,11 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Организации'),
+        title: Text(l10n.organizations),
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: AppColors.primary),
@@ -72,9 +74,10 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
   }
 
   Widget _buildCard(BuildContext context, TenantEntity tenant) {
+    final l10n = AppLocalizations.of(context)!;
     final kybColor = _kybColor(tenant.kybStatus);
-    final kybLabel = _kybLabel(tenant.kybStatus);
-    final roleLabel = _roleLabel(tenant.myRole);
+    final kybLabel = _kybLabel(tenant.kybStatus, l10n);
+    final roleLabel = _roleLabel(tenant.myRole, l10n);
 
     return GestureDetector(
       onTap: () => context.push(
@@ -126,29 +129,35 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
     );
   }
 
-  Widget _buildEmpty(BuildContext context) => Center(
+  Widget _buildEmpty(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.business_outlined, color: AppColors.textSecondary, size: 64),
             const SizedBox(height: 16),
-            const Text('Нет организаций', style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+            Text(l10n.noOrganizations, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18)),
             const SizedBox(height: 8),
-            const Text('Создайте организацию или примите приглашение',
-                textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+            Text(l10n.noOrganizationsDesc,
+                textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => _showCreateDialog(context),
               icon: const Icon(Icons.add),
-              label: const Text('Создать организацию'),
+              label: Text(l10n.createOrganization),
             ),
           ],
         ),
       );
+  }
 
   void _showCreateDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    final websiteCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -159,42 +168,60 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
           left: 24, right: 24, top: 24,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Новая организация',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 20),
-            TextField(
-              controller: nameCtrl,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Название *'),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descCtrl,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Описание'),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (nameCtrl.text.trim().isNotEmpty) {
-                    context.read<TenantBloc>().add(TenantCreateSubmitted({
-                      'name': nameCtrl.text.trim(),
-                      if (descCtrl.text.trim().isNotEmpty) 'description': descCtrl.text.trim(),
-                    }));
-                    Navigator.pop(ctx);
-                  }
-                },
-                child: const Text('Создать'),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.newOrganization,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: nameCtrl,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: l10n.orgName),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: l10n.orgEmail),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: websiteCtrl,
+                keyboardType: TextInputType.url,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: l10n.orgWebsite),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressCtrl,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: l10n.orgLegalAddress),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (nameCtrl.text.trim().isNotEmpty) {
+                      context.read<TenantBloc>().add(TenantCreateSubmitted({
+                        'name': nameCtrl.text.trim(),
+                        if (emailCtrl.text.trim().isNotEmpty) 'contactEmail': emailCtrl.text.trim(),
+                        if (websiteCtrl.text.trim().isNotEmpty) 'website': websiteCtrl.text.trim(),
+                        if (addressCtrl.text.trim().isNotEmpty) 'legalAddress': addressCtrl.text.trim(),
+                      }));
+                      Navigator.pop(ctx);
+                    }
+                  },
+                  child: Text(l10n.create),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -209,21 +236,21 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
     }
   }
 
-  String _kybLabel(KybStatus status) {
+  String _kybLabel(KybStatus status, AppLocalizations l10n) {
     switch (status) {
-      case KybStatus.verified: return 'KYB ✓';
-      case KybStatus.pending: return 'KYB...';
-      case KybStatus.rejected: return 'KYB ✗';
-      default: return 'Без KYB';
+      case KybStatus.verified: return l10n.kybVerified;
+      case KybStatus.pending: return l10n.kybPending;
+      case KybStatus.rejected: return l10n.kybRejected;
+      default: return l10n.noKyb;
     }
   }
 
-  String? _roleLabel(TenantRole? role) {
+  String? _roleLabel(TenantRole? role, AppLocalizations l10n) {
     switch (role) {
-      case TenantRole.owner: return 'Owner';
-      case TenantRole.admin: return 'Admin';
-      case TenantRole.operator: return 'Operator';
-      case TenantRole.viewer: return 'Viewer';
+      case TenantRole.owner: return l10n.roleOwner;
+      case TenantRole.admin: return l10n.roleAdmin;
+      case TenantRole.operator: return l10n.roleOperator;
+      case TenantRole.viewer: return l10n.roleViewer;
       default: return null;
     }
   }

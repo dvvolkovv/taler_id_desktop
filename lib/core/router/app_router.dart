@@ -4,6 +4,8 @@ import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/two_fa_screen.dart';
+import '../../features/auth/presentation/screens/pin_setup_screen.dart';
+import '../../features/auth/presentation/screens/pin_entry_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/kyc/presentation/screens/kyc_screen.dart';
@@ -42,6 +44,14 @@ final appRouter = GoRouter(
           tempToken: extra?['tempToken'] as String? ?? '',
         );
       },
+    ),
+    GoRoute(
+      path: RouteConstants.pinSetup,
+      builder: (_, __) => const PinSetupScreen(),
+    ),
+    GoRoute(
+      path: RouteConstants.pinEntry,
+      builder: (_, __) => const PinEntryScreen(),
     ),
     // Deep link: invite
     GoRoute(
@@ -101,6 +111,8 @@ Future<String?> _globalRedirect(BuildContext context, GoRouterState state) async
     RouteConstants.register,
     RouteConstants.twoFA,
     RouteConstants.splash,
+    RouteConstants.pinEntry,
+    RouteConstants.pinSetup,
   ];
   if (publicRoutes.any((r) => state.matchedLocation.startsWith(r))) return null;
 

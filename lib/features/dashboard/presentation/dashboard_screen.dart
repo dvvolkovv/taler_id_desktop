@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
@@ -23,6 +24,7 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
     final currentIndex = _currentIndex(location);
 
@@ -44,26 +46,26 @@ class DashboardScreen extends StatelessWidget {
           elevation: 0,
           selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outlined),
-              activeIcon: Icon(Icons.person),
-              label: 'Профиль',
+              icon: const Icon(Icons.person_outlined),
+              activeIcon: const Icon(Icons.person),
+              label: l10n.tabProfile,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.verified_user_outlined),
-              activeIcon: Icon(Icons.verified_user),
-              label: 'KYC',
+              icon: const Icon(Icons.verified_user_outlined),
+              activeIcon: const Icon(Icons.verified_user),
+              label: l10n.tabKyc,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.business_outlined),
-              activeIcon: Icon(Icons.business),
-              label: 'Организация',
+              icon: const Icon(Icons.business_outlined),
+              activeIcon: const Icon(Icons.business),
+              label: l10n.tabOrganization,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Настройки',
+              icon: const Icon(Icons.settings_outlined),
+              activeIcon: const Icon(Icons.settings),
+              label: l10n.tabSettings,
             ),
           ],
         ),

@@ -36,3 +36,13 @@ class TenantError extends TenantState {
   @override
   List<Object?> get props => [message];
 }
+
+class TenantKybSdkReady extends TenantState {
+  final String sdkToken;
+  final String tenantId;
+  TenantKybSdkReady({required this.sdkToken, required this.tenantId});
+  @override
+  List<Object?> get props => [sdkToken, tenantId];
+}
+
+class TenantKybDone extends TenantState {}

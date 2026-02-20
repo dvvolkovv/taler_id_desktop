@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taler_id_mobile/l10n/app_localizations.dart';
+import 'package:flutter_idensic_mobile_sdk_plugin/flutter_idensic_mobile_sdk_plugin.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
 import '../bloc/kyc_bloc.dart';
@@ -22,9 +25,10 @@ class _KycScreenState extends State<KycScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Верификация KYC')),
+      appBar: AppBar(title: Text(l10n.kycTitle)),
       body: BlocConsumer<KycBloc, KycState>(
         listener: (context, state) {
           if (state is KycSdkReady) {
@@ -42,15 +46,15 @@ class _KycScreenState extends State<KycScreen> {
           }
 
           if (state is KycSdkDone) {
-            return _buildWaiting();
+            return _buildWaiting(l10n);
           }
 
           if (state is KycStatusLoaded) {
-            return _buildStatus(context, state);
+            return _buildStatus(context, state, l10n);
           }
 
           if (state is KycError) {
-            return _buildError(context, state.message);
+            return _buildError(context, state.message, l10n);
           }
 
           return const SizedBox.shrink();
@@ -59,8 +63,8 @@ class _KycScreenState extends State<KycScreen> {
     );
   }
 
-  Widget _buildStatus(BuildContext context, KycStatusLoaded state) {
-    final statusConfig = _getStatusConfig(state.status);
+  Widget _buildStatus(BuildContext context, KycStatusLoaded state, AppLocalizations l10n) {
+    final statusConfig = _getStatusConfig(state.status, l10n);
 
     return RefreshIndicator(
       color: AppColors.primary,
@@ -98,7 +102,7 @@ class _KycScreenState extends State<KycScreen> {
             const SizedBox(height: 8),
             Center(
               child: Text(
-                'Верифицирован: ${_formatDate(state.verifiedAt!)}',
+                l10n.verifiedAt(_formatDate(state.verifiedAt!)),
                 style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
             ),
@@ -123,7 +127,7 @@ class _KycScreenState extends State<KycScreen> {
           const SizedBox(height: 40),
           if (state.status == 'UNVERIFIED' || state.status == 'REJECTED') ...[
             LoadingButton(
-              text: state.status == 'REJECTED' ? 'Пройти повторно' : 'Пройти верификацию',
+              text: state.status == 'REJECTED' ? l10n.retryVerification : l10n.startVerification,
               loading: false,
               onPressed: () => context.read<KycBloc>().add(KycStartRequested()),
             ),
@@ -133,11 +137,11 @@ class _KycScreenState extends State<KycScreen> {
           AppCard(
             child: Column(
               children: [
-                _infoRow(Icons.security_outlined, 'Ваши данные защищены AES-256 шифрованием'),
+                _infoRow(Icons.security_outlined, l10n.securityAes),
                 const Divider(color: AppColors.border, height: 1),
-                _infoRow(Icons.schedule_outlined, 'Верификация занимает 1-2 рабочих дня'),
+                _infoRow(Icons.schedule_outlined, l10n.verificationTime),
                 const Divider(color: AppColors.border, height: 1),
-                _infoRow(Icons.notifications_outlined, 'Вы получите push-уведомление о результате'),
+                _infoRow(Icons.notifications_outlined, l10n.pushNotification),
               ],
             ),
           ),
@@ -146,7 +150,7 @@ class _KycScreenState extends State<KycScreen> {
     );
   }
 
-  Widget _buildWaiting() => Center(
+  Widget _buildWaiting(AppLocalizations l10n) => Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
@@ -154,23 +158,23 @@ class _KycScreenState extends State<KycScreen> {
             children: [
               const CircularProgressIndicator(color: AppColors.primary),
               const SizedBox(height: 24),
-              const Text(
-                'Документы отправлены на проверку',
+              Text(
+                l10n.documentsSubmitted,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Обычно проверка занимает 1-2 рабочих дня. Вы получите push-уведомление о результате.',
+              Text(
+                l10n.documentsSubmittedDesc,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
               ),
             ],
           ),
         ),
       );
 
-  Widget _buildError(BuildContext context, String message) => Center(
+  Widget _buildError(BuildContext context, String message, AppLocalizations l10n) => Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
@@ -182,7 +186,7 @@ class _KycScreenState extends State<KycScreen> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => context.read<KycBloc>().add(KycStatusRequested()),
-                child: const Text('Повторить'),
+                child: Text(l10n.retry),
               ),
             ],
           ),
@@ -200,35 +204,35 @@ class _KycScreenState extends State<KycScreen> {
         ),
       );
 
-  _StatusConfig _getStatusConfig(String status) {
+  _StatusConfig _getStatusConfig(String status, AppLocalizations l10n) {
     switch (status) {
       case 'VERIFIED':
         return _StatusConfig(
           icon: Icons.verified_outlined,
           color: AppColors.primary,
-          label: 'Верифицирован',
-          description: 'Ваша личность подтверждена. У вас есть полный доступ ко всем функциям экосистемы Taler.',
+          label: l10n.kycVerified,
+          description: l10n.kycVerifiedDesc,
         );
       case 'PENDING':
         return _StatusConfig(
           icon: Icons.hourglass_empty_outlined,
           color: AppColors.warning,
-          label: 'На проверке',
-          description: 'Ваши документы проходят верификацию. Обычно это занимает 1-2 рабочих дня.',
+          label: l10n.kycPending,
+          description: l10n.kycPendingDesc,
         );
       case 'REJECTED':
         return _StatusConfig(
           icon: Icons.cancel_outlined,
           color: AppColors.error,
-          label: 'Отклонено',
-          description: 'Верификация не пройдена. Ознакомьтесь с причиной и отправьте документы повторно.',
+          label: l10n.kycRejected,
+          description: l10n.kycRejectedDesc,
         );
       default:
         return _StatusConfig(
           icon: Icons.person_outlined,
           color: AppColors.textSecondary,
-          label: 'Не верифицирован',
-          description: 'Пройдите верификацию для получения полного доступа к финансовым функциям экосистемы Taler.',
+          label: l10n.kycUnverified,
+          description: l10n.kycUnverifiedDesc,
         );
     }
   }
@@ -242,34 +246,52 @@ class _KycScreenState extends State<KycScreen> {
     }
   }
 
-  void _launchSumsub(BuildContext context, String sdkToken) {
-    // sumsub_flutter SDK launch
-    // In production: SNSMobileSDK.init(sdkToken, locale: 'ru').launch()
-    // For now, show dialog since SDK requires native setup
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.card,
-        title: const Text('Верификация', style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text(
-          'Sumsub SDK будет запущен здесь. Требуется настройка нативного плагина.',
-          style: TextStyle(color: AppColors.textSecondary),
+  void _launchSumsub(BuildContext context, String sdkToken) async {
+    // Sumsub SDK is native-only, show stub on web
+    if (kIsWeb) {
+      final l10n = AppLocalizations.of(context)!;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: AppColors.card,
+          title: Text(l10n.verification, style: const TextStyle(color: AppColors.textPrimary)),
+          content: Text(
+            l10n.kycWebOnly,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.ok, style: const TextStyle(color: AppColors.primary)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<KycBloc>().add(KycSdkCompleted());
-            },
-            child: const Text('Симулировать завершение', style: TextStyle(color: AppColors.primary)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.textSecondary)),
-          ),
-        ],
-      ),
-    );
+      );
+      return;
+    }
+
+    final bloc = context.read<KycBloc>();
+
+    final onTokenExpiration = () async {
+      return await bloc.repo.startKyc();
+    };
+
+    final snsMobileSDK = SNSMobileSDK.init(sdkToken, onTokenExpiration)
+        .withLocale(const Locale('ru'))
+        .withDebug(true)
+        .build();
+
+    final SNSMobileSDKResult result = await snsMobileSDK.launch();
+
+    if (!mounted) return;
+
+    if (result.success) {
+      bloc.add(KycSdkCompleted());
+    } else if (result.errorMsg != null) {
+      bloc.add(KycSdkFailed(result.errorType?.toString() ?? 'unknown'));
+    }
+    // Refresh status after SDK closes
+    bloc.add(KycStatusRequested());
   }
 }
 
