@@ -1,0 +1,182 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/widgets.dart';
+import '../../domain/entities/session_entity.dart';
+import '../bloc/sessions_bloc.dart';
+import '../bloc/sessions_event.dart';
+import '../bloc/sessions_state.dart';
+
+class SessionsScreen extends StatefulWidget {
+  const SessionsScreen({super.key});
+
+  @override
+  State<SessionsScreen> createState() => _SessionsScreenState();
+}
+
+class _SessionsScreenState extends State<SessionsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<SessionsBloc>().add(SessionsLoadRequested());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Активные сессии')),
+      body: BlocConsumer<SessionsBloc, SessionsState>(
+        listener: (context, state) {
+          if (state is SessionsError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is SessionsLoading) {
+            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+          }
+
+          if (state is SessionsLoaded) {
+            if (state.sessions.isEmpty) {
+              return const Center(
+                child: Text('Нет активных сессий', style: TextStyle(color: AppColors.textSecondary)),
+              );
+            }
+            return RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () async => context.read<SessionsBloc>().add(SessionsLoadRequested()),
+              child: ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: state.sessions.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (_, i) => _buildSessionCard(context, state.sessions[i]),
+              ),
+            );
+          }
+
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  Widget _buildSessionCard(BuildContext context, SessionEntity session) {
+    return Dismissible(
+      key: Key(session.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        decoration: BoxDecoration(
+          color: AppColors.error.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(Icons.logout, color: AppColors.error),
+      ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: AppColors.card,
+            title: const Text('Завершить сессию?', style: TextStyle(color: AppColors.textPrimary)),
+            content: const Text('Устройство будет выведено из аккаунта.', style: TextStyle(color: AppColors.textSecondary)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Отмена', style: TextStyle(color: AppColors.textSecondary)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Завершить', style: TextStyle(color: AppColors.error)),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (_) => context.read<SessionsBloc>().add(SessionDeleteRequested(session.id)),
+      child: AppCard(
+        child: Row(
+          children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: session.isCurrent
+                    ? AppColors.primary.withOpacity(0.15)
+                    : AppColors.border.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                _deviceIcon(session.device),
+                color: session.isCurrent ? AppColors.primary : AppColors.textSecondary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        session.device ?? 'Неизвестное устройство',
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
+                      ),
+                      if (session.isCurrent) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('Текущая', style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${session.ip ?? 'IP неизвестен'} · ${_formatDate(session.createdAt)}',
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  if (session.location != null)
+                    Text(session.location!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                ],
+              ),
+            ),
+            if (!session.isCurrent)
+              IconButton(
+                icon: const Icon(Icons.close, color: AppColors.error, size: 18),
+                onPressed: () => context.read<SessionsBloc>().add(SessionDeleteRequested(session.id)),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _deviceIcon(String? device) {
+    if (device == null) return Icons.devices_outlined;
+    final lower = device.toLowerCase();
+    if (lower.contains('iphone') || lower.contains('android')) return Icons.smartphone_outlined;
+    if (lower.contains('ipad') || lower.contains('tablet')) return Icons.tablet_outlined;
+    if (lower.contains('mac') || lower.contains('windows') || lower.contains('linux')) return Icons.computer_outlined;
+    return Icons.devices_outlined;
+  }
+
+  String _formatDate(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Только что';
+    if (diff.inHours < 1) return '${diff.inMinutes} мин. назад';
+    if (diff.inDays < 1) return '${diff.inHours} ч. назад';
+    if (diff.inDays < 7) return '${diff.inDays} дн. назад';
+    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+  }
+}

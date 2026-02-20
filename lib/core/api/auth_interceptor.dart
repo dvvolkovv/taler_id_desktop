@@ -1,0 +1,109 @@
+import 'dart:async';
+import 'package:dio/dio.dart';
+import '../storage/secure_storage_service.dart';
+
+class AuthInterceptor extends Interceptor {
+  final Dio dio;
+  final SecureStorageService storage;
+
+  bool _isRefreshing = false;
+  final List<Completer<String?>> _refreshQueue = [];
+
+  AuthInterceptor({required this.dio, required this.storage});
+
+  @override
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    final token = await storage.getAccessToken();
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    handler.next(options);
+  }
+
+  @override
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    if (err.response?.statusCode != 401) {
+      handler.next(err);
+      return;
+    }
+
+    // Don't retry refresh endpoint itself
+    if (err.requestOptions.path.contains('/auth/refresh') ||
+        err.requestOptions.path.contains('/auth/login') ||
+        err.requestOptions.path.contains('/auth/register')) {
+      handler.next(err);
+      return;
+    }
+
+    final newToken = await _refreshAccessToken();
+    if (newToken == null) {
+      handler.next(err);
+      return;
+    }
+
+    // Retry original request with new token
+    try {
+      final opts = err.requestOptions;
+      opts.headers['Authorization'] = 'Bearer $newToken';
+      final response = await dio.fetch(opts);
+      handler.resolve(response);
+    } catch (e) {
+      handler.next(err);
+    }
+  }
+
+  Future<String?> _refreshAccessToken() async {
+    if (_isRefreshing) {
+      // Queue this request
+      final completer = Completer<String?>();
+      _refreshQueue.add(completer);
+      return completer.future;
+    }
+
+    _isRefreshing = true;
+    try {
+      final refreshToken = await storage.getRefreshToken();
+      if (refreshToken == null) return null;
+
+      final response = await dio.post(
+        '/auth/refresh',
+        data: {'refreshToken': refreshToken},
+        options: Options(
+          headers: {'Authorization': null}, // Don't send old expired token
+        ),
+      );
+
+      final newAccessToken = response.data['accessToken'] as String;
+      final newRefreshToken = response.data['refreshToken'] as String?;
+
+      await storage.saveTokens(
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken ?? refreshToken,
+      );
+
+      // Resolve all queued requests
+      for (final completer in _refreshQueue) {
+        completer.complete(newAccessToken);
+      }
+      _refreshQueue.clear();
+
+      return newAccessToken;
+    } catch (e) {
+      // Refresh failed — clear tokens and reject queue
+      await storage.clearTokens();
+      for (final completer in _refreshQueue) {
+        completer.complete(null);
+      }
+      _refreshQueue.clear();
+      return null;
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+}
