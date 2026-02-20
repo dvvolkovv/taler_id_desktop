@@ -209,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-  Widget _documentRow(BuildContext context, doc) => Padding(
+  Widget _documentRow(BuildContext context, DocumentEntity doc) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
@@ -230,12 +230,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-  String _docTypeName(dynamic type) {
-    switch (type.toString()) {
-      case 'DocumentType.passport': return 'Паспорт';
-      case 'DocumentType.drivingLicense': return 'Водительское удостоверение';
-      case 'DocumentType.diploma': return 'Диплом / Сертификат';
-      default: return 'Документ';
+  String _docTypeName(DocumentType type) {
+    switch (type) {
+      case DocumentType.passport: return 'Паспорт';
+      case DocumentType.drivingLicense: return 'Водительское удостоверение';
+      case DocumentType.diploma: return 'Диплом / Сертификат';
     }
   }
 

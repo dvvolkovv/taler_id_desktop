@@ -28,5 +28,5 @@ class ProfileError extends ProfileState {
   final UserEntity? user; // keep stale data
   ProfileError({required this.message, this.user});
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, user];
 }

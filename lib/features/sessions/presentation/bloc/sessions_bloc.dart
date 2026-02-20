@@ -29,8 +29,7 @@ class SessionsBloc extends Bloc<SessionsEvent, SessionsState> {
     final current = state is SessionsLoaded ? (state as SessionsLoaded).sessions : <SessionEntity>[];
     try {
       await repo.deleteSession(event.sessionId);
-      final updated = current.where((s) => s.id != event.sessionId).toList()
-          .cast<SessionEntity>();
+      final updated = current.where((s) => s.id != event.sessionId).toList();
       emit(SessionsLoaded(updated));
     } on ApiException catch (e) {
       emit(SessionsError(e.message));

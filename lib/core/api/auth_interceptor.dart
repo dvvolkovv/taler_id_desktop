@@ -16,6 +16,10 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    if (options.extra['skipAuth'] == true) {
+      handler.next(options);
+      return;
+    }
     final token = await storage.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -75,7 +79,8 @@ class AuthInterceptor extends Interceptor {
         '/auth/refresh',
         data: {'refreshToken': refreshToken},
         options: Options(
-          headers: {'Authorization': null}, // Don't send old expired token
+          headers: <String, dynamic>{}, // Don't send old expired token
+          extra: {'skipAuth': true},
         ),
       );
 

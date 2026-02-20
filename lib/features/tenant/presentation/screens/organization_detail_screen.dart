@@ -196,12 +196,12 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: roleColors[member.role]!.withOpacity(0.15),
+              color: (roleColors[member.role] ?? AppColors.textSecondary).withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               member.role.name,
-              style: TextStyle(color: roleColors[member.role], fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(color: roleColors[member.role] ?? AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ),
         ],

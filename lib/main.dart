@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/di/service_locator.dart';
 import 'core/notifications/notification_service.dart';
+import 'core/storage/secure_storage_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
@@ -32,6 +33,9 @@ Future<void> main() async {
       debugPrint('Firebase initialization failed: $e');
     }
   }
+
+  // Init web token storage (Hive-based, avoids flutter_secure_storage hang)
+  await SecureStorageService.initWeb();
 
   // Setup DI
   await setupDependencies();
