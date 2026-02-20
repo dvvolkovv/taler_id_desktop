@@ -1,3 +1,4 @@
 arb-dir: lib/l10n
 template-arb-locale: ru
 output-localization-file: app_localizations.dart
+output-dir: lib/l10n
