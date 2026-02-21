@@ -38,9 +38,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final biometricEnabled = await _storage.isBiometricEnabled;
     final pinEnabled = await _storage.isPinEnabled;
     final savedLang = await _storage.getLanguage() ?? 'ru';
-    final localAuth = LocalAuthentication();
-    final canCheck = await localAuth.canCheckBiometrics;
-    final available = canCheck && (await localAuth.getAvailableBiometrics()).isNotEmpty;
+    bool available = false;
+    try {
+      final localAuth = LocalAuthentication();
+      final canCheck = await localAuth.canCheckBiometrics;
+      final isSupported = await localAuth.isDeviceSupported();
+      if (canCheck || isSupported) {
+        final biometrics = await localAuth.getAvailableBiometrics();
+        available = biometrics.isNotEmpty;
+      }
+    } catch (_) {
+      available = false;
+    }
+    if (!mounted) return;
     setState(() {
       _biometricEnabled = biometricEnabled;
       _biometricAvailable = available;
@@ -52,13 +62,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleBiometric(bool value) async {
     final l10n = AppLocalizations.of(context)!;
     if (value) {
-      final localAuth = LocalAuthentication();
-      final ok = await localAuth.authenticate(
-        localizedReason: l10n.biometricsConfirm,
-      );
-      if (!ok) return;
+      try {
+        final localAuth = LocalAuthentication();
+        final ok = await localAuth.authenticate(
+          localizedReason: l10n.biometricsConfirm,
+          options: const AuthenticationOptions(biometricOnly: false),
+        );
+        if (!ok) return;
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.biometricsError), backgroundColor: AppColors.error),
+          );
+        }
+        return;
+      }
     }
     await _storage.setBiometricEnabled(value);
+    if (!mounted) return;
     setState(() => _biometricEnabled = value);
   }
 

@@ -968,6 +968,12 @@ abstract class AppLocalizations {
   /// **'Confirm biometrics to enable quick login'**
   String get biometricsConfirm;
 
+  /// No description provided for @biometricsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to enable biometrics. Check device settings.'**
+  String get biometricsError;
+
   /// No description provided for @changePassword.
   ///
   /// In en, this message translates to:

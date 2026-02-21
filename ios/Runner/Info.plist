@@ -41,6 +41,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID используется для быстрого входа в приложение</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Камера необходима для верификации личности</string>
 	<key>NSMicrophoneUsageDescription</key>

@@ -473,6 +473,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get biometricsConfirm => 'Confirm biometrics to enable quick login';
 
   @override
+  String get biometricsError =>
+      'Failed to enable biometrics. Check device settings.';
+
+  @override
   String get changePassword => 'Change Password';
 
   @override

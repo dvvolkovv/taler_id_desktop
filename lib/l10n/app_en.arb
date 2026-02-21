@@ -165,6 +165,7 @@
   "biometrics": "Biometrics",
   "biometricsDesc": "Quick login with Face ID or fingerprint",
   "biometricsConfirm": "Confirm biometrics to enable quick login",
+  "biometricsError": "Failed to enable biometrics. Check device settings.",
   "changePassword": "Change Password",
   "twoFactorAuth": "Two-Factor Authentication",
   "currentPassword": "Current Password",

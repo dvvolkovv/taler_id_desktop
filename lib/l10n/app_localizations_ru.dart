@@ -474,6 +474,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Подтвердите биометрию для включения быстрого входа';
 
   @override
+  String get biometricsError =>
+      'Не удалось включить биометрию. Проверьте настройки устройства.';
+
+  @override
   String get changePassword => 'Изменить пароль';
 
   @override
