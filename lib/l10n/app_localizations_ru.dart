@@ -12,6 +12,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appTitle => 'Taler ID';
 
   @override
+  String get search => 'Поиск';
+
+  @override
   String get appSubtitle => 'Единая идентификация экосистемы';
 
   @override

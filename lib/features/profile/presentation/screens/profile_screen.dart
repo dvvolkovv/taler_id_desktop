@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
 import '../../../../core/utils/constants.dart';
+import '../../../../core/utils/countries.dart';
 import '../../domain/entities/user_entity.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
@@ -149,33 +150,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 12),
                       _infoRow(Icons.phone_outlined, l10n.phone, user.phone ?? l10n.notSpecified),
                       const Divider(color: AppColors.border, height: 1),
-                      _infoRow(Icons.flag_outlined, l10n.country, user.country ?? l10n.notSpecifiedFemale),
+                      _infoRow(Icons.flag_outlined, l10n.country, _countryDisplayName(user.country) ?? l10n.notSpecifiedFemale),
                       const Divider(color: AppColors.border, height: 1),
-                      _infoRow(Icons.cake_outlined, l10n.dateOfBirth, user.dateOfBirth ?? l10n.notSpecifiedFemale),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Documents
-                AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(l10n.documents, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
-                          GestureDetector(
-                            onTap: () => _showAddDocument(context),
-                            child: Text('+ ${l10n.addDocument}', style: const TextStyle(color: AppColors.primary, fontSize: 13)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      if (user.documents == null || user.documents!.isEmpty)
-                        Text(l10n.noDocuments, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))
-                      else
-                        ...user.documents!.map((doc) => _documentRow(context, doc, l10n)),
+                      _infoRow(Icons.cake_outlined, l10n.dateOfBirth, _formatDateOfBirth(user.dateOfBirth) ?? l10n.notSpecifiedFemale),
                     ],
                   ),
                 ),
@@ -198,6 +175,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return parts.isEmpty ? user.email : parts.join(' ');
   }
 
+  String? _formatDateOfBirth(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+  }
+
+  String? _countryDisplayName(String? code) {
+    if (code == null || code.isEmpty) return null;
+    final locale = Localizations.localeOf(context).languageCode;
+    return countryName(code, locale);
+  }
+
   Widget _infoRow(IconData icon, String label, String value) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
@@ -209,69 +199,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
           ],
         ),
-      );
-
-  Widget _documentRow(BuildContext context, DocumentEntity doc, AppLocalizations l10n) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            const Icon(Icons.description_outlined, color: AppColors.secondary, size: 18),
-            const SizedBox(width: 12),
-            Text(
-              _docTypeName(doc.type, l10n),
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-            ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.delete_outlined, color: AppColors.error, size: 18),
-              onPressed: () => context.read<ProfileBloc>().add(ProfileDocumentDelete(doc.id)),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ],
-        ),
-      );
-
-  String _docTypeName(DocumentType type, AppLocalizations l10n) {
-    switch (type) {
-      case DocumentType.passport: return l10n.passport;
-      case DocumentType.drivingLicense: return l10n.drivingLicense;
-      case DocumentType.diploma: return l10n.diplomaCertificate;
-    }
-  }
-
-  void _showAddDocument(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.documentType, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 16),
-            _docTypeButton(context, l10n.passportId, DocumentType.passport),
-            _docTypeButton(context, l10n.drivingLicense, DocumentType.drivingLicense),
-            _docTypeButton(context, l10n.diplomaCertificate, DocumentType.diploma),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _docTypeButton(BuildContext context, String label, DocumentType type) => ListTile(
-        leading: const Icon(Icons.description_outlined, color: AppColors.primary),
-        title: Text(label, style: const TextStyle(color: AppColors.textPrimary)),
-        onTap: () {
-          Navigator.pop(context);
-          // TODO: pick file with image_picker and dispatch ProfileDocumentUpload
-        },
       );
 
   Widget _buildSkeleton() => Padding(

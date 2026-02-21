@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'Taler ID'**
   String get appTitle;
 
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
   /// No description provided for @appSubtitle.
   ///
   /// In en, this message translates to:

@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Taler ID';
 
   @override
+  String get search => 'Search';
+
+  @override
   String get appSubtitle => 'Unified ecosystem identity';
 
   @override

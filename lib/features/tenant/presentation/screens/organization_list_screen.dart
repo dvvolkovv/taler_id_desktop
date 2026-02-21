@@ -80,9 +80,14 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
     final roleLabel = _roleLabel(tenant.myRole, l10n);
 
     return GestureDetector(
-      onTap: () => context.push(
-        RouteConstants.organizationDetail.replaceFirst(':id', tenant.id),
-      ),
+      onTap: () async {
+        await context.push(
+          RouteConstants.organizationDetail.replaceFirst(':id', tenant.id),
+        );
+        if (mounted) {
+          context.read<TenantBloc>().add(TenantsLoadRequested());
+        }
+      },
       child: AppCard(
         child: Row(
           children: [
