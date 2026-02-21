@@ -26,14 +26,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   DateTime? _dateOfBirth;
   bool _initialized = false;
 
-  List<String> _getCountries(AppLocalizations l10n) => [
-    l10n.countryAustria,
-    l10n.countryGermany,
-    l10n.countryRussia,
-    l10n.countryUkraine,
-    l10n.countryKazakhstan,
-    l10n.countryBelarus,
-    l10n.countryOther,
+  static const _countryCodes = ['AT', 'DE', 'RU', 'UA', 'KZ', 'BY'];
+
+  List<MapEntry<String, String>> _getCountries(AppLocalizations l10n) => [
+    MapEntry('AT', l10n.countryAustria),
+    MapEntry('DE', l10n.countryGermany),
+    MapEntry('RU', l10n.countryRussia),
+    MapEntry('UA', l10n.countryUkraine),
+    MapEntry('KZ', l10n.countryKazakhstan),
+    MapEntry('BY', l10n.countryBelarus),
   ];
 
   @override
@@ -170,12 +171,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _selectedCountry,
+                    value: _countryCodes.contains(_selectedCountry) ? _selectedCountry : null,
                     dropdownColor: AppColors.card,
                     style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: InputDecoration(labelText: l10n.country),
+                    decoration: InputDecoration(
+                      labelText: l10n.country,
+                      hintText: _selectedCountry != null && !_countryCodes.contains(_selectedCountry)
+                          ? _selectedCountry
+                          : null,
+                      hintStyle: const TextStyle(color: AppColors.textPrimary),
+                    ),
                     items: _getCountries(l10n)
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
                         .toList(),
                     onChanged: (v) => setState(() => _selectedCountry = v),
                   ),
@@ -185,13 +192,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     loading: loading,
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        context.read<ProfileBloc>().add(ProfileUpdateSubmitted({
-                          if (_firstNameCtrl.text.isNotEmpty) 'firstName': _firstNameCtrl.text.trim(),
-                          if (_lastNameCtrl.text.isNotEmpty) 'lastName': _lastNameCtrl.text.trim(),
-                          if (_phoneCtrl.text.isNotEmpty) 'phone': _phoneCtrl.text.trim(),
+                        final data = <String, dynamic>{
+                          'firstName': _firstNameCtrl.text.trim(),
+                          'lastName': _lastNameCtrl.text.trim(),
                           if (_selectedCountry != null) 'country': _selectedCountry,
                           if (_dateOfBirth != null) 'dateOfBirth': _dateOfBirth!.toIso8601String().split('T').first,
-                        }));
+                        };
+                        context.read<ProfileBloc>().add(ProfileUpdateSubmitted(data));
                       }
                     },
                   ),

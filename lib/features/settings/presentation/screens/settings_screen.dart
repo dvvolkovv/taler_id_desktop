@@ -12,6 +12,7 @@ import '../../../../main.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../profile/data/datasources/profile_remote_datasource.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -122,7 +123,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.security_outlined,
                     iconColor: AppColors.secondary,
                     title: l10n.twoFactorAuth,
-                    onTap: () {/* TODO: 2FA setup */},
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Coming soon'), backgroundColor: AppColors.warning),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -173,7 +178,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.download_outlined,
                     iconColor: AppColors.textSecondary,
                     title: l10n.exportData,
-                    onTap: () {/* TODO */},
+                    onTap: () async {
+                      try {
+                        final ds = sl<ProfileRemoteDataSource>();
+                        await ds.exportData();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.exportData), backgroundColor: AppColors.primary),
+                          );
+                        }
+                      } catch (_) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Error'), backgroundColor: AppColors.error),
+                          );
+                        }
+                      }
+                    },
                   ),
                   const Divider(color: AppColors.border, height: 1),
                   _navTile(
@@ -359,7 +380,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {/* TODO: change password API */},
+                onPressed: () {
+                      if (newCtrl.text.isEmpty || confirmCtrl.text.isEmpty || oldCtrl.text.isEmpty) return;
+                      if (newCtrl.text != confirmCtrl.text) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.pinMismatch), backgroundColor: AppColors.error),
+                        );
+                        return;
+                      }
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Coming soon'), backgroundColor: AppColors.warning),
+                      );
+                    },
                 child: Text(l10n.save),
               ),
             ),
@@ -425,7 +458,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
-            onPressed: () {/* TODO: delete account API */},
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                final ds = sl<ProfileRemoteDataSource>();
+                await ds.deleteAccount();
+                if (mounted) {
+                  context.read<AuthBloc>().add(LogoutRequested());
+                }
+              } catch (_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Error'), backgroundColor: AppColors.error),
+                  );
+                }
+              }
+            },
             child: Text(l10n.delete, style: const TextStyle(color: AppColors.error)),
           ),
         ],

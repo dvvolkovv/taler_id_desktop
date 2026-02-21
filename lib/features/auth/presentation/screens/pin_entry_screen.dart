@@ -74,6 +74,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
   }
 
   Future<void> _verifyPin() async {
+    if (!mounted) return;
     final hash = sha256.convert(utf8.encode(_pin)).toString();
     final storedHash = await _storage.getPinHash();
 
@@ -81,12 +82,14 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
       if (mounted) context.go(RouteConstants.profile);
     } else {
       _attempts++;
-      setState(() {
-        _pin = '';
-        _error = AppLocalizations.of(context)!.pinIncorrect;
-      });
-      if (_attempts >= 5 && mounted) {
+      if (!mounted) return;
+      if (_attempts >= 5) {
         context.go(RouteConstants.login);
+      } else {
+        setState(() {
+          _pin = '';
+          _error = AppLocalizations.of(context)!.pinIncorrect;
+        });
       }
     }
   }

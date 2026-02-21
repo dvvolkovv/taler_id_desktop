@@ -210,7 +210,7 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
                     if (nameCtrl.text.trim().isNotEmpty) {
                       context.read<TenantBloc>().add(TenantCreateSubmitted({
                         'name': nameCtrl.text.trim(),
-                        if (emailCtrl.text.trim().isNotEmpty) 'contactEmail': emailCtrl.text.trim(),
+                        if (emailCtrl.text.trim().isNotEmpty) 'email': emailCtrl.text.trim(),
                         if (websiteCtrl.text.trim().isNotEmpty) 'website': websiteCtrl.text.trim(),
                         if (addressCtrl.text.trim().isNotEmpty) 'legalAddress': addressCtrl.text.trim(),
                       }));

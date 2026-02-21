@@ -41,6 +41,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   }
 
   Future<void> _onPinComplete() async {
+    if (!mounted) return;
     if (!_confirming) {
       setState(() {
         _firstPin = _pin;
@@ -60,6 +61,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
           context.pop();
         }
       } else {
+        if (!mounted) return;
         setState(() {
           _pin = '';
           _firstPin = null;
