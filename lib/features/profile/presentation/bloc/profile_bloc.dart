@@ -30,7 +30,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     final current = state is ProfileLoaded ? (state as ProfileLoaded).user : null;
     if (current != null) emit(ProfileUpdating(current));
     try {
-      final user = await repo.updateProfile(event.data);
+      await repo.updateProfile(event.data);
+      // Re-fetch full profile since PUT /profile returns partial data (no email/kycStatus)
+      final user = await repo.getProfile();
       emit(ProfileLoaded(user));
     } on ApiException catch (e) {
       emit(ProfileError(message: e.message, user: current));

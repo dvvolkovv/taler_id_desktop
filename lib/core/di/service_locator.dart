@@ -90,6 +90,7 @@ Future<void> setupDependencies() async {
     () => TenantRepositoryImpl(
       remote: sl<TenantRemoteDataSource>(),
       cache: sl<CacheService>(),
+      storage: sl<SecureStorageService>(),
     ),
   );
   sl.registerLazySingleton<ISessionRepository>(

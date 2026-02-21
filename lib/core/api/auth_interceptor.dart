@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../storage/secure_storage_service.dart';
 
@@ -91,6 +92,17 @@ class AuthInterceptor extends Interceptor {
         accessToken: newAccessToken,
         refreshToken: newRefreshToken ?? refreshToken,
       );
+
+      // Save user ID from refreshed token
+      try {
+        final parts = newAccessToken.split('.');
+        if (parts.length == 3) {
+          final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+          final map = jsonDecode(payload) as Map<String, dynamic>;
+          final sub = map['sub'] as String?;
+          if (sub != null) await storage.saveUserId(sub);
+        }
+      } catch (_) {}
 
       // Resolve all queued requests
       for (final completer in _refreshQueue) {

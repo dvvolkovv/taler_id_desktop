@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../domain/entities/auth_entities.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
@@ -8,6 +9,18 @@ class AuthRepositoryImpl implements IAuthRepository {
   final SecureStorageService storage;
 
   AuthRepositoryImpl({required this.remote, required this.storage});
+
+  Future<void> _saveUserIdFromToken(String accessToken) async {
+    try {
+      final parts = accessToken.split('.');
+      if (parts.length == 3) {
+        final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+        final map = jsonDecode(payload) as Map<String, dynamic>;
+        final sub = map['sub'] as String?;
+        if (sub != null) await storage.saveUserId(sub);
+      }
+    } catch (_) {}
+  }
 
   @override
   Future<AuthTokens> login({required String email, required String password}) async {
@@ -27,6 +40,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     );
+    await _saveUserIdFromToken(tokens.accessToken);
     return tokens;
   }
 
@@ -51,6 +65,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     );
+    await _saveUserIdFromToken(tokens.accessToken);
     return tokens;
   }
 
@@ -73,6 +88,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     );
+    await _saveUserIdFromToken(tokens.accessToken);
     return tokens;
   }
 

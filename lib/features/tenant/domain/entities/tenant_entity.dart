@@ -4,7 +4,7 @@ part 'tenant_entity.freezed.dart';
 part 'tenant_entity.g.dart';
 
 enum KybStatus {
-  @JsonValue('NONE') none,
+  @JsonValue('UNVERIFIED') none,
   @JsonValue('PENDING') pending,
   @JsonValue('VERIFIED') verified,
   @JsonValue('REJECTED') rejected,

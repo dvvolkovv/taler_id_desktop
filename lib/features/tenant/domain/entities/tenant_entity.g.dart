@@ -42,7 +42,7 @@ Map<String, dynamic> _$$TenantEntityImplToJson(_$TenantEntityImpl instance) =>
     };
 
 const _$KybStatusEnumMap = {
-  KybStatus.none: 'NONE',
+  KybStatus.none: 'UNVERIFIED',
   KybStatus.pending: 'PENDING',
   KybStatus.verified: 'VERIFIED',
   KybStatus.rejected: 'REJECTED',
