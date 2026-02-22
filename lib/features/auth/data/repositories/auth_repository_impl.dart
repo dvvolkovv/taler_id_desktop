@@ -100,7 +100,11 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<void> logout() async {
-    await remote.logout();
+    try {
+      await remote.logout();
+    } catch (_) {
+      // Server call may fail (expired token, network error) — ignore
+    }
     await storage.clearTokens();
   }
 }

@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Taler Id Mobile</string>
+	<string>TalerID</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -47,9 +47,15 @@
 	<string>Камера необходима для верификации личности</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Микрофон необходим для видео-верификации</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Доступ к фотогалерее необходим для загрузки документов при верификации</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Геолокация может использоваться для верификации личности</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
