@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../domain/entities/sumsub_applicant_entity.dart';
 
 abstract class KycState extends Equatable {
   @override
@@ -12,9 +13,23 @@ class KycStatusLoaded extends KycState {
   final String status;
   final String? rejectionReason;
   final String? verifiedAt;
-  KycStatusLoaded({required this.status, this.rejectionReason, this.verifiedAt});
+  final SumsubApplicantEntity? applicantData;
+  KycStatusLoaded({
+    required this.status,
+    this.rejectionReason,
+    this.verifiedAt,
+    this.applicantData,
+  });
   @override
-  List<Object?> get props => [status, rejectionReason, verifiedAt];
+  List<Object?> get props => [status, rejectionReason, verifiedAt, applicantData];
+}
+
+class KycApplicantDataLoading extends KycState {
+  final String status;
+  final String? verifiedAt;
+  KycApplicantDataLoading({required this.status, this.verifiedAt});
+  @override
+  List<Object?> get props => [status, verifiedAt];
 }
 
 class KycSdkReady extends KycState {

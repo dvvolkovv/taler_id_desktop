@@ -1304,6 +1304,108 @@ abstract class AppLocalizations {
   /// **'Failed to start verification'**
   String get failedToStartKyc;
 
+  /// No description provided for @verifiedPersonalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Data'**
+  String get verifiedPersonalInfo;
+
+  /// No description provided for @middleName.
+  ///
+  /// In en, this message translates to:
+  /// **'Middle Name'**
+  String get middleName;
+
+  /// No description provided for @placeOfBirth.
+  ///
+  /// In en, this message translates to:
+  /// **'Place of Birth'**
+  String get placeOfBirth;
+
+  /// No description provided for @nationality.
+  ///
+  /// In en, this message translates to:
+  /// **'Nationality'**
+  String get nationality;
+
+  /// No description provided for @gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get gender;
+
+  /// No description provided for @genderMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get genderMale;
+
+  /// No description provided for @genderFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get genderFemale;
+
+  /// No description provided for @docNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get docNumber;
+
+  /// No description provided for @docIssuedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Issued'**
+  String get docIssuedDate;
+
+  /// No description provided for @docValidUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid Until'**
+  String get docValidUntil;
+
+  /// No description provided for @docIssuedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Issued By'**
+  String get docIssuedBy;
+
+  /// No description provided for @address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
+  /// No description provided for @refreshData.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Data'**
+  String get refreshData;
+
+  /// No description provided for @failedToLoadSumsubData.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load verification data'**
+  String get failedToLoadSumsubData;
+
+  /// No description provided for @sumsubDataLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading verification data...'**
+  String get sumsubDataLoading;
+
+  /// No description provided for @reviewResultGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification passed'**
+  String get reviewResultGreen;
+
+  /// No description provided for @reviewResultRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification failed'**
+  String get reviewResultRed;
+
   /// No description provided for @chatTitle.
   ///
   /// In en, this message translates to:

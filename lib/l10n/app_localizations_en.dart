@@ -645,6 +645,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToStartKyc => 'Failed to start verification';
 
   @override
+  String get verifiedPersonalInfo => 'Verified Data';
+
+  @override
+  String get middleName => 'Middle Name';
+
+  @override
+  String get placeOfBirth => 'Place of Birth';
+
+  @override
+  String get nationality => 'Nationality';
+
+  @override
+  String get gender => 'Gender';
+
+  @override
+  String get genderMale => 'Male';
+
+  @override
+  String get genderFemale => 'Female';
+
+  @override
+  String get docNumber => 'Number';
+
+  @override
+  String get docIssuedDate => 'Issued';
+
+  @override
+  String get docValidUntil => 'Valid Until';
+
+  @override
+  String get docIssuedBy => 'Issued By';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get refreshData => 'Refresh Data';
+
+  @override
+  String get failedToLoadSumsubData => 'Failed to load verification data';
+
+  @override
+  String get sumsubDataLoading => 'Loading verification data...';
+
+  @override
+  String get reviewResultGreen => 'Verification passed';
+
+  @override
+  String get reviewResultRed => 'Verification failed';
+
+  @override
   String get chatTitle => 'Assistant';
 
   @override

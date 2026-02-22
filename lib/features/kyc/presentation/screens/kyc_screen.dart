@@ -8,6 +8,7 @@ import '../../../../core/theme/widgets.dart';
 import '../bloc/kyc_bloc.dart';
 import '../bloc/kyc_event.dart';
 import '../bloc/kyc_state.dart';
+import '../widgets/sumsub_data_card.dart';
 
 class KycScreen extends StatefulWidget {
   const KycScreen({super.key});
@@ -47,6 +48,10 @@ class _KycScreenState extends State<KycScreen> {
 
           if (state is KycSdkDone) {
             return _buildWaiting(l10n);
+          }
+
+          if (state is KycApplicantDataLoading) {
+            return _buildStatusWithLoading(context, state, l10n);
           }
 
           if (state is KycStatusLoaded) {
@@ -133,6 +138,19 @@ class _KycScreenState extends State<KycScreen> {
             ),
           ],
           const SizedBox(height: 16),
+          // Verified applicant data
+          if (state.status == 'VERIFIED' && state.applicantData != null) ...[
+            SumsubDataCard(data: state.applicantData!),
+            const SizedBox(height: 12),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => context.read<KycBloc>().add(KycApplicantDataRequested()),
+                icon: const Icon(Icons.refresh, size: 18, color: AppColors.textSecondary),
+                label: Text(l10n.refreshData, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           // Info card
           AppCard(
             child: Column(
@@ -147,6 +165,61 @@ class _KycScreenState extends State<KycScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatusWithLoading(BuildContext context, KycApplicantDataLoading state, AppLocalizations l10n) {
+    final statusConfig = _getStatusConfig(state.status, l10n);
+
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 32),
+        Center(
+          child: Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: statusConfig.color.withOpacity(0.15),
+              shape: BoxShape.circle,
+              border: Border.all(color: statusConfig.color.withOpacity(0.4), width: 2),
+            ),
+            child: Icon(statusConfig.icon, color: statusConfig.color, size: 48),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Center(child: StatusBadge(label: statusConfig.label, color: statusConfig.color)),
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            statusConfig.description,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+          ),
+        ),
+        if (state.verifiedAt != null) ...[
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              l10n.verifiedAt(_formatDate(state.verifiedAt!)),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+          ),
+        ],
+        const SizedBox(height: 40),
+        Center(
+          child: Column(
+            children: [
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(height: 12),
+              Text(
+                l10n.sumsubDataLoading,
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

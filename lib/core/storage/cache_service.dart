@@ -4,8 +4,10 @@ class CacheService {
   static const _profileBox = 'profile_cache';
   static const _kycBox = 'kyc_cache';
   static const _tenantBox = 'tenant_cache';
+  static const _sumsubBox = 'sumsub_cache';
 
   static const _kycTtlSeconds = 300; // 5 minutes
+  static const _sumsubTtlSeconds = 600; // 10 minutes
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -13,6 +15,7 @@ class CacheService {
       Hive.openBox(_profileBox),
       Hive.openBox(_kycBox),
       Hive.openBox(_tenantBox),
+      Hive.openBox(_sumsubBox),
     ]);
   }
 
@@ -46,6 +49,22 @@ class CacheService {
     return box.get('data') as Map<String, dynamic>?;
   }
 
+  // Sumsub applicant data cache (10 min TTL)
+  Future<void> saveSumsubData(Map<String, dynamic> data) async {
+    final box = Hive.box(_sumsubBox);
+    await box.put('data', data);
+    await box.put('timestamp', DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Map<String, dynamic>? getSumsubData() {
+    final box = Hive.box(_sumsubBox);
+    final timestamp = box.get('timestamp') as int?;
+    if (timestamp == null) return null;
+    final age = DateTime.now().millisecondsSinceEpoch - timestamp;
+    if (age > _sumsubTtlSeconds * 1000) return null; // expired
+    return box.get('data') as Map<String, dynamic>?;
+  }
+
   // Tenant cache
   Future<void> saveTenants(List<Map<String, dynamic>> data) async {
     final box = Hive.box(_tenantBox);
@@ -65,6 +84,7 @@ class CacheService {
       Hive.box(_profileBox).clear(),
       Hive.box(_kycBox).clear(),
       Hive.box(_tenantBox).clear(),
+      Hive.box(_sumsubBox).clear(),
     ]);
   }
 }

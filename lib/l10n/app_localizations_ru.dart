@@ -646,6 +646,58 @@ class AppLocalizationsRu extends AppLocalizations {
   String get failedToStartKyc => 'Не удалось запустить верификацию';
 
   @override
+  String get verifiedPersonalInfo => 'Подтверждённые данные';
+
+  @override
+  String get middleName => 'Отчество';
+
+  @override
+  String get placeOfBirth => 'Место рождения';
+
+  @override
+  String get nationality => 'Гражданство';
+
+  @override
+  String get gender => 'Пол';
+
+  @override
+  String get genderMale => 'Мужской';
+
+  @override
+  String get genderFemale => 'Женский';
+
+  @override
+  String get docNumber => 'Номер';
+
+  @override
+  String get docIssuedDate => 'Дата выдачи';
+
+  @override
+  String get docValidUntil => 'Действителен до';
+
+  @override
+  String get docIssuedBy => 'Кем выдан';
+
+  @override
+  String get address => 'Адрес';
+
+  @override
+  String get refreshData => 'Обновить данные';
+
+  @override
+  String get failedToLoadSumsubData =>
+      'Не удалось загрузить данные верификации';
+
+  @override
+  String get sumsubDataLoading => 'Загрузка данных верификации...';
+
+  @override
+  String get reviewResultGreen => 'Проверка пройдена';
+
+  @override
+  String get reviewResultRed => 'Проверка не пройдена';
+
+  @override
   String get chatTitle => 'Ассистент';
 
   @override

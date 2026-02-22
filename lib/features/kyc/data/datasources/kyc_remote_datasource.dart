@@ -15,4 +15,7 @@ class KycRemoteDataSource {
 
   Future<Map<String, dynamic>> getKycStatus() =>
       client.get('/kyc/status', fromJson: (d) => Map<String, dynamic>.from(d));
+
+  Future<Map<String, dynamic>> getApplicantData() =>
+      client.get('/kyc/applicant-data', fromJson: (d) => Map<String, dynamic>.from(d));
 }

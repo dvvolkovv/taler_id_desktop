@@ -14,3 +14,5 @@ class KycSdkFailed extends KycEvent {
   @override
   List<Object?> get props => [errorCode];
 }
+
+class KycApplicantDataRequested extends KycEvent {}
