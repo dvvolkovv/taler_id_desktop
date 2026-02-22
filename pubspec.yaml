@@ -55,6 +55,11 @@ dependencies:
   # Crypto
   crypto: ^3.0.6
 
+  # Chat assistant
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.0
+  flutter_markdown: ^0.7.7
+
   # Utils
   intl: any
   package_info_plus: ^8.1.3

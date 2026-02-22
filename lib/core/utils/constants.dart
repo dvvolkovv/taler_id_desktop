@@ -27,4 +27,5 @@ class RouteConstants {
   static const invite = '/invite';
   static const pinSetup = '/auth/pin-setup';
   static const pinEntry = '/auth/pin-entry';
+  static const chat = '/chat';
 }

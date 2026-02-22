@@ -644,4 +644,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get failedToStartKyc => 'Не удалось запустить верификацию';
+
+  @override
+  String get chatTitle => 'Ассистент';
+
+  @override
+  String get chatHint => 'Напишите сообщение...';
+
+  @override
+  String get chatListening => 'Слушаю...';
+
+  @override
+  String get chatError => 'Ошибка соединения';
+
+  @override
+  String get chatClear => 'Очистить чат';
+
+  @override
+  String get chatEmpty => 'Задайте вопрос ассистенту';
 }

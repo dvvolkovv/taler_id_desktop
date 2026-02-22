@@ -1303,6 +1303,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to start verification'**
   String get failedToStartKyc;
+
+  /// No description provided for @chatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get chatTitle;
+
+  /// No description provided for @chatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message...'**
+  String get chatHint;
+
+  /// No description provided for @chatListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get chatListening;
+
+  /// No description provided for @chatError.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error'**
+  String get chatError;
+
+  /// No description provided for @chatClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear chat'**
+  String get chatClear;
+
+  /// No description provided for @chatEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the assistant a question'**
+  String get chatEmpty;
 }
 
 class _AppLocalizationsDelegate

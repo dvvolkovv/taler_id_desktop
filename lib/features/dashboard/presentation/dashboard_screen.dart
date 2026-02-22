@@ -31,6 +31,11 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: child,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push(RouteConstants.chat),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.smart_toy_outlined, color: Colors.black),
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppColors.surface,

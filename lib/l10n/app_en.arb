@@ -223,5 +223,12 @@
   "failedToLoadSessions": "Failed to load sessions",
   "failedToDeleteSession": "Failed to end session",
   "failedToLoadKyc": "Failed to load verification status",
-  "failedToStartKyc": "Failed to start verification"
+  "failedToStartKyc": "Failed to start verification",
+
+  "chatTitle": "Assistant",
+  "chatHint": "Type a message...",
+  "chatListening": "Listening...",
+  "chatError": "Connection error",
+  "chatClear": "Clear chat",
+  "chatEmpty": "Ask the assistant a question"
 }

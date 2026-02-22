@@ -14,6 +14,7 @@ import '../../features/tenant/presentation/screens/organization_detail_screen.da
 import '../../features/tenant/presentation/screens/invite_screen.dart';
 import '../../features/sessions/presentation/screens/sessions_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/chat/presentation/screens/chat_screen.dart';
 import '../storage/secure_storage_service.dart';
 import '../di/service_locator.dart';
 import '../utils/constants.dart';
@@ -60,6 +61,11 @@ final appRouter = GoRouter(
         final token = state.uri.queryParameters['token'] ?? '';
         return InviteScreen(token: token);
       },
+    ),
+    // Chat (full-screen, outside ShellRoute)
+    GoRoute(
+      path: RouteConstants.chat,
+      builder: (_, __) => const ChatScreen(),
     ),
     // Dashboard shell with bottom nav
     ShellRoute(

@@ -643,4 +643,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToStartKyc => 'Failed to start verification';
+
+  @override
+  String get chatTitle => 'Assistant';
+
+  @override
+  String get chatHint => 'Type a message...';
+
+  @override
+  String get chatListening => 'Listening...';
+
+  @override
+  String get chatError => 'Connection error';
+
+  @override
+  String get chatClear => 'Clear chat';
+
+  @override
+  String get chatEmpty => 'Ask the assistant a question';
 }
