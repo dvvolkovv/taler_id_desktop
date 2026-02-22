@@ -150,6 +150,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                     },
                   ),
+                  const Divider(color: AppColors.border, height: 1),
+                  _navTile(
+                    icon: Icons.devices_outlined,
+                    iconColor: AppColors.secondary,
+                    title: l10n.sessions,
+                    onTap: () => context.push(RouteConstants.sessions),
+                  ),
                 ],
               ),
             ),
