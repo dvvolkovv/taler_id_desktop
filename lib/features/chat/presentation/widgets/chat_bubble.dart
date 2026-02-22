@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -13,27 +14,48 @@ class ChatBubble extends StatefulWidget {
 }
 
 class _ChatBubbleState extends State<ChatBubble> {
-  static final FlutterTts _tts = FlutterTts();
+  static FlutterTts? _tts;
+  static bool _ttsAvailable = false;
+  static bool _ttsInitialized = false;
   bool _isSpeaking = false;
 
   @override
   void initState() {
     super.initState();
-    _tts.setCompletionHandler(() {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
-    _tts.setCancelHandler(() {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
+    _initTts();
+  }
+
+  void _initTts() {
+    if (_ttsInitialized) return;
+    _ttsInitialized = true;
+    try {
+      _tts = FlutterTts();
+      _ttsAvailable = true;
+      _tts!.setCompletionHandler(() {
+        if (mounted) setState(() => _isSpeaking = false);
+      });
+      _tts!.setCancelHandler(() {
+        if (mounted) setState(() => _isSpeaking = false);
+      });
+    } catch (e) {
+      _ttsAvailable = false;
+      debugPrint('FlutterTts not available: $e');
+    }
   }
 
   Future<void> _toggleTts() async {
+    if (!_ttsAvailable || _tts == null) return;
     if (_isSpeaking) {
-      await _tts.stop();
+      await _tts!.stop();
       setState(() => _isSpeaking = false);
     } else {
       setState(() => _isSpeaking = true);
-      await _tts.speak(widget.message.content);
+      try {
+        await _tts!.speak(widget.message.content);
+      } catch (e) {
+        setState(() => _isSpeaking = false);
+        debugPrint('TTS speak error: $e');
+      }
     }
   }
 
@@ -135,7 +157,8 @@ class _ChatBubbleState extends State<ChatBubble> {
                       ),
                   ],
                   // TTS button for completed assistant messages
-                  if (!isUser &&
+                  if (_ttsAvailable &&
+                      !isUser &&
                       !widget.message.isStreaming &&
                       widget.message.content.isNotEmpty)
                     Padding(

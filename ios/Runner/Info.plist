@@ -46,7 +46,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Камера необходима для верификации личности</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Микрофон необходим для видео-верификации</string>
+	<string>Микрофон необходим для голосового ввода и видео-верификации</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Распознавание речи используется для голосового ввода сообщений ассистенту</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Доступ к фотогалерее необходим для загрузки документов при верификации</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

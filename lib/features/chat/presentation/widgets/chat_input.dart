@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../../core/theme/app_theme.dart';
@@ -30,9 +31,14 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   Future<void> _initSpeech() async {
-    _speechAvailable = await _speech.initialize(
-      onError: (_) => setState(() => _isListening = false),
-    );
+    try {
+      _speechAvailable = await _speech.initialize(
+        onError: (_) => setState(() => _isListening = false),
+      );
+    } catch (e) {
+      _speechAvailable = false;
+      debugPrint('SpeechToText not available: $e');
+    }
     if (mounted) setState(() {});
   }
 
@@ -72,7 +78,7 @@ class _ChatInputState extends State<ChatInput> {
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
-    _speech.stop();
+    try { _speech.stop(); } catch (_) {}
     super.dispose();
   }
 
