@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 
@@ -135,6 +136,7 @@ class _AssistantScreenState extends State<AssistantScreen>
       final answer = RTCSessionDescription(sdpRes.data as String, 'answer');
       await _pc!.setRemoteDescription(answer);
 
+      WakelockPlus.enable();
       setState(() {
         _active = true;
         _connecting = false;
@@ -187,6 +189,7 @@ class _AssistantScreenState extends State<AssistantScreen>
 
   // ── disconnect ──────────────────────────────────────────────────────
   void _disconnect() {
+    WakelockPlus.disable();
     _dc?.close();
     _dc = null;
     _localStream?.getTracks().forEach((t) => t.stop());

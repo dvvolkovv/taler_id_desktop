@@ -63,6 +63,9 @@ dependencies:
   # WebRTC for realtime assistant
   flutter_webrtc: ^0.12.6
 
+  # Keep screen on
+  wakelock_plus: ^1.2.8
+
   # Utils
   intl: any
   package_info_plus: ^8.1.3
