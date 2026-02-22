@@ -9,7 +9,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   ProfileBloc({required this.repo}) : super(ProfileInitial()) {
     on<ProfileLoadRequested>(_onLoad);
-    on<ProfileUpdateSubmitted>(_onUpdate);
     on<ProfileDocumentUpload>(_onUpload);
     on<ProfileDocumentDelete>(_onDelete);
   }
@@ -23,21 +22,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       emit(ProfileError(message: e.message));
     } catch (e) {
       emit(ProfileError(message: 'Не удалось загрузить профиль'));
-    }
-  }
-
-  Future<void> _onUpdate(ProfileUpdateSubmitted event, Emitter<ProfileState> emit) async {
-    final current = state is ProfileLoaded ? (state as ProfileLoaded).user : null;
-    if (current != null) emit(ProfileUpdating(current));
-    try {
-      await repo.updateProfile(event.data);
-      // Re-fetch full profile since PUT /profile returns partial data (no email/kycStatus)
-      final user = await repo.getProfile();
-      emit(ProfileLoaded(user));
-    } on ApiException catch (e) {
-      emit(ProfileError(message: e.message, user: current));
-    } catch (e) {
-      emit(ProfileError(message: 'Не удалось сохранить изменения', user: current));
     }
   }
 

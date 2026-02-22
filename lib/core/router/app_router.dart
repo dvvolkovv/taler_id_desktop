@@ -7,7 +7,8 @@ import '../../features/auth/presentation/screens/two_fa_screen.dart';
 import '../../features/auth/presentation/screens/pin_setup_screen.dart';
 import '../../features/auth/presentation/screens/pin_entry_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
-import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/assistant/presentation/screens/assistant_screen.dart';
+
 import '../../features/kyc/presentation/screens/kyc_screen.dart';
 import '../../features/tenant/presentation/screens/organization_list_screen.dart';
 import '../../features/tenant/presentation/screens/organization_detail_screen.dart';
@@ -72,14 +73,12 @@ final appRouter = GoRouter(
       builder: (context, state, child) => DashboardScreen(child: child),
       routes: [
         GoRoute(
+          path: RouteConstants.assistant,
+          builder: (_, __) => const AssistantScreen(),
+        ),
+        GoRoute(
           path: RouteConstants.profile,
           builder: (_, __) => const ProfileScreen(),
-          routes: [
-            GoRoute(
-              path: 'edit',
-              builder: (_, __) => const EditProfileScreen(),
-            ),
-          ],
         ),
         GoRoute(
           path: RouteConstants.kyc,

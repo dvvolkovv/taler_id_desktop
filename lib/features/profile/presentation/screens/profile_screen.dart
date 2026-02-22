@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
-import '../../../../core/utils/constants.dart';
 import '../../../../core/utils/countries.dart';
 import '../../domain/entities/user_entity.dart';
 import '../bloc/profile_bloc.dart';
@@ -50,12 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(l10n.profile),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
-            onPressed: () => context.push(RouteConstants.profileEdit),
-          ),
-        ],
+        actions: const [],
       ),
       body: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, state) {

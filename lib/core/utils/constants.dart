@@ -16,7 +16,7 @@ class RouteConstants {
   static const twoFA = '/auth/2fa';
   static const dashboard = '/dashboard';
   static const profile = '/dashboard/profile';
-  static const profileEdit = '/dashboard/profile/edit';
+
   static const kyc = '/dashboard/kyc';
   static const kycSumsub = '/dashboard/kyc/sumsub';
   static const organization = '/dashboard/organization';
@@ -28,4 +28,5 @@ class RouteConstants {
   static const pinSetup = '/auth/pin-setup';
   static const pinEntry = '/auth/pin-entry';
   static const chat = '/chat';
+  static const assistant = '/dashboard/assistant';
 }

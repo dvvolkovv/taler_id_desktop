@@ -9,9 +9,6 @@ class ProfileRemoteDataSource {
   Future<Map<String, dynamic>> getProfile() =>
       client.get('/profile', fromJson: (d) => Map<String, dynamic>.from(d));
 
-  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) =>
-      client.put('/profile', data: data, fromJson: (d) => Map<String, dynamic>.from(d));
-
   Future<Map<String, dynamic>> uploadDocument({
     required File file,
     required String type,

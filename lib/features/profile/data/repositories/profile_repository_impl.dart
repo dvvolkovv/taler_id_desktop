@@ -24,11 +24,6 @@ class ProfileRepositoryImpl implements IProfileRepository {
   }
 
   @override
-  Future<void> updateProfile(Map<String, dynamic> data) async {
-    await remote.updateProfile(data);
-  }
-
-  @override
   Future<DocumentEntity> uploadDocument({
     required File file,
     required DocumentType type,

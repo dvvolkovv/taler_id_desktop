@@ -9,13 +9,6 @@ abstract class ProfileEvent extends Equatable {
 
 class ProfileLoadRequested extends ProfileEvent {}
 
-class ProfileUpdateSubmitted extends ProfileEvent {
-  final Map<String, dynamic> data;
-  ProfileUpdateSubmitted(this.data);
-  @override
-  List<Object?> get props => [data];
-}
-
 class ProfileDocumentUpload extends ProfileEvent {
   final File file;
   final DocumentType type;
