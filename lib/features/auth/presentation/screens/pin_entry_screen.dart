@@ -49,7 +49,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
         options: const AuthenticationOptions(biometricOnly: false),
       );
       if (ok && mounted) {
-        context.go(RouteConstants.profile);
+        context.go(RouteConstants.assistant);
       }
     } catch (_) {}
   }
@@ -79,7 +79,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
     final storedHash = await _storage.getPinHash();
 
     if (hash == storedHash) {
-      if (mounted) context.go(RouteConstants.profile);
+      if (mounted) context.go(RouteConstants.assistant);
     } else {
       _attempts++;
       if (!mounted) return;

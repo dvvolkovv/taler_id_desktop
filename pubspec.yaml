@@ -60,6 +60,9 @@ dependencies:
   flutter_tts: ^4.2.0
   flutter_markdown: ^0.7.7
 
+  # WebRTC for realtime assistant
+  flutter_webrtc: ^0.12.6
+
   # Utils
   intl: any
   package_info_plus: ^8.1.3

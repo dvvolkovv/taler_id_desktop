@@ -49,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (biometricEnabled) {
       final success = await _tryBiometric();
       if (success) {
-        if (mounted) context.go(RouteConstants.profile);
+        if (mounted) context.go(RouteConstants.assistant);
         return;
       }
       // Biometric failed — fallback to PIN if enabled
@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen>
     } else if (pinEnabled) {
       if (mounted) context.go(RouteConstants.pinEntry);
     } else {
-      if (mounted) context.go(RouteConstants.profile);
+      if (mounted) context.go(RouteConstants.assistant);
     }
   }
 

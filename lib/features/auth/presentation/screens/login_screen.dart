@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
-            context.go(RouteConstants.profile);
+            context.go(RouteConstants.assistant);
           } else if (state is AuthRequires2FA) {
             context.push(RouteConstants.twoFA, extra: {
               'email': state.email,

@@ -9,7 +9,7 @@ class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key, required this.child});
 
   static const _tabs = [
-    RouteConstants.profile,
+    RouteConstants.assistant,
     RouteConstants.kyc,
     RouteConstants.organization,
     RouteConstants.settings,
@@ -53,9 +53,9 @@ class DashboardScreen extends StatelessWidget {
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           items: [
             BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outlined),
-              activeIcon: const Icon(Icons.person),
-              label: l10n.tabProfile,
+              icon: const Icon(Icons.headset_mic_outlined),
+              activeIcon: const Icon(Icons.headset_mic),
+              label: l10n.tabAssistant,
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.verified_user_outlined),

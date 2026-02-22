@@ -1441,6 +1441,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ask the assistant a question'**
   String get chatEmpty;
+
+  /// No description provided for @tabAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get tabAssistant;
+
+  /// No description provided for @assistantConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get assistantConnecting;
+
+  /// No description provided for @assistantSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking…'**
+  String get assistantSpeaking;
+
+  /// No description provided for @assistantListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening…'**
+  String get assistantListening;
+
+  /// No description provided for @assistantTapToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to start'**
+  String get assistantTapToStart;
 }
 
 class _AppLocalizationsDelegate

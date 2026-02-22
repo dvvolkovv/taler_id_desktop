@@ -248,5 +248,11 @@
   "chatListening": "Listening...",
   "chatError": "Connection error",
   "chatClear": "Clear chat",
-  "chatEmpty": "Ask the assistant a question"
+  "chatEmpty": "Ask the assistant a question",
+
+  "tabAssistant": "Assistant",
+  "assistantConnecting": "Connecting…",
+  "assistantSpeaking": "Speaking…",
+  "assistantListening": "Listening…",
+  "assistantTapToStart": "Tap to start"
 }

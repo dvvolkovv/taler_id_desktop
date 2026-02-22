@@ -72,7 +72,7 @@ class _InviteScreenState extends State<InviteScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: () => context.go(RouteConstants.profile),
+                  onPressed: () => context.go(RouteConstants.assistant),
                   child: Text(l10n.reject, style: const TextStyle(color: AppColors.textSecondary)),
                 ),
               ],

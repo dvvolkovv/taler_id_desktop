@@ -712,4 +712,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatEmpty => 'Ask the assistant a question';
+
+  @override
+  String get tabAssistant => 'Assistant';
+
+  @override
+  String get assistantConnecting => 'Connecting…';
+
+  @override
+  String get assistantSpeaking => 'Speaking…';
+
+  @override
+  String get assistantListening => 'Listening…';
+
+  @override
+  String get assistantTapToStart => 'Tap to start';
 }

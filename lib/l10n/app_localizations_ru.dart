@@ -714,4 +714,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatEmpty => 'Задайте вопрос ассистенту';
+
+  @override
+  String get tabAssistant => 'Ассистент';
+
+  @override
+  String get assistantConnecting => 'Подключение…';
+
+  @override
+  String get assistantSpeaking => 'Говорит…';
+
+  @override
+  String get assistantListening => 'Слушает…';
+
+  @override
+  String get assistantTapToStart => 'Нажмите для начала';
 }
