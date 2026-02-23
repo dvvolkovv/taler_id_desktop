@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
 import '../../../../core/storage/secure_storage_service.dart';
@@ -26,6 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _biometricAvailable = false;
   bool _pinEnabled = false;
   String _currentLang = 'ru';
+  String _appVersion = '';
   final _storage = sl<SecureStorageService>();
 
   @override
@@ -35,6 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
+    final info = await PackageInfo.fromPlatform();
     final biometricEnabled = await _storage.isBiometricEnabled;
     final pinEnabled = await _storage.isPinEnabled;
     final savedLang = await _storage.getLanguage() ?? 'ru';
@@ -56,6 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _biometricAvailable = available;
       _pinEnabled = pinEnabled;
       _currentLang = savedLang;
+      _appVersion = '${info.version}+${info.buildNumber}';
     });
   }
 
@@ -256,7 +260,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Version info
             Center(
               child: Text(
-                l10n.version('1.0.0'),
+                l10n.version(_appVersion.isNotEmpty ? _appVersion : '...'),
                 style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
             ),
