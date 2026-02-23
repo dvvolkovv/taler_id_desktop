@@ -9,9 +9,72 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/di/service_locator.dart';
+import '../../../../core/api/dio_client.dart';
 
 const _openAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
 const _model = 'gpt-4o-realtime-preview-2024-12-17';
+
+const _instructions =
+    'You are Taler ID assistant. You help users manage their digital identity. '
+    'You can read and update their profile, check KYC status, and list organizations. '
+    'Answer concisely in the language the user speaks. '
+    'When the user mentions personal data (name, phone, country, etc.), use update_profile to save it. '
+    'Always confirm what you saved after updating.';
+
+const List<Map<String, dynamic>> _tools = [
+  {
+    'type': 'function',
+    'name': 'get_profile',
+    'description':
+        'Get current user profile: name, email, phone, country, date of birth',
+    'parameters': {'type': 'object', 'properties': {}},
+  },
+  {
+    'type': 'function',
+    'name': 'update_profile',
+    'description':
+        'Update user profile fields. Only include fields that the user explicitly mentioned.',
+    'parameters': {
+      'type': 'object',
+      'properties': {
+        'firstName': {'type': 'string', 'description': 'First name'},
+        'lastName': {'type': 'string', 'description': 'Last name'},
+        'phone': {
+          'type': 'string',
+          'description': 'Phone number in international format'
+        },
+        'country': {
+          'type': 'string',
+          'description': 'Country ISO code (e.g. AT, DE, RU)'
+        },
+        'dateOfBirth': {
+          'type': 'string',
+          'description': 'Date of birth in ISO format YYYY-MM-DD'
+        },
+        'language': {
+          'type': 'string',
+          'enum': ['en', 'ru', 'de'],
+          'description': 'Preferred language'
+        },
+      },
+    },
+  },
+  {
+    'type': 'function',
+    'name': 'get_kyc_status',
+    'description':
+        'Get KYC verification status: UNVERIFIED, PENDING, VERIFIED, or REJECTED',
+    'parameters': {'type': 'object', 'properties': {}},
+  },
+  {
+    'type': 'function',
+    'name': 'get_organizations',
+    'description':
+        'List all organizations the user belongs to, with roles',
+    'parameters': {'type': 'object', 'properties': {}},
+  },
+];
 
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({super.key});
@@ -31,6 +94,8 @@ class _AssistantScreenState extends State<AssistantScreen>
   bool _isSpeaking = false;
   String? _errorText;
   String _transcript = '';
+
+  final List<Map<String, String>> _messages = [];
 
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulseAnim;
@@ -69,10 +134,11 @@ class _AssistantScreenState extends State<AssistantScreen>
       _connecting = true;
       _errorText = null;
       _transcript = '';
+      _messages.clear();
     });
 
     try {
-      // 1. Get ephemeral token
+      // 1. Get ephemeral token with tools & transcription
       final dio = Dio();
       final sessionRes = await dio.post(
         'https://api.openai.com/v1/realtime/sessions',
@@ -83,8 +149,9 @@ class _AssistantScreenState extends State<AssistantScreen>
         data: {
           'model': _model,
           'voice': 'alloy',
-          'instructions':
-              'You are a helpful assistant for Taler ID app. Answer concisely in the language the user speaks.',
+          'instructions': _instructions,
+          'tools': _tools,
+          'input_audio_transcription': {'model': 'whisper-1'},
         },
       );
       final ephemeralKey =
@@ -167,11 +234,70 @@ class _AssistantScreenState extends State<AssistantScreen>
         final delta = data['delta'] as String? ?? '';
         setState(() => _transcript += delta);
       } else if (type == 'response.audio_transcript.done') {
-        // final transcript available
+        final text = data['transcript'] as String? ?? _transcript;
+        if (text.isNotEmpty) {
+          _messages.add({'role': 'assistant', 'text': text});
+        }
       } else if (type == 'input_audio_buffer.speech_started') {
         setState(() => _transcript = '');
+      } else if (type ==
+          'conversation.item.input_audio_transcription.completed') {
+        final text = data['transcript'] as String? ?? '';
+        if (text.isNotEmpty) {
+          _messages.add({'role': 'user', 'text': text});
+        }
+      } else if (type == 'response.function_call_arguments.done') {
+        final name = data['name'] as String;
+        final callId = data['call_id'] as String;
+        final args =
+            jsonDecode(data['arguments'] as String) as Map<String, dynamic>;
+        _handleFunctionCall(name, callId, args);
       }
     } catch (_) {}
+  }
+
+  // ── function calling ────────────────────────────────────────────────
+  Future<void> _handleFunctionCall(
+      String name, String callId, Map<String, dynamic> args) async {
+    final client = sl<DioClient>();
+    String output;
+
+    try {
+      switch (name) {
+        case 'get_profile':
+          final data = await client.get('/profile', fromJson: (d) => d);
+          output = jsonEncode(data);
+          break;
+        case 'update_profile':
+          final data =
+              await client.put('/profile', data: args, fromJson: (d) => d);
+          output = jsonEncode(data);
+          break;
+        case 'get_kyc_status':
+          final data = await client.get('/kyc/status', fromJson: (d) => d);
+          output = jsonEncode(data);
+          break;
+        case 'get_organizations':
+          final data = await client.get('/tenant', fromJson: (d) => d);
+          output = jsonEncode(data);
+          break;
+        default:
+          output = jsonEncode({'error': 'Unknown function: $name'});
+      }
+    } catch (e) {
+      output = jsonEncode({'error': e.toString()});
+    }
+
+    _dc?.send(RTCDataChannelMessage(jsonEncode({
+      'type': 'conversation.item.create',
+      'item': {
+        'type': 'function_call_output',
+        'call_id': callId,
+        'output': output,
+      }
+    })));
+    _dc?.send(
+        RTCDataChannelMessage(jsonEncode({'type': 'response.create'})));
   }
 
   void _setSpeaking(bool val) {
@@ -189,6 +315,9 @@ class _AssistantScreenState extends State<AssistantScreen>
 
   // ── disconnect ──────────────────────────────────────────────────────
   void _disconnect() {
+    if (_messages.isNotEmpty) {
+      _sendTranscript();
+    }
     WakelockPlus.disable();
     _dc?.close();
     _dc = null;
@@ -204,6 +333,19 @@ class _AssistantScreenState extends State<AssistantScreen>
         _active = false;
         _connecting = false;
       });
+    }
+  }
+
+  Future<void> _sendTranscript() async {
+    try {
+      final client = sl<DioClient>();
+      await client.post(
+        '/assistant/transcripts',
+        data: {'messages': List<Map<String, String>>.from(_messages)},
+        fromJson: (d) => d,
+      );
+    } catch (e) {
+      debugPrint('Failed to save transcript: $e');
     }
   }
 
@@ -330,4 +472,3 @@ class _AssistantScreenState extends State<AssistantScreen>
     );
   }
 }
-
