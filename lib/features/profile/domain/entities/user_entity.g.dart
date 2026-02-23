@@ -20,9 +20,6 @@ _$UserEntityImpl _$$UserEntityImplFromJson(Map<String, dynamic> json) =>
       kycStatus: $enumDecodeNullable(_$KycStatusEnumMap, json['kycStatus']) ??
           KycStatus.unverified,
       fcmToken: json['fcmToken'] as String?,
-      documents: (json['documents'] as List<dynamic>?)
-          ?.map((e) => DocumentEntity.fromJson(e as Map<String, dynamic>))
-          .toList(),
     );
 
 Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
@@ -38,7 +35,6 @@ Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
       'dateOfBirth': instance.dateOfBirth,
       'kycStatus': _$KycStatusEnumMap[instance.kycStatus]!,
       'fcmToken': instance.fcmToken,
-      'documents': instance.documents,
     };
 
 const _$KycStatusEnumMap = {
@@ -46,27 +42,4 @@ const _$KycStatusEnumMap = {
   KycStatus.pending: 'PENDING',
   KycStatus.verified: 'VERIFIED',
   KycStatus.rejected: 'REJECTED',
-};
-
-_$DocumentEntityImpl _$$DocumentEntityImplFromJson(Map<String, dynamic> json) =>
-    _$DocumentEntityImpl(
-      id: json['id'] as String,
-      type: $enumDecode(_$DocumentTypeEnumMap, json['type']),
-      url: json['url'] as String,
-      uploadedAt: DateTime.parse(json['uploadedAt'] as String),
-    );
-
-Map<String, dynamic> _$$DocumentEntityImplToJson(
-        _$DocumentEntityImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'type': _$DocumentTypeEnumMap[instance.type]!,
-      'url': instance.url,
-      'uploadedAt': instance.uploadedAt.toIso8601String(),
-    };
-
-const _$DocumentTypeEnumMap = {
-  DocumentType.passport: 'PASSPORT',
-  DocumentType.drivingLicense: 'DRIVING_LICENSE',
-  DocumentType.diploma: 'DIPLOMA',
 };

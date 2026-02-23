@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/user_entity.dart';
 
 abstract class ProfileEvent extends Equatable {
   @override
@@ -8,18 +6,3 @@ abstract class ProfileEvent extends Equatable {
 }
 
 class ProfileLoadRequested extends ProfileEvent {}
-
-class ProfileDocumentUpload extends ProfileEvent {
-  final File file;
-  final DocumentType type;
-  ProfileDocumentUpload({required this.file, required this.type});
-  @override
-  List<Object?> get props => [file.path, type];
-}
-
-class ProfileDocumentDelete extends ProfileEvent {
-  final String documentId;
-  ProfileDocumentDelete(this.documentId);
-  @override
-  List<Object?> get props => [documentId];
-}

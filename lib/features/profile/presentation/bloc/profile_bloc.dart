@@ -9,8 +9,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   ProfileBloc({required this.repo}) : super(ProfileInitial()) {
     on<ProfileLoadRequested>(_onLoad);
-    on<ProfileDocumentUpload>(_onUpload);
-    on<ProfileDocumentDelete>(_onDelete);
   }
 
   Future<void> _onLoad(ProfileLoadRequested event, Emitter<ProfileState> emit) async {
@@ -22,39 +20,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       emit(ProfileError(message: e.message));
     } catch (e) {
       emit(ProfileError(message: 'Не удалось загрузить профиль'));
-    }
-  }
-
-  Future<void> _onUpload(ProfileDocumentUpload event, Emitter<ProfileState> emit) async {
-    final current = state is ProfileLoaded ? (state as ProfileLoaded).user : null;
-    if (current != null) emit(ProfileUpdating(current));
-    try {
-      final doc = await repo.uploadDocument(file: event.file, type: event.type);
-      final updated = current?.copyWith(
-        documents: [...(current.documents ?? []), doc],
-      );
-      if (updated != null) emit(ProfileLoaded(updated));
-    } on ApiException catch (e) {
-      emit(ProfileError(message: e.message, user: current));
-    } catch (e) {
-      emit(ProfileError(message: 'Не удалось загрузить документ', user: current));
-    }
-  }
-
-  Future<void> _onDelete(ProfileDocumentDelete event, Emitter<ProfileState> emit) async {
-    final current = state is ProfileLoaded ? (state as ProfileLoaded).user : null;
-    if (current == null) return;
-    emit(ProfileUpdating(current));
-    try {
-      await repo.deleteDocument(event.documentId);
-      final updated = current.copyWith(
-        documents: current.documents?.where((d) => d.id != event.documentId).toList(),
-      );
-      emit(ProfileLoaded(updated));
-    } on ApiException catch (e) {
-      emit(ProfileError(message: e.message, user: current));
-    } catch (e) {
-      emit(ProfileError(message: 'Не удалось удалить документ', user: current));
     }
   }
 }

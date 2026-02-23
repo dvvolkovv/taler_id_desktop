@@ -31,7 +31,6 @@ mixin _$UserEntity {
   String? get dateOfBirth => throw _privateConstructorUsedError;
   KycStatus get kycStatus => throw _privateConstructorUsedError;
   String? get fcmToken => throw _privateConstructorUsedError;
-  List<DocumentEntity>? get documents => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -56,8 +55,7 @@ abstract class $UserEntityCopyWith<$Res> {
       String? postalCode,
       String? dateOfBirth,
       KycStatus kycStatus,
-      String? fcmToken,
-      List<DocumentEntity>? documents});
+      String? fcmToken});
 }
 
 /// @nodoc
@@ -84,7 +82,6 @@ class _$UserEntityCopyWithImpl<$Res, $Val extends UserEntity>
     Object? dateOfBirth = freezed,
     Object? kycStatus = null,
     Object? fcmToken = freezed,
-    Object? documents = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -131,10 +128,6 @@ class _$UserEntityCopyWithImpl<$Res, $Val extends UserEntity>
           ? _value.fcmToken
           : fcmToken // ignore: cast_nullable_to_non_nullable
               as String?,
-      documents: freezed == documents
-          ? _value.documents
-          : documents // ignore: cast_nullable_to_non_nullable
-              as List<DocumentEntity>?,
     ) as $Val);
   }
 }
@@ -158,8 +151,7 @@ abstract class _$$UserEntityImplCopyWith<$Res>
       String? postalCode,
       String? dateOfBirth,
       KycStatus kycStatus,
-      String? fcmToken,
-      List<DocumentEntity>? documents});
+      String? fcmToken});
 }
 
 /// @nodoc
@@ -184,7 +176,6 @@ class __$$UserEntityImplCopyWithImpl<$Res>
     Object? dateOfBirth = freezed,
     Object? kycStatus = null,
     Object? fcmToken = freezed,
-    Object? documents = freezed,
   }) {
     return _then(_$UserEntityImpl(
       id: null == id
@@ -231,10 +222,6 @@ class __$$UserEntityImplCopyWithImpl<$Res>
           ? _value.fcmToken
           : fcmToken // ignore: cast_nullable_to_non_nullable
               as String?,
-      documents: freezed == documents
-          ? _value._documents
-          : documents // ignore: cast_nullable_to_non_nullable
-              as List<DocumentEntity>?,
     ));
   }
 }
@@ -253,9 +240,7 @@ class _$UserEntityImpl implements _UserEntity {
       this.postalCode,
       this.dateOfBirth,
       this.kycStatus = KycStatus.unverified,
-      this.fcmToken,
-      final List<DocumentEntity>? documents})
-      : _documents = documents;
+      this.fcmToken});
 
   factory _$UserEntityImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserEntityImplFromJson(json);
@@ -283,19 +268,10 @@ class _$UserEntityImpl implements _UserEntity {
   final KycStatus kycStatus;
   @override
   final String? fcmToken;
-  final List<DocumentEntity>? _documents;
-  @override
-  List<DocumentEntity>? get documents {
-    final value = _documents;
-    if (value == null) return null;
-    if (_documents is EqualUnmodifiableListView) return _documents;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
-  }
 
   @override
   String toString() {
-    return 'UserEntity(id: $id, email: $email, phone: $phone, firstName: $firstName, lastName: $lastName, country: $country, avatarUrl: $avatarUrl, postalCode: $postalCode, dateOfBirth: $dateOfBirth, kycStatus: $kycStatus, fcmToken: $fcmToken, documents: $documents)';
+    return 'UserEntity(id: $id, email: $email, phone: $phone, firstName: $firstName, lastName: $lastName, country: $country, avatarUrl: $avatarUrl, postalCode: $postalCode, dateOfBirth: $dateOfBirth, kycStatus: $kycStatus, fcmToken: $fcmToken)';
   }
 
   @override
@@ -320,9 +296,7 @@ class _$UserEntityImpl implements _UserEntity {
             (identical(other.kycStatus, kycStatus) ||
                 other.kycStatus == kycStatus) &&
             (identical(other.fcmToken, fcmToken) ||
-                other.fcmToken == fcmToken) &&
-            const DeepCollectionEquality()
-                .equals(other._documents, _documents));
+                other.fcmToken == fcmToken));
   }
 
   @JsonKey(ignore: true)
@@ -339,8 +313,7 @@ class _$UserEntityImpl implements _UserEntity {
       postalCode,
       dateOfBirth,
       kycStatus,
-      fcmToken,
-      const DeepCollectionEquality().hash(_documents));
+      fcmToken);
 
   @JsonKey(ignore: true)
   @override
@@ -368,8 +341,7 @@ abstract class _UserEntity implements UserEntity {
       final String? postalCode,
       final String? dateOfBirth,
       final KycStatus kycStatus,
-      final String? fcmToken,
-      final List<DocumentEntity>? documents}) = _$UserEntityImpl;
+      final String? fcmToken}) = _$UserEntityImpl;
 
   factory _UserEntity.fromJson(Map<String, dynamic> json) =
       _$UserEntityImpl.fromJson;
@@ -397,203 +369,7 @@ abstract class _UserEntity implements UserEntity {
   @override
   String? get fcmToken;
   @override
-  List<DocumentEntity>? get documents;
-  @override
   @JsonKey(ignore: true)
   _$$UserEntityImplCopyWith<_$UserEntityImpl> get copyWith =>
-      throw _privateConstructorUsedError;
-}
-
-DocumentEntity _$DocumentEntityFromJson(Map<String, dynamic> json) {
-  return _DocumentEntity.fromJson(json);
-}
-
-/// @nodoc
-mixin _$DocumentEntity {
-  String get id => throw _privateConstructorUsedError;
-  DocumentType get type => throw _privateConstructorUsedError;
-  String get url => throw _privateConstructorUsedError;
-  DateTime get uploadedAt => throw _privateConstructorUsedError;
-
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
-  $DocumentEntityCopyWith<DocumentEntity> get copyWith =>
-      throw _privateConstructorUsedError;
-}
-
-/// @nodoc
-abstract class $DocumentEntityCopyWith<$Res> {
-  factory $DocumentEntityCopyWith(
-          DocumentEntity value, $Res Function(DocumentEntity) then) =
-      _$DocumentEntityCopyWithImpl<$Res, DocumentEntity>;
-  @useResult
-  $Res call({String id, DocumentType type, String url, DateTime uploadedAt});
-}
-
-/// @nodoc
-class _$DocumentEntityCopyWithImpl<$Res, $Val extends DocumentEntity>
-    implements $DocumentEntityCopyWith<$Res> {
-  _$DocumentEntityCopyWithImpl(this._value, this._then);
-
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
-
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? id = null,
-    Object? type = null,
-    Object? url = null,
-    Object? uploadedAt = null,
-  }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as DocumentType,
-      url: null == url
-          ? _value.url
-          : url // ignore: cast_nullable_to_non_nullable
-              as String,
-      uploadedAt: null == uploadedAt
-          ? _value.uploadedAt
-          : uploadedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ) as $Val);
-  }
-}
-
-/// @nodoc
-abstract class _$$DocumentEntityImplCopyWith<$Res>
-    implements $DocumentEntityCopyWith<$Res> {
-  factory _$$DocumentEntityImplCopyWith(_$DocumentEntityImpl value,
-          $Res Function(_$DocumentEntityImpl) then) =
-      __$$DocumentEntityImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call({String id, DocumentType type, String url, DateTime uploadedAt});
-}
-
-/// @nodoc
-class __$$DocumentEntityImplCopyWithImpl<$Res>
-    extends _$DocumentEntityCopyWithImpl<$Res, _$DocumentEntityImpl>
-    implements _$$DocumentEntityImplCopyWith<$Res> {
-  __$$DocumentEntityImplCopyWithImpl(
-      _$DocumentEntityImpl _value, $Res Function(_$DocumentEntityImpl) _then)
-      : super(_value, _then);
-
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? id = null,
-    Object? type = null,
-    Object? url = null,
-    Object? uploadedAt = null,
-  }) {
-    return _then(_$DocumentEntityImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as DocumentType,
-      url: null == url
-          ? _value.url
-          : url // ignore: cast_nullable_to_non_nullable
-              as String,
-      uploadedAt: null == uploadedAt
-          ? _value.uploadedAt
-          : uploadedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ));
-  }
-}
-
-/// @nodoc
-@JsonSerializable()
-class _$DocumentEntityImpl implements _DocumentEntity {
-  const _$DocumentEntityImpl(
-      {required this.id,
-      required this.type,
-      required this.url,
-      required this.uploadedAt});
-
-  factory _$DocumentEntityImpl.fromJson(Map<String, dynamic> json) =>
-      _$$DocumentEntityImplFromJson(json);
-
-  @override
-  final String id;
-  @override
-  final DocumentType type;
-  @override
-  final String url;
-  @override
-  final DateTime uploadedAt;
-
-  @override
-  String toString() {
-    return 'DocumentEntity(id: $id, type: $type, url: $url, uploadedAt: $uploadedAt)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$DocumentEntityImpl &&
-            (identical(other.id, id) || other.id == id) &&
-            (identical(other.type, type) || other.type == type) &&
-            (identical(other.url, url) || other.url == url) &&
-            (identical(other.uploadedAt, uploadedAt) ||
-                other.uploadedAt == uploadedAt));
-  }
-
-  @JsonKey(ignore: true)
-  @override
-  int get hashCode => Object.hash(runtimeType, id, type, url, uploadedAt);
-
-  @JsonKey(ignore: true)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$DocumentEntityImplCopyWith<_$DocumentEntityImpl> get copyWith =>
-      __$$DocumentEntityImplCopyWithImpl<_$DocumentEntityImpl>(
-          this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$DocumentEntityImplToJson(
-      this,
-    );
-  }
-}
-
-abstract class _DocumentEntity implements DocumentEntity {
-  const factory _DocumentEntity(
-      {required final String id,
-      required final DocumentType type,
-      required final String url,
-      required final DateTime uploadedAt}) = _$DocumentEntityImpl;
-
-  factory _DocumentEntity.fromJson(Map<String, dynamic> json) =
-      _$DocumentEntityImpl.fromJson;
-
-  @override
-  String get id;
-  @override
-  DocumentType get type;
-  @override
-  String get url;
-  @override
-  DateTime get uploadedAt;
-  @override
-  @JsonKey(ignore: true)
-  _$$DocumentEntityImplCopyWith<_$DocumentEntityImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

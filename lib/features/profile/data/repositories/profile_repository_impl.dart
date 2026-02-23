@@ -1,4 +1,3 @@
-import 'dart:io';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/i_profile_repository.dart';
 import '../datasources/profile_remote_datasource.dart';
@@ -22,18 +21,4 @@ class ProfileRepositoryImpl implements IProfileRepository {
       rethrow;
     }
   }
-
-  @override
-  Future<DocumentEntity> uploadDocument({
-    required File file,
-    required DocumentType type,
-  }) async {
-    final typeName = type.name.toUpperCase();
-    final data = await remote.uploadDocument(file: file, type: typeName);
-    return DocumentEntity.fromJson(data);
-  }
-
-  @override
-  Future<void> deleteDocument(String documentId) =>
-      remote.deleteDocument(documentId);
 }
