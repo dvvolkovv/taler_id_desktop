@@ -101,6 +101,7 @@ class _AssistantScreenState extends State<AssistantScreen>
   bool _active = false;
   bool _connecting = false;
   bool _isSpeaking = false;
+  bool _speakerOn = true;
   String? _errorText;
   String _transcript = '';
 
@@ -213,6 +214,7 @@ class _AssistantScreenState extends State<AssistantScreen>
       await _pc!.setRemoteDescription(answer);
 
       WakelockPlus.enable();
+      await Helper.setSpeakerphoneOn(_speakerOn);
       setState(() {
         _active = true;
         _connecting = false;
@@ -358,6 +360,13 @@ class _AssistantScreenState extends State<AssistantScreen>
     }
   }
 
+  // ── speaker toggle ──────────────────────────────────────────────────
+  Future<void> _toggleSpeaker() async {
+    final newVal = !_speakerOn;
+    await Helper.setSpeakerphoneOn(newVal);
+    setState(() => _speakerOn = newVal);
+  }
+
   // ── UI ──────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -434,6 +443,24 @@ class _AssistantScreenState extends State<AssistantScreen>
                 fontWeight: FontWeight.w500,
               ),
             ),
+
+            // Speaker toggle
+            if (_active) ...[
+              const SizedBox(height: 20),
+              IconButton(
+                onPressed: _toggleSpeaker,
+                icon: Icon(
+                  _speakerOn
+                      ? Icons.volume_up_rounded
+                      : Icons.hearing_rounded,
+                  color: _speakerOn
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                  size: 28,
+                ),
+                tooltip: _speakerOn ? 'Speaker' : 'Earpiece',
+              ),
+            ],
 
             // Transcript
             if (_transcript.isNotEmpty) ...[
