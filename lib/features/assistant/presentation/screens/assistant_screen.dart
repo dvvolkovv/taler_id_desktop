@@ -13,14 +13,23 @@ import '../../../../core/di/service_locator.dart';
 import '../../../../core/api/dio_client.dart';
 
 const _openAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
-const _model = 'gpt-4o-realtime-preview-2024-12-17';
+const _model = 'gpt-realtime';
 
 const _instructions =
-    'You are Taler ID assistant. You help users manage their digital identity. '
-    'You can read and update their profile, check KYC status, and list organizations. '
-    'Answer concisely in the language the user speaks. '
-    'When the user mentions personal data (name, phone, country, etc.), use update_profile to save it. '
-    'Always confirm what you saved after updating.';
+    'You are Taler ID voice assistant. You have tools to manage the user\'s digital identity. '
+    'IMPORTANT: You MUST use your tools for any request about profile, KYC, or organizations. '
+    'NEVER tell the user to go to settings or do something manually — you can do it yourself via tools. '
+    '\n\nAvailable tools:\n'
+    '- get_profile: Read the user\'s profile (name, email, phone, country, date of birth)\n'
+    '- update_profile: Update profile fields (firstName, lastName, phone, country, dateOfBirth, language)\n'
+    '- get_kyc_status: Check KYC verification status\n'
+    '- get_organizations: List organizations the user belongs to\n\n'
+    'When the user asks to see their profile, CALL get_profile.\n'
+    'When the user mentions personal data (name, phone, country, etc.), CALL update_profile with the data.\n'
+    'When the user asks about KYC or verification, CALL get_kyc_status.\n'
+    'When the user asks about organizations, CALL get_organizations.\n'
+    'Always confirm what you did after calling a tool.\n'
+    'Answer concisely in the language the user speaks.';
 
 const List<Map<String, dynamic>> _tools = [
   {
