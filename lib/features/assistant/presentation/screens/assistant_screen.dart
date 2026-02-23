@@ -104,6 +104,7 @@ class _AssistantScreenState extends State<AssistantScreen>
   bool _speakerOn = true;
   String? _errorText;
   String _transcript = '';
+  final List<String> _debugLog = [];
 
   final List<Map<String, String>> _messages = [];
 
@@ -164,8 +165,12 @@ class _AssistantScreenState extends State<AssistantScreen>
           'input_audio_transcription': {'model': 'whisper-1'},
         },
       );
+      final sessionData = sessionRes.data as Map<String, dynamic>;
+      debugPrint('Session response: ${jsonEncode(sessionData)}');
+      final sessionTools = sessionData['tools'] as List? ?? [];
+      _addDebug('Session: ${sessionTools.length} tools');
       final ephemeralKey =
-          sessionRes.data['client_secret']?['value'] as String? ?? '';
+          sessionData['client_secret']?['value'] as String? ?? '';
       if (ephemeralKey.isEmpty) throw Exception('No ephemeral key');
 
       // 2. Create PeerConnection
@@ -236,6 +241,12 @@ class _AssistantScreenState extends State<AssistantScreen>
       final data = jsonDecode(msg.text) as Map<String, dynamic>;
       final type = data['type'] as String? ?? '';
 
+      // Debug: log non-audio-delta events
+      if (type != 'response.audio.delta') {
+        debugPrint('DC event: $type');
+        _addDebug(type);
+      }
+
       if (type == 'response.audio.delta') {
         _setSpeaking(true);
       } else if (type == 'response.audio.done' ||
@@ -262,9 +273,14 @@ class _AssistantScreenState extends State<AssistantScreen>
         final callId = data['call_id'] as String;
         final args =
             jsonDecode(data['arguments'] as String) as Map<String, dynamic>;
+        debugPrint('Function call: $name($args)');
+        _addDebug('FUNC: $name');
         _handleFunctionCall(name, callId, args);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('DC message error: $e');
+      _addDebug('ERR: $e');
+    }
   }
 
   // ── function calling ────────────────────────────────────────────────
@@ -309,6 +325,15 @@ class _AssistantScreenState extends State<AssistantScreen>
     })));
     _dc?.send(
         RTCDataChannelMessage(jsonEncode({'type': 'response.create'})));
+  }
+
+  void _addDebug(String msg) {
+    if (mounted) {
+      setState(() {
+        _debugLog.add(msg);
+        if (_debugLog.length > 15) _debugLog.removeAt(0);
+      });
+    }
   }
 
   void _setSpeaking(bool val) {
@@ -498,6 +523,35 @@ class _AssistantScreenState extends State<AssistantScreen>
                   style: const TextStyle(
                     color: AppColors.error,
                     fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+
+            // Debug log
+            if (_debugLog.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SingleChildScrollView(
+                      reverse: true,
+                      child: Text(
+                        _debugLog.join('\n'),
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
