@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
@@ -19,6 +20,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _muted = false;
   bool _speakerOn = false;
   String? _error;
+  bool _navigatedAway = false;
   final List<lk.RemoteParticipant> _participants = [];
 
   static const _audioChannel = MethodChannel('taler_id/audio');
@@ -93,8 +95,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
     // Handle disconnection
     if (room.connectionState == lk.ConnectionState.disconnected) {
-      if (mounted) Navigator.of(context).pop();
+      _navigateBack();
     }
+  }
+
+  void _navigateBack() {
+    if (_navigatedAway || !mounted) return;
+    _navigatedAway = true;
+    context.pop();
   }
 
   Future<void> _toggleMute() async {
@@ -113,7 +121,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   Future<void> _hangUp() async {
     await _room?.disconnect();
-    if (mounted) Navigator.of(context).pop();
+    _navigateBack();
   }
 
   @override
