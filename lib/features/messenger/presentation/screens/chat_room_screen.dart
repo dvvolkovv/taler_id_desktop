@@ -115,7 +115,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ),
         ],
       ),
-      body: BlocBuilder<MessengerBloc, MessengerState>(
+      body: BlocListener<MessengerBloc, MessengerState>(
+        listenWhen: (prev, curr) {
+          final prevCount = prev.messages[widget.conversationId]?.length ?? 0;
+          final currCount = curr.messages[widget.conversationId]?.length ?? 0;
+          return currCount > prevCount;
+        },
+        listener: (context, state) {
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (_scrollCtrl.hasClients) {
+              _scrollCtrl.animateTo(
+                _scrollCtrl.position.maxScrollExtent,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            }
+          });
+        },
+        child: BlocBuilder<MessengerBloc, MessengerState>(
         builder: (context, state) {
           final messages = state.messages[widget.conversationId] ?? [];
           final conv = state.conversations
@@ -154,6 +171,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ],
           );
         },
+        ),
       ),
     );
   }

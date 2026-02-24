@@ -10,6 +10,7 @@ class MessengerRemoteDataSource {
   io.Socket? _socket;
   final _messageCtrl = StreamController<MessageEntity>.broadcast();
   final _callInviteCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _joinedConversations = <String>{};
 
   MessengerRemoteDataSource(this._http);
 
@@ -33,14 +34,22 @@ class MessengerRemoteDataSource {
         _callInviteCtrl.add(Map<String, dynamic>.from(d as Map));
       } catch (_) {}
     });
+    // Re-join all conversation rooms after reconnect
+    _socket!.on('connect', (_) {
+      for (final id in _joinedConversations) {
+        _socket?.emit('join', {'conversationId': id});
+      }
+    });
     _socket!.connect();
   }
 
   Stream<MessageEntity> get messageStream => _messageCtrl.stream;
   Stream<Map<String, dynamic>> get callInviteStream => _callInviteCtrl.stream;
 
-  void joinConversation(String id) =>
-      _socket?.emit('join', {'conversationId': id});
+  void joinConversation(String id) {
+    _joinedConversations.add(id);
+    _socket?.emit('join', {'conversationId': id});
+  }
 
   void sendMessage(String id, String content) =>
       _socket?.emit('message', {'conversationId': id, 'content': content});
