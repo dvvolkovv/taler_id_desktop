@@ -11,6 +11,7 @@ class MessengerRemoteDataSource {
   final _messageCtrl = StreamController<MessageEntity>.broadcast();
   final _callInviteCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _joinedConversations = <String>{};
+  final _disconnectCtrl = StreamController<String>.broadcast();
 
   MessengerRemoteDataSource(this._http);
 
@@ -40,11 +41,16 @@ class MessengerRemoteDataSource {
         _socket?.emit('join', {'conversationId': id});
       }
     });
+    _socket!.on('disconnect', (reason) {
+      _disconnectCtrl.add(reason?.toString() ?? 'disconnected');
+    });
     _socket!.connect();
   }
 
   Stream<MessageEntity> get messageStream => _messageCtrl.stream;
   Stream<Map<String, dynamic>> get callInviteStream => _callInviteCtrl.stream;
+  Stream<String> get disconnectStream => _disconnectCtrl.stream;
+  bool get isSocketConnected => _socket?.connected ?? false;
 
   void joinConversation(String id) {
     _joinedConversations.add(id);
@@ -97,5 +103,6 @@ class MessengerRemoteDataSource {
     _socket?.dispose();
     _messageCtrl.close();
     _callInviteCtrl.close();
+    _disconnectCtrl.close();
   }
 }

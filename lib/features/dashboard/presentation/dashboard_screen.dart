@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
@@ -6,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/storage/secure_storage_service.dart';
+import '../../messenger/data/datasources/messenger_remote_datasource.dart';
 import '../../messenger/presentation/bloc/messenger_bloc.dart';
 import '../../messenger/presentation/bloc/messenger_event.dart';
 import '../../messenger/presentation/bloc/messenger_state.dart';
@@ -27,10 +29,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
     RouteConstants.messenger,
   ];
 
+  StreamSubscription? _disconnectSub;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _connectMessenger());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectMessenger();
+      _listenForDisconnect();
+    });
+  }
+
+  void _listenForDisconnect() {
+    _disconnectSub?.cancel();
+    _disconnectSub = sl<MessengerRemoteDataSource>()
+        .disconnectStream
+        .listen((_) => _reconnectMessenger());
+  }
+
+  Future<void> _reconnectMessenger() async {
+    if (!mounted) return;
+    // Wait to see if socket.io auto-reconnects on its own
+    await Future.delayed(const Duration(seconds: 5));
+    if (!mounted) return;
+    // Skip if socket already reconnected automatically
+    if (sl<MessengerRemoteDataSource>().isSocketConnected) return;
+    try {
+      final storage = sl<SecureStorageService>();
+      final token = await storage.getAccessToken();
+      final userId = await storage.getUserId();
+      if (token != null && mounted) {
+        context.read<MessengerBloc>().add(ConnectMessenger(token, userId: userId));
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _disconnectSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _connectMessenger() async {
