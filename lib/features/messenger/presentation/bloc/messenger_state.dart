@@ -11,6 +11,7 @@ class MessengerState extends Equatable {
   final bool isLoading;
   final String? error;
   final String? newConversationId;
+  final String? currentUserId;
 
   const MessengerState({
     this.conversations = const [],
@@ -20,6 +21,7 @@ class MessengerState extends Equatable {
     this.isLoading = false,
     this.error,
     this.newConversationId,
+    this.currentUserId,
   });
 
   MessengerState copyWith({
@@ -30,6 +32,7 @@ class MessengerState extends Equatable {
     bool? isLoading,
     String? error,
     String? newConversationId,
+    String? currentUserId,
     bool clearError = false,
     bool clearNewConversation = false,
   }) {
@@ -43,6 +46,7 @@ class MessengerState extends Equatable {
       newConversationId: clearNewConversation
           ? null
           : (newConversationId ?? this.newConversationId),
+      currentUserId: currentUserId ?? this.currentUserId,
     );
   }
 
@@ -55,5 +59,6 @@ class MessengerState extends Equatable {
         isLoading,
         error,
         newConversationId,
+        currentUserId,
       ];
 }

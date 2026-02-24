@@ -20,12 +20,17 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<LoadMoreMessages>(_onLoadMoreMessages);
     on<SearchUsers>(_onSearchUsers);
     on<StartConversationWith>(_onStartConversationWith);
+    on<ClearNewConversation>((_, emit) =>
+        emit(state.copyWith(clearNewConversation: true)));
   }
 
   Future<void> _onConnect(
       ConnectMessenger event, Emitter<MessengerState> emit) async {
     await _repo.connect(event.accessToken);
     _msgSub = _repo.messageStream.listen((msg) => add(MessageReceived(msg)));
+    if (event.userId != null) {
+      emit(state.copyWith(currentUserId: event.userId));
+    }
     add(LoadConversations());
   }
 
@@ -66,6 +71,23 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   }
 
   void _onSendMessage(SendMessage event, Emitter<MessengerState> emit) {
+    // Optimistic: show message in UI immediately
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempMsg = MessageEntity(
+      id: tempId,
+      conversationId: event.conversationId,
+      senderId: state.currentUserId ?? 'me',
+      content: event.content,
+      sentAt: DateTime.now(),
+    );
+    final existing =
+        List<MessageEntity>.from(state.messages[event.conversationId] ?? []);
+    existing.add(tempMsg);
+    final newMessages =
+        Map<String, List<MessageEntity>>.from(state.messages);
+    newMessages[event.conversationId] = existing;
+    emit(state.copyWith(messages: newMessages));
+    // Send via socket
     _repo.sendMessage(event.conversationId, event.content);
   }
 
@@ -74,6 +96,11 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     final msg = event.message;
     final existing =
         List<MessageEntity>.from(state.messages[msg.conversationId] ?? []);
+    // Remove optimistic temp message with same content from same sender
+    existing.removeWhere((m) =>
+        m.id.startsWith('temp_') &&
+        m.senderId == msg.senderId &&
+        m.content == msg.content);
     existing.add(msg);
     final newMessages =
         Map<String, List<MessageEntity>>.from(state.messages);

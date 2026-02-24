@@ -34,9 +34,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
       try {
         final storage = sl<SecureStorageService>();
         final token = await storage.getAccessToken();
+        final userId = await storage.getUserId();
         if (!mounted) return;
         if (token != null) {
-          bloc.add(ConnectMessenger(token));
+          bloc.add(ConnectMessenger(token, userId: userId));
         } else {
           bloc.add(LoadConversations());
         }
@@ -76,87 +77,85 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.card,
-          title: const Text(
-            'Задайте никнейм',
-            style: TextStyle(color: AppColors.textPrimary),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Никнейм нужен, чтобы другие пользователи могли найти вас в мессенджере.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: ctrl,
-                autofocus: true,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  hintText: 'username',
-                  hintStyle: const TextStyle(color: AppColors.textSecondary),
-                  prefixText: '@',
-                  prefixStyle: const TextStyle(color: AppColors.primary),
-                  errorText: errorText,
-                  border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primary),
-                  ),
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            backgroundColor: AppColors.card,
+            title: const Text(
+              'Задайте никнейм',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Никнейм обязателен для использования мессенджера. Другие пользователи смогут найти вас по нему.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                 ),
-                inputFormatters: [],
-                onChanged: (_) {
-                  if (errorText != null) {
-                    setDialogState(() => errorText = null);
+                const SizedBox(height: 16),
+                TextField(
+                  controller: ctrl,
+                  autofocus: true,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: 'username',
+                    hintStyle: const TextStyle(color: AppColors.textSecondary),
+                    prefixText: '@',
+                    prefixStyle: const TextStyle(color: AppColors.primary),
+                    errorText: errorText,
+                    border: const OutlineInputBorder(),
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  inputFormatters: [],
+                  onChanged: (_) {
+                    if (errorText != null) {
+                      setDialogState(() => errorText = null);
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  '3–30 символов: буквы, цифры, _',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.black),
+                onPressed: () async {
+                  final value = ctrl.text.trim();
+                  final regex = RegExp(r'^[a-zA-Z0-9_]{3,30}$');
+                  if (!regex.hasMatch(value)) {
+                    setDialogState(() =>
+                        errorText = '3–30 символов: буквы, цифры, _');
+                    return;
+                  }
+                  try {
+                    final client = sl<DioClient>();
+                    await client.patch(
+                      '/profile/username',
+                      data: {'username': value},
+                      fromJson: (d) => d,
+                    );
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  } on Exception catch (e) {
+                    final msg = e.toString();
+                    setDialogState(() => errorText =
+                        msg.contains('409') ? 'Никнейм уже занят' : 'Ошибка сохранения');
                   }
                 },
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '3–30 символов: буквы, цифры, _',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                child: const Text('Сохранить'),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Пропустить',
-                  style: TextStyle(color: AppColors.textSecondary)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.black),
-              onPressed: () async {
-                final value = ctrl.text.trim();
-                final regex = RegExp(r'^[a-zA-Z0-9_]{3,30}$');
-                if (!regex.hasMatch(value)) {
-                  setDialogState(() =>
-                      errorText = '3–30 символов: буквы, цифры, _');
-                  return;
-                }
-                try {
-                  final client = sl<DioClient>();
-                  await client.patch(
-                    '/profile/username',
-                    data: {'username': value},
-                    fromJson: (d) => d,
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx);
-                } on Exception catch (e) {
-                  final msg = e.toString();
-                  setDialogState(() => errorText =
-                      msg.contains('409') ? 'Никнейм уже занят' : 'Ошибка сохранения');
-                }
-              },
-              child: const Text('Сохранить'),
-            ),
-          ],
         ),
       ),
     );

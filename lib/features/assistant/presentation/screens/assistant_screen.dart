@@ -27,6 +27,7 @@ class _AssistantScreenState extends State<AssistantScreen>
   bool _muted = false;
   bool _speakerOn = false;
   bool _aiSpeaking = false;
+  bool _sessionConfigured = false;
   String? _errorMessage;
 
   late AnimationController _pulseCtrl;
@@ -59,6 +60,7 @@ class _AssistantScreenState extends State<AssistantScreen>
   }
 
   Future<void> _cleanup() async {
+    _sessionConfigured = false;
     _dc?.close();
     _dc = null;
     await _localStream?.dispose();
@@ -150,6 +152,13 @@ class _AssistantScreenState extends State<AssistantScreen>
 
       await _setSpeaker(true);
       setState(() => _state = _CallState.connected);
+
+      // Fallback: send session.update if data channel callback didn't fire
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted && !_sessionConfigured && _dc != null) {
+          _onDataChannelOpen();
+        }
+      });
     } catch (e) {
       await _cleanup();
       setState(() {
@@ -160,6 +169,8 @@ class _AssistantScreenState extends State<AssistantScreen>
   }
 
   void _onDataChannelOpen() {
+    if (_sessionConfigured) return;
+    _sessionConfigured = true;
     _sendEvent({
       'type': 'session.update',
       'session': {

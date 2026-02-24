@@ -210,8 +210,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   bool _isMyMessage(MessageEntity msg, MessengerState state) {
-    // TODO: compare with actual current user ID from auth state
-    return false;
+    final uid = state.currentUserId;
+    if (uid == null) return msg.id.startsWith('temp_');
+    return msg.senderId == uid;
   }
 }
 

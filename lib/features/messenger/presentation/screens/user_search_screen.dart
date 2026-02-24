@@ -85,8 +85,19 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
             child: BlocConsumer<MessengerBloc, MessengerState>(
               listener: (context, state) {
                 if (state.newConversationId != null) {
+                  context
+                      .read<MessengerBloc>()
+                      .add(ClearNewConversation());
                   context.pushReplacement(
                       '/dashboard/messenger/${state.newConversationId}');
+                }
+                if (state.error != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Ошибка: ${state.error}'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
                 }
               },
               builder: (context, state) {

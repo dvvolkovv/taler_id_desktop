@@ -9,10 +9,13 @@ abstract class MessengerEvent extends Equatable {
 
 class ConnectMessenger extends MessengerEvent {
   final String accessToken;
-  const ConnectMessenger(this.accessToken);
+  final String? userId;
+  const ConnectMessenger(this.accessToken, {this.userId});
   @override
-  List<Object?> get props => [accessToken];
+  List<Object?> get props => [accessToken, userId];
 }
+
+class ClearNewConversation extends MessengerEvent {}
 
 class LoadConversations extends MessengerEvent {}
 
