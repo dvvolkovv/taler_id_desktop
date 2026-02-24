@@ -237,15 +237,17 @@ class _AssistantScreenState extends State<AssistantScreen>
     String output;
     try {
       if (name == 'get_profile') {
-        final data =
-            await client.get('/profile', fromJson: (d) => d);
+        final data = await client.get(
+          '/profile',
+          fromJson: (d) => Map<String, dynamic>.from(d as Map),
+        );
         output = jsonEncode(data);
       } else if (name == 'update_profile') {
         final args = jsonDecode(argsJson) as Map<String, dynamic>;
         final data = await client.patch(
           '/profile',
           data: args,
-          fromJson: (d) => d,
+          fromJson: (d) => Map<String, dynamic>.from(d as Map),
         );
         output = jsonEncode(data);
       } else {
