@@ -10,6 +10,9 @@ class ProfileRemoteDataSource {
   Future<void> updatePhone(String phone) =>
       client.put('/profile/phone', data: {'phone': phone}, fromJson: (d) => d);
 
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) =>
+      client.put('/profile', data: data, fromJson: (d) => Map<String, dynamic>.from(d));
+
   Future<Map<String, dynamic>> exportData() =>
       client.get('/profile/export', fromJson: (d) => Map<String, dynamic>.from(d));
 

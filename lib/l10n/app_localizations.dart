@@ -1471,6 +1471,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to start'**
   String get assistantTapToStart;
+
+  /// No description provided for @tabMessenger.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get tabMessenger;
 }
 
 class _AppLocalizationsDelegate

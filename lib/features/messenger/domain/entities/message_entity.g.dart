@@ -1,0 +1,27 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'message_entity.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$MessageEntityImpl _$$MessageEntityImplFromJson(Map<String, dynamic> json) =>
+    _$MessageEntityImpl(
+      id: json['id'] as String,
+      conversationId: json['conversationId'] as String,
+      senderId: json['senderId'] as String,
+      senderName: json['senderName'] as String?,
+      content: json['content'] as String,
+      sentAt: DateTime.parse(json['sentAt'] as String),
+    );
+
+Map<String, dynamic> _$$MessageEntityImplToJson(_$MessageEntityImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'conversationId': instance.conversationId,
+      'senderId': instance.senderId,
+      'senderName': instance.senderName,
+      'content': instance.content,
+      'sentAt': instance.sentAt.toIso8601String(),
+    };

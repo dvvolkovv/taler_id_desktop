@@ -20,6 +20,7 @@ _$UserEntityImpl _$$UserEntityImplFromJson(Map<String, dynamic> json) =>
       kycStatus: $enumDecodeNullable(_$KycStatusEnumMap, json['kycStatus']) ??
           KycStatus.unverified,
       fcmToken: json['fcmToken'] as String?,
+      username: json['username'] as String?,
     );
 
 Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
@@ -35,6 +36,7 @@ Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
       'dateOfBirth': instance.dateOfBirth,
       'kycStatus': _$KycStatusEnumMap[instance.kycStatus]!,
       'fcmToken': instance.fcmToken,
+      'username': instance.username,
     };
 
 const _$KycStatusEnumMap = {

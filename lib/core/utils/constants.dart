@@ -29,4 +29,7 @@ class RouteConstants {
   static const pinEntry = '/auth/pin-entry';
   static const chat = '/chat';
   static const assistant = '/dashboard/assistant';
+  static const messenger = '/dashboard/messenger';
+  static const messengerSearch = '/dashboard/messenger/search';
+  static const voice = '/dashboard/voice';
 }

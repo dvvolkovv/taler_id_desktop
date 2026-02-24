@@ -254,5 +254,7 @@
   "assistantConnecting": "Connecting…",
   "assistantSpeaking": "Speaking…",
   "assistantListening": "Listening…",
-  "assistantTapToStart": "Tap to start"
+  "assistantTapToStart": "Tap to start",
+
+  "tabMessenger": "Messages"
 }

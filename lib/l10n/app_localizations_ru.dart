@@ -729,4 +729,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get assistantTapToStart => 'Нажмите для начала';
+
+  @override
+  String get tabMessenger => 'Сообщения';
 }

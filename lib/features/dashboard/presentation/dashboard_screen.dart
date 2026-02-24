@@ -13,6 +13,7 @@ class DashboardScreen extends StatelessWidget {
     RouteConstants.kyc,
     RouteConstants.organization,
     RouteConstants.settings,
+    RouteConstants.messenger,
   ];
 
   int _currentIndex(String location) {
@@ -71,6 +72,11 @@ class DashboardScreen extends StatelessWidget {
               icon: const Icon(Icons.settings_outlined),
               activeIcon: const Icon(Icons.settings),
               label: l10n.tabSettings,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.chat_bubble_outline_rounded),
+              activeIcon: const Icon(Icons.chat_bubble_rounded),
+              label: l10n.tabMessenger,
             ),
           ],
         ),

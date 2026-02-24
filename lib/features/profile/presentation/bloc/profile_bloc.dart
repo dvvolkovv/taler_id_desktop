@@ -9,6 +9,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   ProfileBloc({required this.repo}) : super(ProfileInitial()) {
     on<ProfileLoadRequested>(_onLoad);
+    on<ProfileUpdateSubmitted>(_onUpdate);
   }
 
   Future<void> _onLoad(ProfileLoadRequested event, Emitter<ProfileState> emit) async {
@@ -20,6 +21,18 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       emit(ProfileError(message: e.message));
     } catch (e) {
       emit(ProfileError(message: 'Не удалось загрузить профиль'));
+    }
+  }
+
+  Future<void> _onUpdate(ProfileUpdateSubmitted event, Emitter<ProfileState> emit) async {
+    emit(ProfileLoading());
+    try {
+      final user = await repo.updateProfile(event.data);
+      emit(ProfileLoaded(user));
+    } on ApiException catch (e) {
+      emit(ProfileError(message: e.message));
+    } catch (e) {
+      emit(ProfileError(message: 'Не удалось обновить профиль'));
     }
   }
 }

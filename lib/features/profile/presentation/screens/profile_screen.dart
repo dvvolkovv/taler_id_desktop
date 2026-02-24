@@ -4,6 +4,8 @@ import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
 import '../../../../core/utils/countries.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/di/service_locator.dart';
 import '../../domain/entities/user_entity.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
@@ -122,6 +124,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(user.email, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                            if (user.username != null) ...[
+                              const SizedBox(height: 2),
+                              Text('@${user.username}', style: const TextStyle(color: AppColors.primary, fontSize: 12)),
+                            ],
                             const SizedBox(height: 8),
                             StatusBadge(
                               label: _kycLabel(user.kycStatus, l10n),
@@ -141,6 +147,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Text(l10n.personalData, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 12),
+                      _usernameRow(context, user),
+                      const Divider(color: AppColors.border, height: 1),
                       _infoRow(Icons.phone_outlined, l10n.phone, user.phone ?? l10n.notSpecified),
                       const Divider(color: AppColors.border, height: 1),
                       _infoRow(Icons.flag_outlined, l10n.country, _countryDisplayName(user.country) ?? l10n.notSpecifiedFemale),
@@ -179,6 +187,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (code == null || code.isEmpty) return null;
     final locale = Localizations.localeOf(context).languageCode;
     return countryName(code, locale);
+  }
+
+  Widget _usernameRow(BuildContext context, UserEntity user) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            const Icon(Icons.alternate_email, color: AppColors.textSecondary, size: 18),
+            const SizedBox(width: 12),
+            const Text('Никнейм', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            const Spacer(),
+            Text(
+              user.username != null ? '@${user.username}' : 'Не задан',
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _editUsername(context, user),
+              child: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 18),
+            ),
+          ],
+        ),
+      );
+
+  Future<void> _editUsername(BuildContext context, UserEntity user) async {
+    final ctrl = TextEditingController(text: user.username ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Изменить никнейм', style: TextStyle(color: AppColors.textPrimary)),
+        content: TextField(
+          controller: ctrl,
+          style: const TextStyle(color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            prefixText: '@',
+            prefixStyle: const TextStyle(color: AppColors.textSecondary),
+            hintText: 'username',
+            hintStyle: const TextStyle(color: AppColors.textSecondary),
+            filled: true,
+            fillColor: AppColors.background,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Сохранить', style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (result == null || result.isEmpty) return;
+    if (!mounted) return;
+    try {
+      final client = sl<DioClient>();
+      await client.patch('/profile/username', data: {'username': result}, fromJson: (d) => d);
+      if (!mounted) return;
+      context.read<ProfileBloc>().add(ProfileLoadRequested());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Никнейм обновлён'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+      );
+    }
   }
 
   Widget _infoRow(IconData icon, String label, String value) => Padding(

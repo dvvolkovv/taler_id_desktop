@@ -18,6 +18,7 @@ class AuthRemoteDataSource {
     required String password,
     String? firstName,
     String? lastName,
+    String? username,
   }) async {
     return client.post<Map<String, dynamic>>(
       '/auth/register',
@@ -26,6 +27,7 @@ class AuthRemoteDataSource {
         'password': password,
         if (firstName != null) 'firstName': firstName,
         if (lastName != null) 'lastName': lastName,
+        if (username != null && username.isNotEmpty) 'username': username,
       },
       fromJson: (data) => Map<String, dynamic>.from(data),
     );

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/messenger/presentation/bloc/messenger_bloc.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -16,6 +18,10 @@ import '../../features/tenant/presentation/screens/invite_screen.dart';
 import '../../features/sessions/presentation/screens/sessions_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/chat/presentation/screens/chat_screen.dart';
+import '../../features/messenger/presentation/screens/conversations_screen.dart';
+import '../../features/messenger/presentation/screens/chat_room_screen.dart';
+import '../../features/messenger/presentation/screens/user_search_screen.dart';
+import '../../features/voice/presentation/screens/voice_call_screen.dart';
 import '../storage/secure_storage_service.dart';
 import '../di/service_locator.dart';
 import '../utils/constants.dart';
@@ -68,9 +74,20 @@ final appRouter = GoRouter(
       path: RouteConstants.chat,
       builder: (_, __) => const ChatScreen(),
     ),
+    // Voice call (full-screen, outside ShellRoute)
+    GoRoute(
+      path: RouteConstants.voice,
+      builder: (_, state) {
+        final roomName = state.uri.queryParameters['room'];
+        return VoiceCallScreen(roomName: roomName);
+      },
+    ),
     // Dashboard shell with bottom nav
     ShellRoute(
-      builder: (context, state, child) => DashboardScreen(child: child),
+      builder: (context, state, child) => BlocProvider.value(
+        value: sl<MessengerBloc>(),
+        child: DashboardScreen(child: child),
+      ),
       routes: [
         GoRoute(
           path: RouteConstants.assistant,
@@ -103,6 +120,23 @@ final appRouter = GoRouter(
         GoRoute(
           path: RouteConstants.settings,
           builder: (_, __) => const SettingsScreen(),
+        ),
+        // Messenger
+        GoRoute(
+          path: RouteConstants.messenger,
+          builder: (_, __) => const ConversationsScreen(),
+          routes: [
+            GoRoute(
+              path: 'search',
+              builder: (_, __) => const UserSearchScreen(),
+            ),
+            GoRoute(
+              path: ':id',
+              builder: (_, state) => ChatRoomScreen(
+                conversationId: state.pathParameters['id']!,
+              ),
+            ),
+          ],
         ),
       ],
     ),

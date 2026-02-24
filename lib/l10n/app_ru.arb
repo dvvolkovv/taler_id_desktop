@@ -254,5 +254,7 @@
   "assistantConnecting": "Подключение…",
   "assistantSpeaking": "Говорит…",
   "assistantListening": "Слушает…",
-  "assistantTapToStart": "Нажмите для начала"
+  "assistantTapToStart": "Нажмите для начала",
+
+  "tabMessenger": "Сообщения"
 }

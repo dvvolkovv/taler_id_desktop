@@ -727,4 +727,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantTapToStart => 'Tap to start';
+
+  @override
+  String get tabMessenger => 'Messages';
 }

@@ -21,6 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
@@ -30,6 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
@@ -128,6 +130,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
+                        controller: _usernameController,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Никнейм (необязательно)',
+                          hintText: 'username',
+                          prefixText: '@',
+                          prefixStyle: const TextStyle(color: AppColors.textSecondary),
+                          filled: true,
+                          fillColor: AppColors.card,
+                          prefixIcon: const Icon(Icons.alternate_email, color: AppColors.textSecondary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.error),
+                          ),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return null; // optional
+                          if (v.length < 3) return 'Минимум 3 символа';
+                          if (v.length > 30) return 'Максимум 30 символов';
+                          if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(v)) {
+                            return 'Только буквы, цифры и _';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         style: const TextStyle(color: AppColors.textPrimary),
@@ -222,6 +263,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               lastName: _lastNameController.text.trim().isEmpty
                                   ? null
                                   : _lastNameController.text.trim(),
+                              username: _usernameController.text.trim().isEmpty
+                                  ? null
+                                  : _usernameController.text.trim(),
                             ));
                           }
                         },

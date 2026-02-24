@@ -21,4 +21,11 @@ class ProfileRepositoryImpl implements IProfileRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<UserEntity> updateProfile(Map<String, dynamic> data) async {
+    final result = await remote.updateProfile(data);
+    await cache.saveProfile(result);
+    return UserEntity.fromJson(result);
+  }
 }

@@ -18,9 +18,10 @@ class RegisterSubmitted extends AuthEvent {
   final String password;
   final String? firstName;
   final String? lastName;
-  RegisterSubmitted({required this.email, required this.password, this.firstName, this.lastName});
+  final String? username;
+  RegisterSubmitted({required this.email, required this.password, this.firstName, this.lastName, this.username});
   @override
-  List<Object?> get props => [email, password, firstName, lastName];
+  List<Object?> get props => [email, password, firstName, lastName, username];
 }
 
 class TwoFASubmitted extends AuthEvent {

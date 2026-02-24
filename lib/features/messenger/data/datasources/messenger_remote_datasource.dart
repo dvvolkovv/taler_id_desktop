@@ -1,0 +1,92 @@
+import 'dart:async';
+import 'package:socket_io_client/socket_io_client.dart' as io;
+import '../../../../core/api/dio_client.dart';
+import '../../domain/entities/conversation_entity.dart';
+import '../../domain/entities/message_entity.dart';
+import '../../domain/entities/user_search_entity.dart';
+
+class MessengerRemoteDataSource {
+  final DioClient _http;
+  io.Socket? _socket;
+  final _messageCtrl = StreamController<MessageEntity>.broadcast();
+  final _callInviteCtrl = StreamController<Map<String, dynamic>>.broadcast();
+
+  MessengerRemoteDataSource(this._http);
+
+  Future<void> connect(String accessToken) async {
+    _socket?.dispose();
+    _socket = io.io(
+      'https://id.taler.tirol/messenger',
+      io.OptionBuilder()
+          .setTransports(['websocket'])
+          .setAuth({'token': accessToken})
+          .disableAutoConnect()
+          .build(),
+    );
+    _socket!.on('new_message', (d) {
+      try {
+        _messageCtrl.add(MessageEntity.fromJson(Map<String, dynamic>.from(d as Map)));
+      } catch (_) {}
+    });
+    _socket!.on('call_invite', (d) {
+      try {
+        _callInviteCtrl.add(Map<String, dynamic>.from(d as Map));
+      } catch (_) {}
+    });
+    _socket!.connect();
+  }
+
+  Stream<MessageEntity> get messageStream => _messageCtrl.stream;
+  Stream<Map<String, dynamic>> get callInviteStream => _callInviteCtrl.stream;
+
+  void joinConversation(String id) =>
+      _socket?.emit('join', {'conversationId': id});
+
+  void sendMessage(String id, String content) =>
+      _socket?.emit('message', {'conversationId': id, 'content': content});
+
+  void sendTyping(String id, bool isTyping) =>
+      _socket?.emit('typing', {'conversationId': id, 'isTyping': isTyping});
+
+  void sendCallInvite(String conversationId, String roomName) =>
+      _socket?.emit('call_invite', {'conversationId': conversationId, 'roomName': roomName});
+
+  Future<List<ConversationEntity>> getConversations() async {
+    final data = await _http.get('/messenger/conversations', fromJson: (d) => d as List);
+    return data
+        .map((e) => ConversationEntity.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<ConversationEntity> createConversation(String participantId) async {
+    final data = await _http.post(
+      '/messenger/conversations',
+      data: {'participantId': participantId},
+      fromJson: (d) => Map<String, dynamic>.from(d as Map),
+    );
+    return ConversationEntity.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> getMessages(String conversationId, {String? cursor}) async {
+    final url = cursor != null
+        ? '/messenger/conversations/$conversationId/messages?cursor=$cursor'
+        : '/messenger/conversations/$conversationId/messages';
+    return _http.get(url, fromJson: (d) => Map<String, dynamic>.from(d as Map));
+  }
+
+  Future<List<UserSearchEntity>> searchUsers(String query) async {
+    final data = await _http.get(
+      '/messenger/users/search?q=${Uri.encodeComponent(query)}',
+      fromJson: (d) => d as List,
+    );
+    return data
+        .map((e) => UserSearchEntity.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  void dispose() {
+    _socket?.dispose();
+    _messageCtrl.close();
+    _callInviteCtrl.close();
+  }
+}

@@ -41,6 +41,12 @@ import '../../features/chat/data/repositories/chat_repository_impl.dart';
 import '../../features/chat/domain/repositories/i_chat_repository.dart';
 import '../../features/chat/presentation/bloc/chat_bloc.dart';
 
+// Messenger
+import '../../features/messenger/data/datasources/messenger_remote_datasource.dart';
+import '../../features/messenger/data/repositories/messenger_repository_impl.dart';
+import '../../features/messenger/domain/repositories/i_messenger_repository.dart';
+import '../../features/messenger/presentation/bloc/messenger_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> setupDependencies() async {
@@ -112,6 +118,12 @@ Future<void> setupDependencies() async {
     ),
   );
 
+  // Messenger
+  sl.registerLazySingleton(() => MessengerRemoteDataSource(sl<DioClient>()));
+  sl.registerLazySingleton<IMessengerRepository>(
+    () => MessengerRepositoryImpl(sl<MessengerRemoteDataSource>()),
+  );
+
   // BLoCs
   sl.registerFactory(() => AuthBloc(authRepository: sl<IAuthRepository>()));
   sl.registerFactory(() => ProfileBloc(repo: sl<IProfileRepository>()));
@@ -119,4 +131,5 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => TenantBloc(repo: sl<ITenantRepository>()));
   sl.registerFactory(() => SessionsBloc(repo: sl<ISessionRepository>()));
   sl.registerFactory(() => ChatBloc(repo: sl<IChatRepository>()));
+  sl.registerLazySingleton(() => MessengerBloc(repo: sl<IMessengerRepository>()));
 }

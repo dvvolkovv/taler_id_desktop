@@ -50,12 +50,14 @@ class AuthRepositoryImpl implements IAuthRepository {
     required String password,
     String? firstName,
     String? lastName,
+    String? username,
   }) async {
     final data = await remote.register(
       email: email,
       password: password,
       firstName: firstName,
       lastName: lastName,
+      username: username,
     );
     final tokens = AuthTokens(
       accessToken: data['accessToken'] as String,

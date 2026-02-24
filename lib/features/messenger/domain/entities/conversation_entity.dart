@@ -1,0 +1,20 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'conversation_entity.freezed.dart';
+part 'conversation_entity.g.dart';
+
+@freezed
+class ConversationEntity with _$ConversationEntity {
+  const factory ConversationEntity({
+    required String id,
+    required List<String> participantIds,
+    String? lastMessageContent,
+    DateTime? lastMessageAt,
+    String? lastMessageSenderId,
+    String? otherUserName,
+    String? otherUserId,
+  }) = _ConversationEntity;
+
+  factory ConversationEntity.fromJson(Map<String, dynamic> json) =>
+      _$ConversationEntityFromJson(json);
+}
