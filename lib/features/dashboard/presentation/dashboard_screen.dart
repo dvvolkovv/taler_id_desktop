@@ -58,58 +58,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final fromName = data['fromUserName'] as String? ?? 'Пользователь';
     final roomName = data['roomName'] as String? ?? '';
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: AppColors.card,
-      isDismissible: false,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.call_rounded, size: 48, color: AppColors.primary),
-            const SizedBox(height: 12),
-            Text(
-              'Входящий звонок от $fromName',
-              style: const TextStyle(
+            const Icon(Icons.call_rounded, size: 56, color: AppColors.primary),
+            const SizedBox(height: 16),
+            const Text(
+              'Входящий звонок',
+              style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    context
-                        .read<MessengerBloc>()
-                        .add(DismissCallInvite());
-                    Navigator.pop(context);
-                    context.push('/dashboard/voice?room=$roomName');
-                  },
-                  icon: const Icon(Icons.call, color: Colors.white),
-                  label: const Text('Принять'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    context
-                        .read<MessengerBloc>()
-                        .add(DismissCallInvite());
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.call_end, color: Colors.white),
-                  label: const Text('Отклонить'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error),
-                ),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              'от $fromName',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
           ],
         ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              context.read<MessengerBloc>().add(DismissCallInvite());
+              context.push('/dashboard/voice?room=$roomName');
+            },
+            icon: const Icon(Icons.call, color: Colors.white),
+            label: const Text('Принять'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              context.read<MessengerBloc>().add(DismissCallInvite());
+            },
+            icon: const Icon(Icons.call_end, color: Colors.white),
+            label: const Text('Отклонить'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+          ),
+        ],
       ),
     ).whenComplete(() {
       if (context.mounted) {

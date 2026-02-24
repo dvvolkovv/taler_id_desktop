@@ -28,7 +28,9 @@ class CacheService {
 
   Map<String, dynamic>? getProfile() {
     final box = Hive.box(_profileBox);
-    return box.get('data') as Map<String, dynamic>?;
+    final raw = box.get('data');
+    if (raw == null) return null;
+    return Map<String, dynamic>.from(raw as Map);
   }
 
   Future<void> clearProfile() => Hive.box(_profileBox).clear();

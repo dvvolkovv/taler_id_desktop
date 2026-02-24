@@ -117,8 +117,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       ),
       body: BlocBuilder<MessengerBloc, MessengerState>(
         builder: (context, state) {
-          final messages =
-              state.messages[widget.conversationId] ?? [];
+          final messages = state.messages[widget.conversationId] ?? [];
+          final conv = state.conversations
+              .where((c) => c.id == widget.conversationId)
+              .firstOrNull;
+          final otherUserName = conv?.otherUserName;
           return Column(
             children: [
               Expanded(
@@ -136,9 +139,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
                           final msg = messages[index];
+                          final isMe = _isMyMessage(msg, state);
                           return _MessageBubble(
                             message: msg,
-                            isMe: _isMyMessage(msg, state),
+                            isMe: isMe,
+                            senderName: isMe
+                                ? null
+                                : (msg.senderName ?? otherUserName),
                           );
                         },
                       ),
@@ -161,7 +168,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 class _MessageBubble extends StatelessWidget {
   final MessageEntity message;
   final bool isMe;
-  const _MessageBubble({required this.message, required this.isMe});
+  final String? senderName;
+  const _MessageBubble({
+    required this.message,
+    required this.isMe,
+    this.senderName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -180,13 +192,13 @@ class _MessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isMe && message.senderName != null)
+            if (!isMe && senderName != null && senderName!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  message.senderName!,
-                  style: TextStyle(
-                    color: isMe ? Colors.black87 : AppColors.primary,
+                  senderName!,
+                  style: const TextStyle(
+                    color: AppColors.primary,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
