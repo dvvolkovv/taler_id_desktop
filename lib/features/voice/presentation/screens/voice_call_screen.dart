@@ -5,6 +5,7 @@ import 'package:livekit_client/livekit_client.dart' as lk;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/api/dio_client.dart';
+import '../../../../core/utils/constants.dart';
 
 class VoiceCallScreen extends StatefulWidget {
   final String? roomName; // null = create new room with AI
@@ -102,7 +103,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   void _navigateBack() {
     if (_navigatedAway || !mounted) return;
     _navigatedAway = true;
-    context.pop();
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(RouteConstants.assistant);
+    }
   }
 
   Future<void> _toggleMute() async {
@@ -120,7 +125,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _hangUp() async {
-    await _room?.disconnect();
+    try {
+      await _room?.disconnect();
+    } catch (_) {}
     _navigateBack();
   }
 

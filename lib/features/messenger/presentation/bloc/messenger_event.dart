@@ -61,3 +61,12 @@ class StartConversationWith extends MessengerEvent {
   @override
   List<Object?> get props => [userId];
 }
+
+class CallInviteReceived extends MessengerEvent {
+  final Map<String, dynamic> data;
+  const CallInviteReceived(this.data);
+  @override
+  List<Object?> get props => [data];
+}
+
+class DismissCallInvite extends MessengerEvent {}

@@ -22,79 +22,13 @@ class ChatRoomScreen extends StatefulWidget {
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   late final TextEditingController _ctrl;
   late final ScrollController _scrollCtrl;
-  StreamSubscription? _callSub;
 
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController();
     _scrollCtrl = ScrollController();
-    _initData();
-  }
-
-  Future<void> _initData() async {
-    // Load messages for this conversation
     context.read<MessengerBloc>().add(OpenConversation(widget.conversationId));
-    // Listen for incoming call invites
-    try {
-      final ds = sl<MessengerRemoteDataSource>();
-      _callSub = ds.callInviteStream.listen((data) {
-        if (!mounted) return;
-        _showIncomingCallBanner(
-          data['fromUserName'] as String? ?? 'Пользователь',
-          data['roomName'] as String? ?? '',
-        );
-      });
-    } catch (_) {}
-  }
-
-  void _showIncomingCallBanner(String fromName, String roomName) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.card,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.call_rounded,
-                size: 48, color: AppColors.primary),
-            const SizedBox(height: 12),
-            Text(
-              'Входящий звонок от $fromName',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    context.push('/dashboard/voice?room=$roomName');
-                  },
-                  icon: const Icon(Icons.call, color: Colors.white),
-                  label: const Text('Принять'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.call_end, color: Colors.white),
-                  label: const Text('Отклонить'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _startCall() async {
@@ -155,7 +89,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void dispose() {
     _ctrl.dispose();
     _scrollCtrl.dispose();
-    _callSub?.cancel();
     super.dispose();
   }
 
@@ -164,7 +97,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Диалог'),
+        title: BlocBuilder<MessengerBloc, MessengerState>(
+          buildWhen: (prev, curr) => prev.conversations != curr.conversations,
+          builder: (context, state) {
+            final conv = state.conversations
+                .where((c) => c.id == widget.conversationId)
+                .firstOrNull;
+            final name = conv?.otherUserName;
+            return Text(name != null && name.isNotEmpty ? name : 'Диалог');
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.phone_outlined),

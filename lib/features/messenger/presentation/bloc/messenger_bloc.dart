@@ -8,6 +8,7 @@ import 'messenger_state.dart';
 class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   final IMessengerRepository _repo;
   StreamSubscription? _msgSub;
+  StreamSubscription? _callSub;
 
   MessengerBloc({required IMessengerRepository repo})
       : _repo = repo,
@@ -22,12 +23,18 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<StartConversationWith>(_onStartConversationWith);
     on<ClearNewConversation>((_, emit) =>
         emit(state.copyWith(clearNewConversation: true)));
+    on<CallInviteReceived>(
+        (event, emit) => emit(state.copyWith(pendingCallInvite: event.data)));
+    on<DismissCallInvite>(
+        (_, emit) => emit(state.copyWith(clearCallInvite: true)));
   }
 
   Future<void> _onConnect(
       ConnectMessenger event, Emitter<MessengerState> emit) async {
     await _repo.connect(event.accessToken);
     _msgSub = _repo.messageStream.listen((msg) => add(MessageReceived(msg)));
+    _callSub?.cancel();
+    _callSub = _repo.callInviteStream.listen((data) => add(CallInviteReceived(data)));
     if (event.userId != null) {
       emit(state.copyWith(currentUserId: event.userId));
     }
@@ -168,6 +175,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   @override
   Future<void> close() {
     _msgSub?.cancel();
+    _callSub?.cancel();
     _repo.dispose();
     return super.close();
   }
