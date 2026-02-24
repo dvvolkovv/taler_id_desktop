@@ -32,12 +32,14 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   Future<void> _onConnect(
       ConnectMessenger event, Emitter<MessengerState> emit) async {
     await _repo.connect(event.accessToken);
+    _msgSub?.cancel();
     _msgSub = _repo.messageStream.listen((msg) => add(MessageReceived(msg)));
     _callSub?.cancel();
     _callSub = _repo.callInviteStream.listen((data) => add(CallInviteReceived(data)));
-    if (event.userId != null) {
-      emit(state.copyWith(currentUserId: event.userId));
-    }
+    emit(state.copyWith(
+      isConnected: true,
+      currentUserId: event.userId ?? state.currentUserId,
+    ));
     add(LoadConversations());
   }
 
@@ -103,6 +105,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     final msg = event.message;
     final existing =
         List<MessageEntity>.from(state.messages[msg.conversationId] ?? []);
+    // Deduplicate: skip if already have this message ID (can arrive twice via room + personal rooms)
+    if (existing.any((m) => m.id == msg.id)) return;
     // Remove optimistic temp message with same content from same sender
     existing.removeWhere((m) =>
         m.id.startsWith('temp_') &&

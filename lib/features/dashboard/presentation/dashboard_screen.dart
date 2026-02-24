@@ -4,14 +4,21 @@ import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
+import '../../../core/di/service_locator.dart';
+import '../../../core/storage/secure_storage_service.dart';
 import '../../messenger/presentation/bloc/messenger_bloc.dart';
 import '../../messenger/presentation/bloc/messenger_event.dart';
 import '../../messenger/presentation/bloc/messenger_state.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   final Widget child;
   const DashboardScreen({super.key, required this.child});
 
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
   static const _tabs = [
     RouteConstants.assistant,
     RouteConstants.kyc,
@@ -19,6 +26,26 @@ class DashboardScreen extends StatelessWidget {
     RouteConstants.settings,
     RouteConstants.messenger,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _connectMessenger());
+  }
+
+  Future<void> _connectMessenger() async {
+    if (!mounted) return;
+    final bloc = context.read<MessengerBloc>();
+    if (bloc.state.isConnected) return;
+    try {
+      final storage = sl<SecureStorageService>();
+      final token = await storage.getAccessToken();
+      final userId = await storage.getUserId();
+      if (token != null && mounted) {
+        bloc.add(ConnectMessenger(token, userId: userId));
+      }
+    } catch (_) {}
+  }
 
   int _currentIndex(String location) {
     for (int i = 0; i < _tabs.length; i++) {
@@ -85,7 +112,6 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
     ).whenComplete(() {
-      // If dismissed by swiping, also clear the state
       if (context.mounted) {
         context.read<MessengerBloc>().add(DismissCallInvite());
       }
@@ -109,7 +135,7 @@ class DashboardScreen extends StatelessWidget {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: child,
+        body: widget.child,
         floatingActionButton: location.startsWith(RouteConstants.messenger)
             ? null
             : FloatingActionButton(

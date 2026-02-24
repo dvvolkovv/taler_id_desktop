@@ -21,30 +21,24 @@ class ConversationsScreen extends StatefulWidget {
 }
 
 class _ConversationsScreenState extends State<ConversationsScreen> {
+  String? _myUsername;
+
   @override
   void initState() {
     super.initState();
-    _connectIfNeeded();
+    _loadConversationsIfNeeded();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkUsername());
   }
 
-  Future<void> _connectIfNeeded() async {
+  Future<void> _loadConversationsIfNeeded() async {
     final bloc = context.read<MessengerBloc>();
+    // DashboardScreen already connects WebSocket; just reload conversations if needed
     if (bloc.state.conversations.isEmpty && !bloc.state.isLoading) {
-      try {
-        final storage = sl<SecureStorageService>();
-        final token = await storage.getAccessToken();
-        final userId = await storage.getUserId();
-        if (!mounted) return;
-        if (token != null) {
-          bloc.add(ConnectMessenger(token, userId: userId));
-        } else {
-          bloc.add(LoadConversations());
-        }
-      } catch (_) {
-        if (!mounted) return;
+      if (bloc.state.isConnected) {
         bloc.add(LoadConversations());
       }
+      // If not connected yet, DashboardScreen will trigger ConnectMessenger
+      // which calls LoadConversations after connecting
     }
   }
 
@@ -60,13 +54,16 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
           '/profile',
           fromJson: (d) => Map<String, dynamic>.from(d as Map),
         );
+        if (profile != null) await cache.saveProfile(profile);
       } catch (_) {
         return;
       }
     }
     if (!mounted) return;
     final username = profile?['username'] as String?;
-    if (username == null || username.trim().isEmpty) {
+    if (username != null && username.trim().isNotEmpty) {
+      setState(() => _myUsername = username.trim());
+    } else {
       _showUsernameDialog();
     }
   }
@@ -145,6 +142,11 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       data: {'username': value},
                       fromJson: (d) => d,
                     );
+                    // Update cache to prevent dialog on next visit
+                    final cache = sl<CacheService>();
+                    final currentProfile = cache.getProfile() ?? {};
+                    await cache.saveProfile({...currentProfile, 'username': value});
+                    if (mounted) setState(() => _myUsername = value);
                     if (ctx.mounted) Navigator.pop(ctx);
                   } on Exception catch (e) {
                     final msg = e.toString();
@@ -162,18 +164,34 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => const _ConversationsView();
+  Widget build(BuildContext context) => _ConversationsView(myUsername: _myUsername);
 }
 
 class _ConversationsView extends StatelessWidget {
-  const _ConversationsView();
+  final String? myUsername;
+  const _ConversationsView({this.myUsername});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Сообщения'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Сообщения'),
+            if (myUsername != null && myUsername!.isNotEmpty)
+              Text(
+                '@$myUsername',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_search_rounded),
