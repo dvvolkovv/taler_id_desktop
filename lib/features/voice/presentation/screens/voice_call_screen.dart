@@ -54,7 +54,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       _room!.addListener(_onRoomChanged);
 
       await _room!.connect(
-        'wss://livekit.taler.tirol',
+        'wss://id.taler.tirol/livekit',
         token,
         roomOptions: const lk.RoomOptions(
           defaultAudioPublishOptions: lk.AudioPublishOptions(

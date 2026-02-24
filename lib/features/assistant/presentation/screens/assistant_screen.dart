@@ -65,7 +65,7 @@ class _AssistantScreenState extends State<AssistantScreen>
       _room = lk.Room();
       _room!.addListener(_onRoomChanged);
       await _room!.connect(
-        'wss://livekit.taler.tirol',
+        'wss://id.taler.tirol/livekit',
         token,
         roomOptions: const lk.RoomOptions(
           defaultAudioPublishOptions: lk.AudioPublishOptions(audioBitrate: 32000),
