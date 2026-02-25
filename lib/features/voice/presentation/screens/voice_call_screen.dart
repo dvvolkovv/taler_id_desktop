@@ -103,16 +103,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     final room = _room;
     if (room == null) return;
 
-    // Sync participants list from room state
-    setState(() {
-      _participants
-        ..clear()
-        ..addAll(room.remoteParticipants.values);
-    });
-
-    // Handle disconnection
+    // Handle disconnection (navigate before setState)
     if (room.connectionState == lk.ConnectionState.disconnected) {
       _navigateBack();
+      return;
+    }
+
+    // Sync participants list from room state
+    if (mounted) {
+      setState(() {
+        _participants
+          ..clear()
+          ..addAll(room.remoteParticipants.values);
+      });
     }
   }
 
