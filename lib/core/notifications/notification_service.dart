@@ -98,6 +98,15 @@ class NotificationService {
   static final _fcm = FirebaseMessaging.instance;
   static String? _currentToken;
 
+  // Pending voice call route to handle CallKit accept across all app states
+  static String? _pendingCallRoute;
+  static void setPendingCallRoute(String route) => _pendingCallRoute = route;
+  static String? consumePendingCallRoute() {
+    final route = _pendingCallRoute;
+    _pendingCallRoute = null;
+    return route;
+  }
+
   static Future<void> init() async {
     // Register background handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

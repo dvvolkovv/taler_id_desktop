@@ -8,6 +8,7 @@ import '../../../core/utils/constants.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import '../../../core/notifications/notification_service.dart';
 import '../../messenger/data/datasources/messenger_remote_datasource.dart';
 import '../../messenger/presentation/bloc/messenger_bloc.dart';
 import '../../messenger/presentation/bloc/messenger_event.dart';
@@ -37,6 +38,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Handle CallKit accept that happened while app was cold-starting
+      final pendingRoute = NotificationService.consumePendingCallRoute();
+      if (pendingRoute != null && mounted) {
+        context.go(pendingRoute);
+        return;
+      }
       _connectMessenger();
       _listenForDisconnect();
       _listenForCallEnded();

@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:io';
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -20,8 +19,33 @@ import 'features/kyc/presentation/bloc/kyc_bloc.dart';
 import 'features/tenant/presentation/bloc/tenant_bloc.dart';
 import 'features/sessions/presentation/bloc/sessions_bloc.dart';
 
+/// Set up CallKit event listener as early as possible (before runApp) so that
+/// accept events are not missed when the app is launched from a killed state.
+void _setupCallkitListener() {
+  if (kIsWeb) return;
+  FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
+    if (event?.event != Event.actionCallAccept) return;
+    final extra = event!.body['extra'] as Map?;
+    final roomName = extra?['roomName'] as String?;
+    final convId = extra?['conversationId'] as String?;
+    if (roomName == null || roomName.isEmpty) return;
+    final route =
+        '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
+    // Store for dashboard to pick up (handles killed-app race condition)
+    NotificationService.setPendingCallRoute(route);
+    // Also attempt immediate navigation (works when app is already running)
+    try {
+      appRouter.go(route);
+    } catch (_) {}
+  });
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Set up CallKit listener early — before runApp — to catch accept events
+  // that arrive while the app is cold-starting.
+  _setupCallkitListener();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -74,30 +98,6 @@ class _TalerIdAppState extends State<TalerIdApp> {
     if (widget.initialLocale != null) {
       _locale = Locale(widget.initialLocale!);
     }
-    _setupCallkitListener();
-  }
-
-  /// Navigate to VoiceCallScreen when user accepts a call from the OS notification.
-  /// CallKit does not work on iOS Simulator — skip to avoid native crash.
-  void _setupCallkitListener() {
-    final isIosSimulator = Platform.isIOS &&
-        (Platform.environment['SIMULATOR_DEVICE_NAME'] != null ||
-            Platform.environment['SIMULATOR_UDID'] != null);
-    if (isIosSimulator) return;
-
-    FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
-      if (event == null) return;
-      if (event.event == Event.actionCallAccept) {
-        final extra = event.body['extra'] as Map?;
-        final roomName = extra?['roomName'] as String?;
-        final convId = extra?['conversationId'] as String?;
-        if (roomName != null && roomName.isNotEmpty) {
-          appRouter.go(
-            '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1',
-          );
-        }
-      }
-    });
   }
 
   void _setLocale(Locale locale) {
