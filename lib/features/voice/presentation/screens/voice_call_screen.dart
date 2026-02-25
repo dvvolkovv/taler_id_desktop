@@ -69,7 +69,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       _room!.addListener(_onRoomChanged);
 
       await _room!.connect(
-        'wss://id.taler.tirol/livekit',
+        'wss://id.taler.tirol/livekit/',
         token,
         roomOptions: const lk.RoomOptions(
           defaultAudioPublishOptions: lk.AudioPublishOptions(
@@ -83,7 +83,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         _participants.addAll(_room!.remoteParticipants.values);
       });
 
-      await _room!.localParticipant?.setMicrophoneEnabled(true);
+      // Enable microphone; may fail on iOS simulator — don't treat as fatal
+      try {
+        await _room!.localParticipant?.setMicrophoneEnabled(true);
+      } catch (_) {}
 
       setState(() => _connecting = false);
       WakelockPlus.enable();

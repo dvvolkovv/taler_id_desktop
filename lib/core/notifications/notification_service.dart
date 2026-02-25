@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -8,15 +9,41 @@ import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import '../api/dio_client.dart';
 import '../di/service_locator.dart';
+import '../../firebase_options.dart';
 
-/// Shows native OS-level incoming call screen (Android full-screen / iOS CallKit)
+bool get _isIosSimulator =>
+    !kIsWeb &&
+    Platform.isIOS &&
+    (Platform.environment['SIMULATOR_DEVICE_NAME'] != null ||
+        Platform.environment['SIMULATOR_UDID'] != null);
+
+/// Extract UUID part from roomName like "call-550e8400-e29b-41d4-a716-446655440000"
+/// CallKit requires a valid RFC4122 UUID string as id.
+String _toCallkitId(String roomName) {
+  // If roomName already looks like a UUID, use it directly
+  final uuidRegex = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  );
+  if (uuidRegex.hasMatch(roomName)) return roomName;
+  // Strip prefix "call-" and take remaining UUID part
+  final stripped = roomName.replaceFirst(RegExp(r'^call-'), '');
+  if (uuidRegex.hasMatch(stripped)) return stripped;
+  // Fallback: derive UUID from hash (must be a valid UUID)
+  final hash = roomName.hashCode.abs();
+  return '00000000-0000-4000-8000-${hash.toRadixString(16).padLeft(12, '0').substring(0, 12)}';
+}
+
+/// Shows native OS-level incoming call screen (Android full-screen / iOS CallKit).
+/// Skipped on iOS Simulator where CallKit is not supported.
 Future<void> showCallkitIncoming({
   required String roomName,
   required String fromName,
   required String convId,
 }) async {
+  if (_isIosSimulator) return;
   await FlutterCallkitIncoming.showCallkitIncoming(CallKitParams(
-    id: roomName,
+    id: _toCallkitId(roomName),
     nameCaller: fromName,
     appName: 'Taler ID',
     type: 0,
@@ -57,7 +84,7 @@ Future<void> showCallkitIncoming({
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   if (message.data['type'] == 'call_invite') {
     await showCallkitIncoming(
       roomName: message.data['roomName'] ?? '',

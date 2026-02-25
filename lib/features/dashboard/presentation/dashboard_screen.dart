@@ -8,7 +8,6 @@ import '../../../core/utils/constants.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
-import '../../../core/notifications/notification_service.dart';
 import '../../messenger/data/datasources/messenger_remote_datasource.dart';
 import '../../messenger/presentation/bloc/messenger_bloc.dart';
 import '../../messenger/presentation/bloc/messenger_event.dart';
@@ -112,14 +111,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final roomName = data['roomName'] as String? ?? '';
     final convId = data['conversationId'] as String? ?? '';
 
-    // Show native OS-level incoming call screen (works even from lock screen)
-    showCallkitIncoming(
-      roomName: roomName,
-      fromName: fromName,
-      convId: convId,
-    );
-    // The callkit "Accept" event is handled globally in main.dart (_setupCallkitListener)
+    // When the app is in foreground (WebSocket path), always show in-app dialog.
+    // CallKit is used only for background/killed app (via FCM push handler).
+    _showIncomingCallDialog(context, fromName: fromName, roomName: roomName, convId: convId);
     if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
+  }
+
+  void _showIncomingCallDialog(
+    BuildContext context, {
+    required String fromName,
+    required String roomName,
+    required String convId,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.call_rounded, size: 56, color: AppColors.primary),
+            const SizedBox(height: 16),
+            const Text('Входящий звонок',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('от $fromName',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              final uri = '/dashboard/voice?room=$roomName'
+                  '${convId.isNotEmpty ? '&convId=$convId' : ''}';
+              context.push(uri);
+            },
+            icon: const Icon(Icons.call, color: Colors.white),
+            label: const Text('Принять'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+            icon: const Icon(Icons.call_end, color: Colors.white),
+            label: const Text('Отклонить'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

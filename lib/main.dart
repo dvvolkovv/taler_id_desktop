@@ -3,12 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:io';
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'core/di/service_locator.dart';
 import 'core/notifications/notification_service.dart';
+import 'firebase_options.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -29,7 +31,7 @@ Future<void> main() async {
   // Initialize Firebase (mobile only)
   if (!kIsWeb) {
     try {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
       // Initialize FCM
       await NotificationService.init();
     } catch (e) {
@@ -75,8 +77,14 @@ class _TalerIdAppState extends State<TalerIdApp> {
     _setupCallkitListener();
   }
 
-  /// Navigate to VoiceCallScreen when user accepts a call from the OS notification
+  /// Navigate to VoiceCallScreen when user accepts a call from the OS notification.
+  /// CallKit does not work on iOS Simulator — skip to avoid native crash.
   void _setupCallkitListener() {
+    final isIosSimulator = Platform.isIOS &&
+        (Platform.environment['SIMULATOR_DEVICE_NAME'] != null ||
+            Platform.environment['SIMULATOR_UDID'] != null);
+    if (isIosSimulator) return;
+
     FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
       if (event == null) return;
       if (event.event == Event.actionCallAccept) {
