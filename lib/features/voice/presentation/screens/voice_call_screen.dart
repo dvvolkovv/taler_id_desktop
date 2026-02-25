@@ -36,7 +36,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _navigatedAway = false;
   String? _roomName; // actual room name (resolved after connect)
   final List<lk.RemoteParticipant> _participants = [];
-  EventsListener<lk.RoomEvent>? _eventsListener;
+  lk.EventsListener<lk.RoomEvent>? _eventsListener;
 
   static const _audioChannel = MethodChannel('taler_id/audio');
 
