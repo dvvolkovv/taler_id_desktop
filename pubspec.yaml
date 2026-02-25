@@ -72,6 +72,9 @@ dependencies:
   # Keep screen on
   wakelock_plus: ^1.2.8
 
+  # Native incoming call UI (like a real phone call)
+  flutter_callkit_incoming: ^2.0.2
+
   # Utils
   intl: any
   package_info_plus: ^8.1.3

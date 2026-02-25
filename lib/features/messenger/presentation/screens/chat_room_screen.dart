@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/api/dio_client.dart';
@@ -227,6 +228,16 @@ class _MessageBubble extends StatelessWidget {
               style: TextStyle(
                 color: isMe ? Colors.black : AppColors.textPrimary,
                 fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              DateFormat('HH:mm').format(message.sentAt.toLocal()),
+              style: TextStyle(
+                color: isMe
+                    ? Colors.black.withValues(alpha: 0.6)
+                    : AppColors.textSecondary,
+                fontSize: 11,
               ),
             ),
           ],

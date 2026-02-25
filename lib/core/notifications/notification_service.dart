@@ -1,13 +1,69 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_callkit_incoming/entities/android_params.dart';
+import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
+import 'package:flutter_callkit_incoming/entities/ios_params.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import '../api/dio_client.dart';
 import '../di/service_locator.dart';
 
+/// Shows native OS-level incoming call screen (Android full-screen / iOS CallKit)
+Future<void> showCallkitIncoming({
+  required String roomName,
+  required String fromName,
+  required String convId,
+}) async {
+  await FlutterCallkitIncoming.showCallkitIncoming(CallKitParams(
+    id: roomName,
+    nameCaller: fromName,
+    appName: 'Taler ID',
+    type: 0,
+    textAccept: 'Принять',
+    textDecline: 'Отклонить',
+    duration: 30000,
+    extra: <String, dynamic>{'roomName': roomName, 'conversationId': convId},
+    android: const AndroidParams(
+      isCustomNotification: true,
+      isShowLogo: false,
+      ringtonePath: 'system_ringtone_default',
+      backgroundColor: '#0A0A0A',
+      actionColor: '#FFD700',
+      textColor: '#FFFFFF',
+      incomingCallNotificationChannelName: 'Входящий звонок',
+      missedCallNotificationChannelName: 'Пропущенный звонок',
+      isShowCallID: false,
+    ),
+    ios: const IOSParams(
+      iconName: 'CallKitLogo',
+      supportsVideo: false,
+      maximumCallGroups: 2,
+      maximumCallsPerCallGroup: 1,
+      audioSessionMode: 'default',
+      audioSessionActive: true,
+      audioSessionPreferredSampleRate: 44100.0,
+      audioSessionPreferredIOBufferDuration: 0.005,
+      supportsDTMF: false,
+      supportsHolding: false,
+      supportsGrouping: false,
+      supportsUngrouping: false,
+      ringtonePath: 'system_ringtone_default',
+    ),
+  ));
+}
+
 // Background message handler (top-level function required by FCM)
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Handle background messages
-  debugPrint('Background message: ${message.messageId}');
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  if (message.data['type'] == 'call_invite') {
+    await showCallkitIncoming(
+      roomName: message.data['roomName'] ?? '',
+      fromName: message.data['fromName'] ?? 'Входящий звонок',
+      convId: message.data['conversationId'] ?? '',
+    );
+  }
 }
 
 class NotificationService {
@@ -16,7 +72,7 @@ class NotificationService {
 
   static Future<void> init() async {
     // Register background handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     // Request permission
     await _fcm.requestPermission(
@@ -50,10 +106,15 @@ class NotificationService {
   /// Set up foreground notification tap handlers
   /// Call this after GoRouter is initialized
   static void setupForegroundHandlers({required Function(RemoteMessage) onTap}) {
-    // Foreground messages
+    // Foreground FCM messages — show callkit for incoming calls
     FirebaseMessaging.onMessage.listen((message) {
-      debugPrint('Foreground message: ${message.notification?.title}');
-      // In production: show local notification using flutter_local_notifications
+      if (message.data['type'] == 'call_invite') {
+        showCallkitIncoming(
+          roomName: message.data['roomName'] ?? '',
+          fromName: message.data['fromName'] ?? 'Входящий звонок',
+          convId: message.data['conversationId'] ?? '',
+        );
+      }
     });
 
     // App opened from notification (background)
@@ -82,6 +143,13 @@ String? notificationToRoute(RemoteMessage message) {
     case 'invite':
       final token = data['token'] as String?;
       return token != null ? '/invite?token=$token' : null;
+    case 'call_invite':
+      final roomName = data['roomName'] as String?;
+      final convId = data['conversationId'] as String?;
+      if (roomName != null && convId != null) {
+        return '/dashboard/voice?room=$roomName&convId=$convId&incoming=1';
+      }
+      return null;
     default:
       return null;
   }

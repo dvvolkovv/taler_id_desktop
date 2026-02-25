@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_callkit_incoming/entities/call_event.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'core/di/service_locator.dart';
@@ -70,6 +72,24 @@ class _TalerIdAppState extends State<TalerIdApp> {
     if (widget.initialLocale != null) {
       _locale = Locale(widget.initialLocale!);
     }
+    _setupCallkitListener();
+  }
+
+  /// Navigate to VoiceCallScreen when user accepts a call from the OS notification
+  void _setupCallkitListener() {
+    FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
+      if (event == null) return;
+      if (event.event == Event.actionCallAccept) {
+        final extra = event.body['extra'] as Map?;
+        final roomName = extra?['roomName'] as String?;
+        final convId = extra?['conversationId'] as String?;
+        if (roomName != null && roomName.isNotEmpty) {
+          appRouter.go(
+            '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1',
+          );
+        }
+      }
+    });
   }
 
   void _setLocale(Locale locale) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/api/dio_client.dart';
@@ -11,7 +12,13 @@ import '../../../messenger/data/datasources/messenger_remote_datasource.dart';
 class VoiceCallScreen extends StatefulWidget {
   final String? roomName; // null = create new room with AI
   final String? conversationId; // for sending call_ended when hanging up
-  const VoiceCallScreen({super.key, this.roomName, this.conversationId});
+  final bool isIncoming; // opened from FCM push notification
+  const VoiceCallScreen({
+    super.key,
+    this.roomName,
+    this.conversationId,
+    this.isIncoming = false,
+  });
 
   @override
   State<VoiceCallScreen> createState() => _VoiceCallScreenState();
@@ -32,6 +39,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void initState() {
     super.initState();
+    // Always connect directly — callkit handles accept/decline before navigation
     _connect();
   }
 
@@ -78,6 +86,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       await _room!.localParticipant?.setMicrophoneEnabled(true);
 
       setState(() => _connecting = false);
+      WakelockPlus.enable();
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -145,6 +154,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   @override
   void dispose() {
+    WakelockPlus.disable();
     _room?.removeListener(_onRoomChanged);
     _room?.disconnect();
     super.dispose();
