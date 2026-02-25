@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/api/dio_client.dart';
+import '../../../../core/services/call_state_service.dart';
 import '../bloc/messenger_bloc.dart';
 import '../bloc/messenger_event.dart';
 import '../bloc/messenger_state.dart';
@@ -33,6 +38,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _startCall() async {
+    // Guard: only one call at a time
+    if (CallStateService.instance.isInCall) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Уже идёт звонок'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
     // Show bottom sheet to choose call type
     final withAi = await showModalBottomSheet<bool>(
       context: context,
@@ -64,6 +82,40 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _sendFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+    );
+    if (result == null || result.files.single.path == null || !mounted) return;
+    final file = result.files.single;
+    try {
+      final client = sl<DioClient>();
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(file.path!, filename: file.name),
+      });
+      final res = await client.post(
+        '/messenger/files',
+        data: formData,
+        fromJson: (d) => Map<String, dynamic>.from(d as Map),
+      );
+      if (!mounted) return;
+      context.read<MessengerBloc>().add(SendMessage(
+        widget.conversationId,
+        file.name,
+        fileUrl: res['fileUrl'] as String,
+        fileName: res['fileName'] as String,
+        fileSize: res['fileSize'] as int?,
+        fileType: res['fileType'] as String,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка загрузки файла: $e'), backgroundColor: AppColors.error),
+      );
     }
   }
 
@@ -168,7 +220,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         },
                       ),
               ),
-              _InputBar(controller: _ctrl, onSend: _sendMessage),
+              _InputBar(controller: _ctrl, onSend: _sendMessage, onAttach: _sendFile),
             ],
           );
         },
@@ -223,13 +275,52 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
               ),
-            Text(
-              message.content,
-              style: TextStyle(
-                color: isMe ? Colors.black : AppColors.textPrimary,
-                fontSize: 14,
+            if (message.fileUrl != null && message.fileType == 'image')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CachedNetworkImage(
+                    imageUrl: message.fileUrl!,
+                    width: 220,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: AppColors.textSecondary),
+                  ),
+                ),
+              )
+            else if (message.fileUrl != null && message.fileType == 'document')
+              GestureDetector(
+                onTap: () async {
+                  final uri = Uri.parse(message.fileUrl!);
+                  if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.insert_drive_file_rounded, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        message.fileName ?? message.content,
+                        style: TextStyle(
+                          color: isMe ? Colors.black : AppColors.primary,
+                          fontSize: 13,
+                          decoration: TextDecoration.underline,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Text(
+                message.content,
+                style: TextStyle(
+                  color: isMe ? Colors.black : AppColors.textPrimary,
+                  fontSize: 14,
+                ),
               ),
-            ),
             const SizedBox(height: 4),
             Text(
               DateFormat('HH:mm').format(message.sentAt.toLocal()),
@@ -330,12 +421,13 @@ class _CallOptionsSheetState extends State<_CallOptionsSheet> {
 class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
-  const _InputBar({required this.controller, required this.onSend});
+  final VoidCallback onAttach;
+  const _InputBar({required this.controller, required this.onSend, required this.onAttach});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: const BoxDecoration(
         color: AppColors.card,
         border: Border(
@@ -344,6 +436,10 @@ class _InputBar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          IconButton(
+            onPressed: onAttach,
+            icon: const Icon(Icons.attach_file_rounded, color: AppColors.textSecondary),
+          ),
           Expanded(
             child: TextField(
               controller: controller,

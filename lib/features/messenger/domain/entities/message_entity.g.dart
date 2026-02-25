@@ -14,6 +14,10 @@ _$MessageEntityImpl _$$MessageEntityImplFromJson(Map<String, dynamic> json) =>
       senderName: json['senderName'] as String?,
       content: json['content'] as String,
       sentAt: DateTime.parse(json['sentAt'] as String),
+      fileUrl: json['fileUrl'] as String?,
+      fileName: json['fileName'] as String?,
+      fileSize: (json['fileSize'] as num?)?.toInt(),
+      fileType: json['fileType'] as String?,
     );
 
 Map<String, dynamic> _$$MessageEntityImplToJson(_$MessageEntityImpl instance) =>
@@ -24,4 +28,8 @@ Map<String, dynamic> _$$MessageEntityImplToJson(_$MessageEntityImpl instance) =>
       'senderName': instance.senderName,
       'content': instance.content,
       'sentAt': instance.sentAt.toIso8601String(),
+      'fileUrl': instance.fileUrl,
+      'fileName': instance.fileName,
+      'fileSize': instance.fileSize,
+      'fileType': instance.fileType,
     };

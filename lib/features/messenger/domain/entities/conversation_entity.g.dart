@@ -20,6 +20,7 @@ _$ConversationEntityImpl _$$ConversationEntityImplFromJson(
       lastMessageSenderId: json['lastMessageSenderId'] as String?,
       otherUserName: json['otherUserName'] as String?,
       otherUserId: json['otherUserId'] as String?,
+      otherUserAvatar: json['otherUserAvatar'] as String?,
     );
 
 Map<String, dynamic> _$$ConversationEntityImplToJson(
@@ -32,4 +33,5 @@ Map<String, dynamic> _$$ConversationEntityImplToJson(
       'lastMessageSenderId': instance.lastMessageSenderId,
       'otherUserName': instance.otherUserName,
       'otherUserId': instance.otherUserId,
+      'otherUserAvatar': instance.otherUserAvatar,
     };

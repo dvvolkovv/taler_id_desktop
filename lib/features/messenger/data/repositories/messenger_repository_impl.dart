@@ -30,8 +30,8 @@ class MessengerRepositoryImpl implements IMessengerRepository {
   void joinConversation(String id) => _remote.joinConversation(id);
 
   @override
-  void sendMessage(String conversationId, String content) =>
-      _remote.sendMessage(conversationId, content);
+  void sendMessage(String conversationId, String content, {String? fileUrl, String? fileName, int? fileSize, String? fileType}) =>
+      _remote.sendMessage(conversationId, content, fileUrl: fileUrl, fileName: fileName, fileSize: fileSize, fileType: fileType);
 
   @override
   void sendTyping(String conversationId, bool isTyping) =>

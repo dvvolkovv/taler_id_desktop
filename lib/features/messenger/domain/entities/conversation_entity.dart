@@ -13,6 +13,7 @@ class ConversationEntity with _$ConversationEntity {
     String? lastMessageSenderId,
     String? otherUserName,
     String? otherUserId,
+    String? otherUserAvatar,
   }) = _ConversationEntity;
 
   factory ConversationEntity.fromJson(Map<String, dynamic> json) =>

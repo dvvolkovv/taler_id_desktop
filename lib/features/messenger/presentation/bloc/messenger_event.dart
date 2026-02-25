@@ -29,9 +29,20 @@ class OpenConversation extends MessengerEvent {
 class SendMessage extends MessengerEvent {
   final String conversationId;
   final String content;
-  const SendMessage(this.conversationId, this.content);
+  final String? fileUrl;
+  final String? fileName;
+  final int? fileSize;
+  final String? fileType;
+  const SendMessage(
+    this.conversationId,
+    this.content, {
+    this.fileUrl,
+    this.fileName,
+    this.fileSize,
+    this.fileType,
+  });
   @override
-  List<Object?> get props => [conversationId, content];
+  List<Object?> get props => [conversationId, content, fileUrl, fileName];
 }
 
 class MessageReceived extends MessengerEvent {

@@ -88,6 +88,10 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
       senderId: state.currentUserId ?? 'me',
       content: event.content,
       sentAt: DateTime.now(),
+      fileUrl: event.fileUrl,
+      fileName: event.fileName,
+      fileSize: event.fileSize,
+      fileType: event.fileType,
     );
     final existing =
         List<MessageEntity>.from(state.messages[event.conversationId] ?? []);
@@ -97,7 +101,14 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     newMessages[event.conversationId] = existing;
     emit(state.copyWith(messages: newMessages));
     // Send via socket
-    _repo.sendMessage(event.conversationId, event.content);
+    _repo.sendMessage(
+      event.conversationId,
+      event.content,
+      fileUrl: event.fileUrl,
+      fileName: event.fileName,
+      fileSize: event.fileSize,
+      fileType: event.fileType,
+    );
   }
 
   void _onMessageReceived(

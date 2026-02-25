@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
@@ -97,18 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 AppCard(
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: AppColors.primary.withOpacity(0.2),
-                        child: Text(
-                          _initials(user),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      _buildAvatar(user),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -161,6 +154,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Future<void> _uploadAvatar(BuildContext context) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+    if (picked == null || !mounted) return;
+    try {
+      final client = sl<DioClient>();
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(picked.path, filename: 'avatar.jpg'),
+      });
+      await client.post('/profile/avatar', data: formData, fromJson: (d) => d);
+      if (!mounted) return;
+      context.read<ProfileBloc>().add(ProfileLoadRequested());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Аватар обновлён'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+      );
+    }
+  }
+
+  Widget _buildAvatar(UserEntity user) {
+    return GestureDetector(
+      onTap: () => _uploadAvatar(context),
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+            child: user.avatarUrl != null
+                ? ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: user.avatarUrl!,
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Text(
+                        _initials(user),
+                        style: const TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                : Text(
+                    _initials(user),
+                    style: const TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.camera_alt, size: 12, color: Colors.black),
+            ),
+          ),
+        ],
       ),
     );
   }

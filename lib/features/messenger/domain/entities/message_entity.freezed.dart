@@ -26,6 +26,10 @@ mixin _$MessageEntity {
   String? get senderName => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
   DateTime get sentAt => throw _privateConstructorUsedError;
+  String? get fileUrl => throw _privateConstructorUsedError;
+  String? get fileName => throw _privateConstructorUsedError;
+  int? get fileSize => throw _privateConstructorUsedError;
+  String? get fileType => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -45,7 +49,11 @@ abstract class $MessageEntityCopyWith<$Res> {
       String senderId,
       String? senderName,
       String content,
-      DateTime sentAt});
+      DateTime sentAt,
+      String? fileUrl,
+      String? fileName,
+      int? fileSize,
+      String? fileType});
 }
 
 /// @nodoc
@@ -67,6 +75,10 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
     Object? senderName = freezed,
     Object? content = null,
     Object? sentAt = null,
+    Object? fileUrl = freezed,
+    Object? fileName = freezed,
+    Object? fileSize = freezed,
+    Object? fileType = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -93,6 +105,22 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
           ? _value.sentAt
           : sentAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      fileUrl: freezed == fileUrl
+          ? _value.fileUrl
+          : fileUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fileName: freezed == fileName
+          ? _value.fileName
+          : fileName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fileSize: freezed == fileSize
+          ? _value.fileSize
+          : fileSize // ignore: cast_nullable_to_non_nullable
+              as int?,
+      fileType: freezed == fileType
+          ? _value.fileType
+          : fileType // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -111,7 +139,11 @@ abstract class _$$MessageEntityImplCopyWith<$Res>
       String senderId,
       String? senderName,
       String content,
-      DateTime sentAt});
+      DateTime sentAt,
+      String? fileUrl,
+      String? fileName,
+      int? fileSize,
+      String? fileType});
 }
 
 /// @nodoc
@@ -131,6 +163,10 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
     Object? senderName = freezed,
     Object? content = null,
     Object? sentAt = null,
+    Object? fileUrl = freezed,
+    Object? fileName = freezed,
+    Object? fileSize = freezed,
+    Object? fileType = freezed,
   }) {
     return _then(_$MessageEntityImpl(
       id: null == id
@@ -157,6 +193,22 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
           ? _value.sentAt
           : sentAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      fileUrl: freezed == fileUrl
+          ? _value.fileUrl
+          : fileUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fileName: freezed == fileName
+          ? _value.fileName
+          : fileName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fileSize: freezed == fileSize
+          ? _value.fileSize
+          : fileSize // ignore: cast_nullable_to_non_nullable
+              as int?,
+      fileType: freezed == fileType
+          ? _value.fileType
+          : fileType // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -170,7 +222,11 @@ class _$MessageEntityImpl implements _MessageEntity {
       required this.senderId,
       this.senderName,
       required this.content,
-      required this.sentAt});
+      required this.sentAt,
+      this.fileUrl,
+      this.fileName,
+      this.fileSize,
+      this.fileType});
 
   factory _$MessageEntityImpl.fromJson(Map<String, dynamic> json) =>
       _$$MessageEntityImplFromJson(json);
@@ -187,10 +243,18 @@ class _$MessageEntityImpl implements _MessageEntity {
   final String content;
   @override
   final DateTime sentAt;
+  @override
+  final String? fileUrl;
+  @override
+  final String? fileName;
+  @override
+  final int? fileSize;
+  @override
+  final String? fileType;
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt)';
+    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType)';
   }
 
   @override
@@ -206,13 +270,17 @@ class _$MessageEntityImpl implements _MessageEntity {
             (identical(other.senderName, senderName) ||
                 other.senderName == senderName) &&
             (identical(other.content, content) || other.content == content) &&
-            (identical(other.sentAt, sentAt) || other.sentAt == sentAt));
+            (identical(other.sentAt, sentAt) || other.sentAt == sentAt) &&
+            (identical(other.fileUrl, fileUrl) || other.fileUrl == fileUrl) &&
+            (identical(other.fileName, fileName) || other.fileName == fileName) &&
+            (identical(other.fileSize, fileSize) || other.fileSize == fileSize) &&
+            (identical(other.fileType, fileType) || other.fileType == fileType));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
-      runtimeType, id, conversationId, senderId, senderName, content, sentAt);
+      runtimeType, id, conversationId, senderId, senderName, content, sentAt, fileUrl, fileName, fileSize, fileType);
 
   @JsonKey(ignore: true)
   @override
@@ -235,7 +303,11 @@ abstract class _MessageEntity implements MessageEntity {
       required final String senderId,
       final String? senderName,
       required final String content,
-      required final DateTime sentAt}) = _$MessageEntityImpl;
+      required final DateTime sentAt,
+      final String? fileUrl,
+      final String? fileName,
+      final int? fileSize,
+      final String? fileType}) = _$MessageEntityImpl;
 
   factory _MessageEntity.fromJson(Map<String, dynamic> json) =
       _$MessageEntityImpl.fromJson;
@@ -252,6 +324,14 @@ abstract class _MessageEntity implements MessageEntity {
   String get content;
   @override
   DateTime get sentAt;
+  @override
+  String? get fileUrl;
+  @override
+  String? get fileName;
+  @override
+  int? get fileSize;
+  @override
+  String? get fileType;
   @override
   @JsonKey(ignore: true)
   _$$MessageEntityImplCopyWith<_$MessageEntityImpl> get copyWith =>

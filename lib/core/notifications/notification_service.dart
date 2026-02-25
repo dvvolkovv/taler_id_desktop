@@ -187,6 +187,11 @@ String? notificationToRoute(RemoteMessage message) {
         return '/dashboard/voice?room=$roomName&convId=$convId&incoming=1';
       }
       return null;
+    case 'new_message':
+      final convId = data['conversationId'] as String?;
+      return convId != null
+          ? '/dashboard/messenger/$convId'
+          : '/dashboard/messenger';
     default:
       return null;
   }

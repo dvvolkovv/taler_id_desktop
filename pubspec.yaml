@@ -75,6 +75,10 @@ dependencies:
   # Native incoming call UI (like a real phone call)
   flutter_callkit_incoming: ^2.0.2
 
+  # File picking and URL launching
+  file_picker: ^8.1.2
+  url_launcher: ^6.3.1
+
   # Utils
   intl: any
   package_info_plus: ^8.1.3

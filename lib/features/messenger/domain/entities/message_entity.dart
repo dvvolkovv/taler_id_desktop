@@ -12,6 +12,10 @@ class MessageEntity with _$MessageEntity {
     String? senderName,
     required String content,
     required DateTime sentAt,
+    String? fileUrl,
+    String? fileName,
+    int? fileSize,
+    String? fileType,
   }) = _MessageEntity;
 
   factory MessageEntity.fromJson(Map<String, dynamic> json) =>

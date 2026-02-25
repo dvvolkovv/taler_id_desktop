@@ -7,8 +7,10 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/constants.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/storage/secure_storage_service.dart';
+import '../../../core/services/call_state_service.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import '../../../core/notifications/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../messenger/data/datasources/messenger_remote_datasource.dart';
 import '../../messenger/presentation/bloc/messenger_bloc.dart';
 import '../../messenger/presentation/bloc/messenger_event.dart';
@@ -37,12 +39,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Handle CallKit accept that happened while app was cold-starting
       final pendingRoute = NotificationService.consumePendingCallRoute();
       if (pendingRoute != null && mounted) {
         context.go(pendingRoute);
         return;
+      }
+      // Handle FCM notification tap when app was terminated
+      final initialMsg = await NotificationService.getInitialMessage();
+      if (initialMsg != null) {
+        final route = notificationToRoute(initialMsg);
+        if (route != null && mounted) {
+          context.go(route);
+        }
       }
       _connectMessenger();
       _listenForDisconnect();
@@ -118,6 +128,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final roomName = data['roomName'] as String? ?? '';
     final convId = data['conversationId'] as String? ?? '';
 
+    // If already in a call, silently dismiss incoming call invite
+    if (CallStateService.instance.isInCall) {
+      if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
+      return;
+    }
+
     // When the app is in foreground (WebSocket path), always show in-app dialog.
     // CallKit is used only for background/killed app (via FCM push handler).
     _showIncomingCallDialog(context, fromName: fromName, roomName: roomName, convId: convId);
@@ -190,7 +206,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: widget.child,
+        body: Column(
+          children: [
+            // Active call banner — visible on all tabs
+            StreamBuilder<bool>(
+              stream: CallStateService.instance.stateStream,
+              initialData: CallStateService.instance.isInCall,
+              builder: (context, snapshot) {
+                final inCall = snapshot.data ?? false;
+                if (!inCall) return const SizedBox.shrink();
+                final cs = CallStateService.instance;
+                return GestureDetector(
+                  onTap: () {
+                    final room = cs.roomName;
+                    final convId = cs.conversationId;
+                    if (room != null) {
+                      context.push(
+                        '/dashboard/voice?room=$room${convId != null ? '&convId=$convId' : ''}',
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    color: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.call_rounded, color: Colors.black, size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          'Активный звонок — нажмите, чтобы вернуться',
+                          style: TextStyle(color: Colors.black, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            Expanded(child: widget.child),
+          ],
+        ),
         floatingActionButton: location.startsWith(RouteConstants.messenger)
             ? null
             : FloatingActionButton(

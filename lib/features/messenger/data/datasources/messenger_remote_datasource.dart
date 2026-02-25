@@ -65,8 +65,23 @@ class MessengerRemoteDataSource {
     _socket?.emit('join', {'conversationId': id});
   }
 
-  void sendMessage(String id, String content) =>
-      _socket?.emit('message', {'conversationId': id, 'content': content});
+  void sendMessage(
+    String id,
+    String content, {
+    String? fileUrl,
+    String? fileName,
+    int? fileSize,
+    String? fileType,
+  }) {
+    final payload = <String, dynamic>{'conversationId': id, 'content': content};
+    if (fileUrl != null) {
+      payload['fileUrl'] = fileUrl;
+      payload['fileName'] = fileName;
+      payload['fileSize'] = fileSize;
+      payload['fileType'] = fileType;
+    }
+    _socket?.emit('message', payload);
+  }
 
   void sendTyping(String id, bool isTyping) =>
       _socket?.emit('typing', {'conversationId': id, 'isTyping': isTyping});

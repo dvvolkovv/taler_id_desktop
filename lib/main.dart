@@ -58,6 +58,15 @@ Future<void> main() async {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
       // Initialize FCM
       await NotificationService.init();
+      // Handle FCM notification taps (app in background or foreground)
+      NotificationService.setupForegroundHandlers(onTap: (msg) {
+        final route = notificationToRoute(msg);
+        if (route != null) {
+          try {
+            appRouter.go(route);
+          } catch (_) {}
+        }
+      });
     } catch (e) {
       debugPrint('Firebase initialization failed: $e');
     }
