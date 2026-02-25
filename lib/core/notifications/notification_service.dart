@@ -80,10 +80,10 @@ Future<void> showCallkitIncoming({
   ));
 }
 
-// Background message handler (top-level function required by FCM)
+// Background message handler (top-level function required by FCM).
+// Runs in a separate background isolate — do NOT call WidgetsFlutterBinding here.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   if (message.data['type'] == 'call_invite') {
     await showCallkitIncoming(

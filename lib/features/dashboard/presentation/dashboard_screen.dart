@@ -8,6 +8,7 @@ import '../../../core/utils/constants.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/services/call_state_service.dart';
+import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import '../../../core/notifications/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -35,10 +36,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   StreamSubscription? _disconnectSub;
   StreamSubscription? _callEndedSub;
+  StreamSubscription? _callkitSub;
 
   @override
   void initState() {
     super.initState();
+    // Listen for CallKit accept events at all times — this catches the race condition
+    // where the ActionCallAccept event fires AFTER addPostFrameCallback already ran.
+    _callkitSub = FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
+      if (event?.event != Event.actionCallAccept) return;
+      final extra = event!.body['extra'] as Map?;
+      final roomName = extra?['roomName'] as String?;
+      final convId = extra?['conversationId'] as String?;
+      if (roomName != null && roomName.isNotEmpty && mounted) {
+        context.go(
+          '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1',
+        );
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Handle CallKit accept that happened while app was cold-starting
       final pendingRoute = NotificationService.consumePendingCallRoute();
@@ -99,6 +114,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _disconnectSub?.cancel();
     _callEndedSub?.cancel();
+    _callkitSub?.cancel();
     super.dispose();
   }
 
