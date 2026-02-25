@@ -304,14 +304,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    trailing: Icon(
-                                      hasMic
-                                          ? Icons.mic_rounded
-                                          : Icons.mic_off_rounded,
-                                      color: hasMic
-                                          ? Colors.green
-                                          : AppColors.textSecondary,
-                                    ),
+                                    trailing: isAI
+                                        ? const Icon(
+                                            Icons.graphic_eq_rounded,
+                                            color: AppColors.primary,
+                                          )
+                                        : Icon(
+                                            hasMic
+                                                ? Icons.mic_rounded
+                                                : Icons.mic_off_rounded,
+                                            color: hasMic
+                                                ? Colors.green
+                                                : AppColors.textSecondary,
+                                          ),
                                   ),
                                 );
                               },
