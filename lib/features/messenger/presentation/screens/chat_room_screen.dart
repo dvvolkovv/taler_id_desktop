@@ -53,7 +53,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final roomName = res['roomName'] as String;
       sl<MessengerRemoteDataSource>()
           .sendCallInvite(widget.conversationId, roomName);
-      if (mounted) context.push('/dashboard/voice?room=$roomName');
+      if (mounted) context.push('/dashboard/voice?room=$roomName&convId=${widget.conversationId}');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -79,7 +79,8 @@ final appRouter = GoRouter(
       path: RouteConstants.voice,
       builder: (_, state) {
         final roomName = state.uri.queryParameters['room'];
-        return VoiceCallScreen(roomName: roomName);
+        final conversationId = state.uri.queryParameters['convId'];
+        return VoiceCallScreen(roomName: roomName, conversationId: conversationId);
       },
     ),
     // Dashboard shell with bottom nav

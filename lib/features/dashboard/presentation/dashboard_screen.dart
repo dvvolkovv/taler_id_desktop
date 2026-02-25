@@ -30,6 +30,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ];
 
   StreamSubscription? _disconnectSub;
+  StreamSubscription? _callEndedSub;
+  bool _callDialogShowing = false;
 
   @override
   void initState() {
@@ -37,6 +39,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _connectMessenger();
       _listenForDisconnect();
+      _listenForCallEnded();
+    });
+  }
+
+  void _listenForCallEnded() {
+    _callEndedSub?.cancel();
+    _callEndedSub = sl<MessengerRemoteDataSource>()
+        .callEndedStream
+        .listen((_) {
+      if (_callDialogShowing && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        _callDialogShowing = false;
+        if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
+      }
     });
   }
 
@@ -67,6 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _disconnectSub?.cancel();
+    _callEndedSub?.cancel();
     super.dispose();
   }
 
@@ -94,7 +111,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _showIncomingCall(BuildContext context, Map<String, dynamic> data) {
     final fromName = data['fromUserName'] as String? ?? 'Пользователь';
     final roomName = data['roomName'] as String? ?? '';
+    final convId = data['conversationId'] as String? ?? '';
 
+    _callDialogShowing = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -127,8 +146,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ElevatedButton.icon(
             onPressed: () {
               Navigator.of(context, rootNavigator: true).pop();
+              _callDialogShowing = false;
               context.read<MessengerBloc>().add(DismissCallInvite());
-              context.push('/dashboard/voice?room=$roomName');
+              final uri = '/dashboard/voice?room=$roomName'
+                  + (convId.isNotEmpty ? '&convId=$convId' : '');
+              context.push(uri);
             },
             icon: const Icon(Icons.call, color: Colors.white),
             label: const Text('Принять'),
@@ -137,6 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ElevatedButton.icon(
             onPressed: () {
               Navigator.of(context, rootNavigator: true).pop();
+              _callDialogShowing = false;
               context.read<MessengerBloc>().add(DismissCallInvite());
             },
             icon: const Icon(Icons.call_end, color: Colors.white),
@@ -146,6 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     ).whenComplete(() {
+      _callDialogShowing = false;
       if (context.mounted) {
         context.read<MessengerBloc>().add(DismissCallInvite());
       }

@@ -6,10 +6,12 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/api/dio_client.dart';
 import '../../../../core/utils/constants.dart';
+import '../../../messenger/data/datasources/messenger_remote_datasource.dart';
 
 class VoiceCallScreen extends StatefulWidget {
   final String? roomName; // null = create new room with AI
-  const VoiceCallScreen({super.key, this.roomName});
+  final String? conversationId; // for sending call_ended when hanging up
+  const VoiceCallScreen({super.key, this.roomName, this.conversationId});
 
   @override
   State<VoiceCallScreen> createState() => _VoiceCallScreenState();
@@ -22,6 +24,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _speakerOn = false;
   String? _error;
   bool _navigatedAway = false;
+  String? _roomName; // actual room name (resolved after connect)
   final List<lk.RemoteParticipant> _participants = [];
 
   static const _audioChannel = MethodChannel('taler_id/audio');
@@ -52,6 +55,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       }
 
       final token = res['token'] as String;
+      _roomName = (res['roomName'] as String?) ?? widget.roomName;
       _room = lk.Room();
 
       _room!.addListener(_onRoomChanged);
@@ -125,6 +129,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _hangUp() async {
+    // Notify the other party that the call ended (e.g. while they're in the incoming call dialog)
+    final convId = widget.conversationId;
+    final rName = _roomName;
+    if (convId != null && rName != null) {
+      try {
+        sl<MessengerRemoteDataSource>().sendCallEnded(convId, rName);
+      } catch (_) {}
+    }
     try {
       await _room?.disconnect();
     } catch (_) {}

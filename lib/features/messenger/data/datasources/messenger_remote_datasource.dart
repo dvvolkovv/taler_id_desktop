@@ -10,6 +10,7 @@ class MessengerRemoteDataSource {
   io.Socket? _socket;
   final _messageCtrl = StreamController<MessageEntity>.broadcast();
   final _callInviteCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _callEndedCtrl = StreamController<String>.broadcast();
   final _joinedConversations = <String>{};
   final _disconnectCtrl = StreamController<String>.broadcast();
 
@@ -35,6 +36,12 @@ class MessengerRemoteDataSource {
         _callInviteCtrl.add(Map<String, dynamic>.from(d as Map));
       } catch (_) {}
     });
+    _socket!.on('call_ended', (d) {
+      try {
+        final data = Map<String, dynamic>.from(d as Map);
+        _callEndedCtrl.add(data['roomName'] as String? ?? '');
+      } catch (_) {}
+    });
     // Re-join all conversation rooms after reconnect
     _socket!.on('connect', (_) {
       for (final id in _joinedConversations) {
@@ -49,6 +56,7 @@ class MessengerRemoteDataSource {
 
   Stream<MessageEntity> get messageStream => _messageCtrl.stream;
   Stream<Map<String, dynamic>> get callInviteStream => _callInviteCtrl.stream;
+  Stream<String> get callEndedStream => _callEndedCtrl.stream;
   Stream<String> get disconnectStream => _disconnectCtrl.stream;
   bool get isSocketConnected => _socket?.connected ?? false;
 
@@ -65,6 +73,9 @@ class MessengerRemoteDataSource {
 
   void sendCallInvite(String conversationId, String roomName) =>
       _socket?.emit('call_invite', {'conversationId': conversationId, 'roomName': roomName});
+
+  void sendCallEnded(String conversationId, String roomName) =>
+      _socket?.emit('call_ended', {'conversationId': conversationId, 'roomName': roomName});
 
   Future<List<ConversationEntity>> getConversations() async {
     final data = await _http.get('/messenger/conversations', fromJson: (d) => d as List);
@@ -103,6 +114,7 @@ class MessengerRemoteDataSource {
     _socket?.dispose();
     _messageCtrl.close();
     _callInviteCtrl.close();
+    _callEndedCtrl.close();
     _disconnectCtrl.close();
   }
 }
