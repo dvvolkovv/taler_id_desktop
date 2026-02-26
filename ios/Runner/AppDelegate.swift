@@ -87,7 +87,7 @@ extension AppDelegate: PKPushRegistryDelegate {
                     for type: PKPushType) {
     guard type == .voIP else { return }
     let token = credentials.token.map { String(format: "%02x", $0) }.joined()
-    SwiftFlutterCallkitIncomingPlugin.shared.setDevicePushTokenVoIP(token)
+    SwiftFlutterCallkitIncomingPlugin.sharedInstance?.setDevicePushTokenVoIP(token)
   }
 
   func pushRegistry(_ registry: PKPushRegistry,
@@ -96,10 +96,9 @@ extension AppDelegate: PKPushRegistryDelegate {
                     completion: @escaping () -> Void) {
     guard type == .voIP else { completion(); return }
     // MUST call showCallkitIncoming synchronously — iOS kills app if delayed
-    SwiftFlutterCallkitIncomingPlugin.shared.showCallkitIncoming(
-      payload.dictionaryPayload as NSDictionary,
-      fromPushKit: true
-    )
-    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { completion() }
+    let data = flutter_callkit_incoming.Data(args: payload.dictionaryPayload as NSDictionary)
+    SwiftFlutterCallkitIncomingPlugin.sharedInstance?.showCallkitIncoming(data, fromPushKit: true) {
+      completion()
+    }
   }
 }
