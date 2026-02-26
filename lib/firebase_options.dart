@@ -27,7 +27,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAuMsMgk63qIMGpQWN8iSRq2HXclZfZA48',
-    appId: '1:337152405350:ios:e826c560ea10b68e65a2a7',
+    appId: '1:337152405350:ios:b6d0f85eae1e517365a2a7',
     messagingSenderId: '337152405350',
     projectId: 'talerid-afd44',
     storageBucket: 'talerid-afd44.firebasestorage.app',
