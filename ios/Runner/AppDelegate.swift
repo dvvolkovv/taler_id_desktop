@@ -6,16 +6,19 @@ import flutter_callkit_incoming
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+  private var audioChannel: FlutterMethodChannel?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     let controller = window?.rootViewController as! FlutterViewController
-    let audioChannel = FlutterMethodChannel(
+    let channel = FlutterMethodChannel(
       name: "taler_id/audio",
       binaryMessenger: controller.binaryMessenger
     )
-    audioChannel.setMethodCallHandler { call, result in
+    audioChannel = channel
+    channel.setMethodCallHandler { call, result in
       let session = AVAudioSession.sharedInstance()
       switch call.method {
       case "setSpeaker":
@@ -71,6 +74,14 @@ import flutter_callkit_incoming
       }
     }
 
+    // Register for audio session interruptions (parallel calls from other apps/phone)
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleAudioInterruption(_:)),
+      name: AVAudioSession.interruptionNotification,
+      object: nil
+    )
+
     // Register for VoIP push notifications via PushKit
     let voipRegistry = PKPushRegistry(queue: .main)
     voipRegistry.delegate = self
@@ -78,6 +89,22 @@ import flutter_callkit_incoming
 
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  @objc private func handleAudioInterruption(_ notification: Notification) {
+    guard let info = notification.userInfo,
+          let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+          let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+    DispatchQueue.main.async {
+      if type == .began {
+        // Notify Flutter to play 3 beeps
+        self.audioChannel?.invokeMethod("audioInterrupted", arguments: nil)
+      } else if type == .ended {
+        // Reactivate our audio session when the other call ends
+        try? AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
+        self.audioChannel?.invokeMethod("audioResumed", arguments: nil)
+      }
+    }
   }
 }
 

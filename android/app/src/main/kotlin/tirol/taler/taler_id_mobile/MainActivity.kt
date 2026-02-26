@@ -18,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
     private var audioFocusRequest: AudioFocusRequest? = null
+    private var flutterChannel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,8 +42,9 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "taler_id/audio")
-            .setMethodCallHandler { call, result ->
+        val ch = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "taler_id/audio")
+        flutterChannel = ch
+        ch.setMethodCallHandler { call, result ->
                 when (call.method) {
                     "setSpeaker" -> {
                         val on = call.arguments as? Boolean ?: false
@@ -134,6 +136,20 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun requestAudioFocus(am: AudioManager) {
+        val focusListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+            when (focusChange) {
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                    // Another call or audio source took focus — notify Flutter to play 3 beeps
+                    runOnUiThread { flutterChannel?.invokeMethod("audioInterrupted", null) }
+                }
+                AudioManager.AUDIOFOCUS_GAIN -> {
+                    // Focus returned (other call ended)
+                    runOnUiThread { flutterChannel?.invokeMethod("audioResumed", null) }
+                }
+                else -> {}
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val attrs = AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
@@ -141,13 +157,13 @@ class MainActivity : FlutterFragmentActivity() {
                 .build()
             val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
                 .setAudioAttributes(attrs)
-                .setOnAudioFocusChangeListener { }
+                .setOnAudioFocusChangeListener(focusListener)
                 .build()
             audioFocusRequest = req
             am.requestAudioFocus(req)
         } else {
             @Suppress("DEPRECATION")
-            am.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
+            am.requestAudioFocus(focusListener, AudioManager.STREAM_VOICE_CALL,
                 AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
         }
     }

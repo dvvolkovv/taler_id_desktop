@@ -59,6 +59,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void initState() {
     super.initState();
+    // Listen for audio interruptions from native (parallel call from phone/other app)
+    _audioChannel.setMethodCallHandler(_onNativeAudioEvent);
     final cs = CallStateService.instance;
     // Resume existing room if already connected
     if (cs.isInCall && cs.room != null) {
@@ -70,6 +72,25 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       _subscribeRoomEvents();
     } else {
       _connect();
+    }
+  }
+
+  Future<dynamic> _onNativeAudioEvent(MethodCall call) async {
+    if (call.method == 'audioInterrupted') {
+      _playInterruptionBeeps();
+    }
+    return null;
+  }
+
+  Future<void> _playInterruptionBeeps() async {
+    for (int i = 0; i < 3; i++) {
+      if (!mounted) return;
+      try {
+        await _ringPlayer.play(AssetSource('audio/ringback.wav'), volume: 0.7);
+        await Future.delayed(const Duration(milliseconds: 180));
+        await _ringPlayer.stop();
+        if (i < 2) await Future.delayed(const Duration(milliseconds: 350));
+      } catch (_) {}
     }
   }
 
@@ -356,6 +377,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   @override
   void dispose() {
+    _audioChannel.setMethodCallHandler(null);
     WakelockPlus.disable();
     _eventsListener?.dispose();
     _room?.removeListener(_onRoomChanged);

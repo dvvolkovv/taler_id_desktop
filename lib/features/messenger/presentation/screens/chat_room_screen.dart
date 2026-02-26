@@ -53,13 +53,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.didChangeDependencies();
     final kh = MediaQuery.of(context).viewInsets.bottom;
     if (kh > _prevKeyboardHeight) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollCtrl.hasClients) {
-          _scrollCtrl.animateTo(
-            _scrollCtrl.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-          );
+      // Wait for keyboard animation to finish before scrolling
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && _scrollCtrl.hasClients) {
+          _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
         }
       });
     }
