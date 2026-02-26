@@ -1,6 +1,8 @@
 import Flutter
 import UIKit
 import AVFoundation
+import PushKit
+import flutter_callkit_incoming
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -68,7 +70,36 @@ import AVFoundation
         result(FlutterMethodNotImplemented)
       }
     }
+
+    // Register for VoIP push notifications via PushKit
+    let voipRegistry = PKPushRegistry(queue: .main)
+    voipRegistry.delegate = self
+    voipRegistry.desiredPushTypes = [.voIP]
+
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+}
+
+extension AppDelegate: PKPushRegistryDelegate {
+  func pushRegistry(_ registry: PKPushRegistry,
+                    didUpdate credentials: PKPushCredentials,
+                    for type: PKPushType) {
+    guard type == .voIP else { return }
+    let token = credentials.token.map { String(format: "%02x", $0) }.joined()
+    SwiftFlutterCallkitIncomingPlugin.shared.setDevicePushTokenVoIP(token)
+  }
+
+  func pushRegistry(_ registry: PKPushRegistry,
+                    didReceiveIncomingPushWith payload: PKPushPayload,
+                    for type: PKPushType,
+                    completion: @escaping () -> Void) {
+    guard type == .voIP else { completion(); return }
+    // MUST call showCallkitIncoming synchronously — iOS kills app if delayed
+    SwiftFlutterCallkitIncomingPlugin.shared.showCallkitIncoming(
+      payload.dictionaryPayload as NSDictionary,
+      fromPushKit: true
+    )
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { completion() }
   }
 }

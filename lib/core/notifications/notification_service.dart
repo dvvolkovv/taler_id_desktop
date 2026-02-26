@@ -175,6 +175,20 @@ class NotificationService {
       _currentToken = token;
       await _saveTokenToBackend(token);
     });
+
+    // Register VoIP push token for iOS (real device only, not simulator)
+    if (!kIsWeb && Platform.isIOS && !_isIosSimulator) {
+      try {
+        final voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
+        if (voipToken != null && voipToken.isNotEmpty) {
+          final client = sl<DioClient>();
+          await client.put('/profile', data: {'voipToken': voipToken}, fromJson: (d) => d);
+          debugPrint('VoIP token saved to backend');
+        }
+      } catch (e) {
+        debugPrint('Failed to save VoIP token: $e');
+      }
+    }
   }
 
   static Future<void> _saveTokenToBackend(String token) async {
