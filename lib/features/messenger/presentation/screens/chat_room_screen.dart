@@ -36,6 +36,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isRecording = false;
   String? _recordingPath;
   double _prevKeyboardHeight = 0;
+  bool _initialScrollDone = false;
 
   @override
   void initState() {
@@ -309,8 +310,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           return currCount > prevCount;
         },
         listener: (context, state) {
-          Future.delayed(const Duration(milliseconds: 100), () {
-            if (_scrollCtrl.hasClients) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !_scrollCtrl.hasClients) return;
+            if (!_initialScrollDone) {
+              // Jump instantly to bottom on first load (no animation flash)
+              _initialScrollDone = true;
+              _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+            } else {
               _scrollCtrl.animateTo(
                 _scrollCtrl.position.maxScrollExtent,
                 duration: const Duration(milliseconds: 300),

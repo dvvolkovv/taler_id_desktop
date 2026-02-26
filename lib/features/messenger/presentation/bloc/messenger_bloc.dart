@@ -71,6 +71,15 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     emit(state.copyWith(isLoading: true));
     try {
       final convs = await _repo.getConversations();
+      // Sort: most recent message on top
+      convs.sort((a, b) {
+        final aTime = a.lastMessageAt;
+        final bTime = b.lastMessageAt;
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        return bTime.compareTo(aTime);
+      });
       emit(state.copyWith(conversations: convs, isLoading: false));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
@@ -84,10 +93,22 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     try {
       final result = await _repo.getMessages(event.conversationId);
       final rawMessages = result['messages'] as List? ?? [];
-      final msgs = rawMessages
-          .map((e) =>
-              MessageEntity.fromJson(Map<String, dynamic>.from(e as Map)))
-          .toList();
+      // Build a lookup of known read/delivered status to preserve checkmarks
+      final knownStatus = <String, ({bool isRead, bool isDelivered})>{
+        for (final m in state.messages[event.conversationId] ?? [])
+          m.id: (isRead: m.isRead, isDelivered: m.isDelivered),
+      };
+      final msgs = rawMessages.map((e) {
+        final m = MessageEntity.fromJson(Map<String, dynamic>.from(e as Map));
+        final known = knownStatus[m.id];
+        if (known != null) {
+          return m.copyWith(
+            isRead: m.isRead || known.isRead,
+            isDelivered: m.isDelivered || known.isDelivered,
+          );
+        }
+        return m;
+      }).toList();
       final nextCursor = result['nextCursor'] as String?;
       final newMessages =
           Map<String, List<MessageEntity>>.from(state.messages);
@@ -244,6 +265,12 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
 
   void _onMarkConversationRead(MarkConversationRead event, Emitter<MessengerState> emit) {
     _repo.markRead(event.conversationId);
+    // Immediately clear unread badge in local state (don't wait for next API refresh)
+    final updatedConvs = state.conversations.map((c) {
+      if (c.id == event.conversationId) return c.copyWith(unreadCount: 0);
+      return c;
+    }).toList();
+    emit(state.copyWith(conversations: updatedConvs));
   }
 
   @override
