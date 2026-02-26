@@ -31,6 +31,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '337152405350',
     projectId: 'talerid-afd44',
     storageBucket: 'talerid-afd44.firebasestorage.app',
-    iosBundleId: 'com.taler.idMobile',
+    iosBundleId: 'tirol.taler.talerIdMobile',
   );
 }
