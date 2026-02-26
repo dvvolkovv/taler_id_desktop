@@ -81,3 +81,27 @@ class CallInviteReceived extends MessengerEvent {
 }
 
 class DismissCallInvite extends MessengerEvent {}
+
+class MessageUpdated extends MessengerEvent {
+  final String messageId;
+  final bool? isDelivered;
+  final bool? isRead;
+  const MessageUpdated(this.messageId, {this.isDelivered, this.isRead});
+  @override
+  List<Object?> get props => [messageId, isDelivered, isRead];
+}
+
+class MessagesRead extends MessengerEvent {
+  final String conversationId;
+  final List<String> messageIds;
+  const MessagesRead(this.conversationId, this.messageIds);
+  @override
+  List<Object?> get props => [conversationId, messageIds];
+}
+
+class MarkConversationRead extends MessengerEvent {
+  final String conversationId;
+  const MarkConversationRead(this.conversationId);
+  @override
+  List<Object?> get props => [conversationId];
+}

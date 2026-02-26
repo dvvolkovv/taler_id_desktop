@@ -28,6 +28,7 @@ mixin _$ConversationEntity {
   String? get otherUserName => throw _privateConstructorUsedError;
   String? get otherUserId => throw _privateConstructorUsedError;
   String? get otherUserAvatar => throw _privateConstructorUsedError;
+  int get unreadCount => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -49,7 +50,8 @@ abstract class $ConversationEntityCopyWith<$Res> {
       String? lastMessageSenderId,
       String? otherUserName,
       String? otherUserId,
-      String? otherUserAvatar});
+      String? otherUserAvatar,
+      int unreadCount});
 }
 
 /// @nodoc
@@ -73,6 +75,7 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
     Object? otherUserName = freezed,
     Object? otherUserId = freezed,
     Object? otherUserAvatar = freezed,
+    Object? unreadCount = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -107,6 +110,10 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
           ? _value.otherUserAvatar
           : otherUserAvatar // ignore: cast_nullable_to_non_nullable
               as String?,
+      unreadCount: null == unreadCount
+          ? _value.unreadCount
+          : unreadCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -127,7 +134,8 @@ abstract class _$$ConversationEntityImplCopyWith<$Res>
       String? lastMessageSenderId,
       String? otherUserName,
       String? otherUserId,
-      String? otherUserAvatar});
+      String? otherUserAvatar,
+      int unreadCount});
 }
 
 /// @nodoc
@@ -149,6 +157,7 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
     Object? otherUserName = freezed,
     Object? otherUserId = freezed,
     Object? otherUserAvatar = freezed,
+    Object? unreadCount = null,
   }) {
     return _then(_$ConversationEntityImpl(
       id: null == id
@@ -183,6 +192,10 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
           ? _value.otherUserAvatar
           : otherUserAvatar // ignore: cast_nullable_to_non_nullable
               as String?,
+      unreadCount: null == unreadCount
+          ? _value.unreadCount
+          : unreadCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -198,7 +211,8 @@ class _$ConversationEntityImpl implements _ConversationEntity {
       this.lastMessageSenderId,
       this.otherUserName,
       this.otherUserId,
-      this.otherUserAvatar})
+      this.otherUserAvatar,
+      this.unreadCount = 0})
       : _participantIds = participantIds;
 
   factory _$ConversationEntityImpl.fromJson(Map<String, dynamic> json) =>
@@ -226,10 +240,13 @@ class _$ConversationEntityImpl implements _ConversationEntity {
   final String? otherUserId;
   @override
   final String? otherUserAvatar;
+  @override
+  @JsonKey()
+  final int unreadCount;
 
   @override
   String toString() {
-    return 'ConversationEntity(id: $id, participantIds: $participantIds, lastMessageContent: $lastMessageContent, lastMessageAt: $lastMessageAt, lastMessageSenderId: $lastMessageSenderId, otherUserName: $otherUserName, otherUserId: $otherUserId, otherUserAvatar: $otherUserAvatar)';
+    return 'ConversationEntity(id: $id, participantIds: $participantIds, lastMessageContent: $lastMessageContent, lastMessageAt: $lastMessageAt, lastMessageSenderId: $lastMessageSenderId, otherUserName: $otherUserName, otherUserId: $otherUserId, otherUserAvatar: $otherUserAvatar, unreadCount: $unreadCount)';
   }
 
   @override
@@ -251,7 +268,9 @@ class _$ConversationEntityImpl implements _ConversationEntity {
             (identical(other.otherUserId, otherUserId) ||
                 other.otherUserId == otherUserId) &&
             (identical(other.otherUserAvatar, otherUserAvatar) ||
-                other.otherUserAvatar == otherUserAvatar));
+                other.otherUserAvatar == otherUserAvatar) &&
+            (identical(other.unreadCount, unreadCount) ||
+                other.unreadCount == unreadCount));
   }
 
   @JsonKey(ignore: true)
@@ -265,7 +284,8 @@ class _$ConversationEntityImpl implements _ConversationEntity {
       lastMessageSenderId,
       otherUserName,
       otherUserId,
-      otherUserAvatar);
+      otherUserAvatar,
+      unreadCount);
 
   @JsonKey(ignore: true)
   @override
@@ -291,7 +311,8 @@ abstract class _ConversationEntity implements ConversationEntity {
       final String? lastMessageSenderId,
       final String? otherUserName,
       final String? otherUserId,
-      final String? otherUserAvatar}) = _$ConversationEntityImpl;
+      final String? otherUserAvatar,
+      final int unreadCount}) = _$ConversationEntityImpl;
 
   factory _ConversationEntity.fromJson(Map<String, dynamic> json) =
       _$ConversationEntityImpl.fromJson;
@@ -312,6 +333,8 @@ abstract class _ConversationEntity implements ConversationEntity {
   String? get otherUserId;
   @override
   String? get otherUserAvatar;
+  @override
+  int get unreadCount;
   @override
   @JsonKey(ignore: true)
   _$$ConversationEntityImplCopyWith<_$ConversationEntityImpl> get copyWith =>

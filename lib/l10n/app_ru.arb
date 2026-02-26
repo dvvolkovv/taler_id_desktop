@@ -255,6 +255,17 @@
   "assistantSpeaking": "Говорит…",
   "assistantListening": "Слушает…",
   "assistantTapToStart": "Нажмите для начала",
+  "assistantTapToTalk": "Нажмите для разговора с AI",
+  "assistantRealtimeDesc": "Ассистент отвечает голосом в реальном времени",
+  "assistantConnectingToAssistant": "Подключение к ассистенту...",
+  "assistantAiSpeaking": "AI говорит...",
+  "assistantAiListening": "AI слушает",
+  "assistantSpeakerOn": "Динамик вкл",
+  "assistantSpeaker": "Динамик",
+  "assistantEnd": "Завершить",
+  "assistantUnmute": "Включить",
+  "assistantMicrophone": "Микрофон",
+  "assistantConnectionError": "Ошибка подключения",
 
   "tabMessenger": "Сообщения"
 }

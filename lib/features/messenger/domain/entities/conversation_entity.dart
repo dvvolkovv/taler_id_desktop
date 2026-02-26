@@ -14,6 +14,7 @@ class ConversationEntity with _$ConversationEntity {
     String? otherUserName,
     String? otherUserId,
     String? otherUserAvatar,
+    @Default(0) int unreadCount,
   }) = _ConversationEntity;
 
   factory ConversationEntity.fromJson(Map<String, dynamic> json) =>

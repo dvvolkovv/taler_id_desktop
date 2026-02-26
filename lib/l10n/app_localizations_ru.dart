@@ -731,5 +731,39 @@ class AppLocalizationsRu extends AppLocalizations {
   String get assistantTapToStart => 'Нажмите для начала';
 
   @override
+  String get assistantTapToTalk => 'Нажмите для разговора с AI';
+
+  @override
+  String get assistantRealtimeDesc =>
+      'Ассистент отвечает голосом в реальном времени';
+
+  @override
+  String get assistantConnectingToAssistant => 'Подключение к ассистенту...';
+
+  @override
+  String get assistantAiSpeaking => 'AI говорит...';
+
+  @override
+  String get assistantAiListening => 'AI слушает';
+
+  @override
+  String get assistantSpeakerOn => 'Динамик вкл';
+
+  @override
+  String get assistantSpeaker => 'Динамик';
+
+  @override
+  String get assistantEnd => 'Завершить';
+
+  @override
+  String get assistantUnmute => 'Включить';
+
+  @override
+  String get assistantMicrophone => 'Микрофон';
+
+  @override
+  String get assistantConnectionError => 'Ошибка подключения';
+
+  @override
   String get tabMessenger => 'Сообщения';
 }

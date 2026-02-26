@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -30,8 +31,23 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   lk.Room? _room;
   bool _connecting = true;
   bool _muted = false;
-  bool _speakerOn = false;
+  String _audioOutputType = 'earpiece'; // earpiece, speaker, bluetooth, headphones
   bool _reconnecting = false;
+  final AudioPlayer _ringPlayer = AudioPlayer();
+
+  static const _outputIcons = <String, IconData>{
+    'earpiece': Icons.phone_in_talk_rounded,
+    'speaker': Icons.volume_up_rounded,
+    'bluetooth': Icons.bluetooth_audio_rounded,
+    'headphones': Icons.headphones_rounded,
+  };
+
+  static const _outputLabels = <String, String>{
+    'earpiece': 'Телефон',
+    'speaker': 'Динамик',
+    'bluetooth': 'Bluetooth',
+    'headphones': 'Наушники',
+  };
   String? _error;
   bool _navigatedAway = false;
   String? _roomName; // actual room name (resolved after connect)
@@ -58,6 +74,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _connect() async {
+    // Play ringback tone for outgoing calls to user (not incoming, not AI assistant)
+    if (!widget.isIncoming && widget.roomName != null) {
+      try {
+        await _ringPlayer.setReleaseMode(ReleaseMode.loop);
+        await _ringPlayer.play(AssetSource('audio/ringback.wav'), volume: 0.6);
+      } catch (_) {}
+    }
     try {
       final client = sl<DioClient>();
       final Map<String, dynamic> res;
@@ -100,6 +123,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         widget.conversationId,
       );
 
+      // Notify other devices: this device answered the call (dismiss CallKit on others)
+      if (widget.isIncoming && widget.conversationId != null) {
+        try {
+          sl<MessengerRemoteDataSource>().sendCallAnswered(widget.conversationId!, _roomName!);
+        } catch (_) {}
+      }
+
       // Initial participants
       setState(() {
         _participants.addAll(_room!.remoteParticipants.values);
@@ -115,8 +145,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         await _audioChannel.invokeMethod('requestAudioFocus');
       } catch (_) {}
 
+      // Stop ringback — room is connected (callee may already be present)
+      await _ringPlayer.stop();
+
       setState(() => _connecting = false);
       WakelockPlus.enable();
+
+      // Force earpiece mode — LiveKit may default to speakerphone on Android
+      await Future.delayed(const Duration(milliseconds: 300));
+      try {
+        await _audioChannel.invokeMethod('setAudioOutput', 'earpiece');
+      } catch (_) {}
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -135,6 +174,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       })
       ..on<lk.RoomReconnectedEvent>((_) {
         if (mounted) setState(() => _reconnecting = false);
+      })
+      ..on<lk.ParticipantConnectedEvent>((_) async {
+        // Stop ringback when someone answers the call
+        await _ringPlayer.stop();
       });
   }
 
@@ -176,12 +219,76 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     setState(() => _muted = newMuted);
   }
 
-  Future<void> _toggleSpeaker() async {
-    final on = !_speakerOn;
+  Future<void> _showAudioOutputPicker() async {
+    List<Map<String, String>> outputs = [
+      {'id': 'earpiece', 'name': 'Телефон', 'type': 'earpiece'},
+      {'id': 'speaker', 'name': 'Динамик', 'type': 'speaker'},
+    ];
     try {
-      await _audioChannel.invokeMethod('setSpeaker', on);
+      final raw = await _audioChannel.invokeMethod<List>('getAudioOutputs');
+      if (raw != null) {
+        outputs = raw.map((e) => Map<String, String>.from(e as Map)).toList();
+      }
     } catch (_) {}
-    setState(() => _speakerOn = on);
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Аудиовыход',
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...outputs.map((o) {
+              final type = o['type'] ?? o['id'] ?? '';
+              final name = o['name'] ?? type;
+              final icon = _outputIcons[type] ?? Icons.volume_up_rounded;
+              final isSelected = _audioOutputType == type;
+              return ListTile(
+                leading: Icon(icon, color: isSelected ? AppColors.primary : AppColors.textSecondary),
+                title: Text(
+                  name,
+                  style: TextStyle(
+                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _setAudioOutput(type);
+                },
+              );
+            }),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setAudioOutput(String type) async {
+    try {
+      await _audioChannel.invokeMethod('setAudioOutput', type);
+      setState(() => _audioOutputType = type);
+    } catch (_) {}
   }
 
   Future<void> _hangUp() async {
@@ -252,6 +359,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     WakelockPlus.disable();
     _eventsListener?.dispose();
     _room?.removeListener(_onRoomChanged);
+    _ringPlayer.dispose();
     // Do NOT disconnect room — call continues in background via CallStateService
     super.dispose();
   }
@@ -520,14 +628,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                 large: true,
               ),
               _ControlButton(
-                icon: _speakerOn
-                    ? Icons.volume_up_rounded
-                    : Icons.volume_off_rounded,
-                label: 'Динамик',
-                color: _speakerOn
+                icon: _outputIcons[_audioOutputType] ?? Icons.volume_up_rounded,
+                label: _outputLabels[_audioOutputType] ?? 'Аудио',
+                color: _audioOutputType != 'earpiece'
                     ? AppColors.primary.withValues(alpha: 0.2)
                     : AppColors.card,
-                onTap: _toggleSpeaker,
+                onTap: _showAudioOutputPicker,
               ),
             ],
           ),

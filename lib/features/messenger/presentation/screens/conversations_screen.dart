@@ -308,11 +308,33 @@ class _ConversationTile extends StatelessWidget {
                   color: AppColors.textSecondary, fontSize: 13),
             )
           : null,
-      trailing: timeStr.isNotEmpty
-          ? Text(
-              timeStr,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12),
+      trailing: (timeStr.isNotEmpty || conversation.unreadCount > 0)
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (timeStr.isNotEmpty)
+                  Text(
+                    timeStr,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                if (conversation.unreadCount > 0) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${conversation.unreadCount}',
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ],
             )
           : null,
       onTap: () =>

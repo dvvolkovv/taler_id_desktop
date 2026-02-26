@@ -9,6 +9,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   final IMessengerRepository _repo;
   StreamSubscription? _msgSub;
   StreamSubscription? _callSub;
+  StreamSubscription? _msgUpdatedSub;
+  StreamSubscription? _msgsReadSub;
 
   MessengerBloc({required IMessengerRepository repo})
       : _repo = repo,
@@ -27,6 +29,9 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         (event, emit) => emit(state.copyWith(pendingCallInvite: event.data)));
     on<DismissCallInvite>(
         (_, emit) => emit(state.copyWith(clearCallInvite: true)));
+    on<MessageUpdated>(_onMessageUpdated);
+    on<MessagesRead>(_onMessagesRead);
+    on<MarkConversationRead>(_onMarkConversationRead);
   }
 
   Future<void> _onConnect(
@@ -36,6 +41,24 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _msgSub = _repo.messageStream.listen((msg) => add(MessageReceived(msg)));
     _callSub?.cancel();
     _callSub = _repo.callInviteStream.listen((data) => add(CallInviteReceived(data)));
+    _msgUpdatedSub?.cancel();
+    _msgUpdatedSub = _repo.messageUpdatedStream.listen((data) {
+      final id = data['id'] as String?;
+      if (id != null) {
+        add(MessageUpdated(id,
+          isDelivered: data['isDelivered'] as bool?,
+          isRead: data['isRead'] as bool?,
+        ));
+      }
+    });
+    _msgsReadSub?.cancel();
+    _msgsReadSub = _repo.messagesReadStream.listen((data) {
+      final convId = data['conversationId'] as String?;
+      final ids = (data['messageIds'] as List?)?.cast<String>() ?? [];
+      if (convId != null && ids.isNotEmpty) {
+        add(MessagesRead(convId, ids));
+      }
+    });
     emit(state.copyWith(
       isConnected: true,
       currentUserId: event.userId ?? state.currentUserId,
@@ -57,7 +80,6 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   Future<void> _onOpenConversation(
       OpenConversation event, Emitter<MessengerState> emit) async {
     _repo.joinConversation(event.conversationId);
-    if (state.messages.containsKey(event.conversationId)) return;
     emit(state.copyWith(isLoading: true));
     try {
       final result = await _repo.getMessages(event.conversationId);
@@ -187,10 +209,49 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     }
   }
 
+  void _onMessageUpdated(MessageUpdated event, Emitter<MessengerState> emit) {
+    final allMessages = Map<String, List<MessageEntity>>.from(state.messages);
+    for (final convId in allMessages.keys) {
+      final msgs = List<MessageEntity>.from(allMessages[convId]!);
+      final idx = msgs.indexWhere((m) => m.id == event.messageId);
+      if (idx != -1) {
+        msgs[idx] = msgs[idx].copyWith(
+          isDelivered: event.isDelivered ?? msgs[idx].isDelivered,
+          isRead: event.isRead ?? msgs[idx].isRead,
+        );
+        allMessages[convId] = msgs;
+        emit(state.copyWith(messages: allMessages));
+        return;
+      }
+    }
+  }
+
+  void _onMessagesRead(MessagesRead event, Emitter<MessengerState> emit) {
+    final msgs = List<MessageEntity>.from(state.messages[event.conversationId] ?? []);
+    bool changed = false;
+    for (int i = 0; i < msgs.length; i++) {
+      if (event.messageIds.contains(msgs[i].id)) {
+        msgs[i] = msgs[i].copyWith(isRead: true, isDelivered: true);
+        changed = true;
+      }
+    }
+    if (changed) {
+      final allMessages = Map<String, List<MessageEntity>>.from(state.messages);
+      allMessages[event.conversationId] = msgs;
+      emit(state.copyWith(messages: allMessages));
+    }
+  }
+
+  void _onMarkConversationRead(MarkConversationRead event, Emitter<MessengerState> emit) {
+    _repo.markRead(event.conversationId);
+  }
+
   @override
   Future<void> close() {
     _msgSub?.cancel();
     _callSub?.cancel();
+    _msgUpdatedSub?.cancel();
+    _msgsReadSub?.cancel();
     _repo.dispose();
     return super.close();
   }

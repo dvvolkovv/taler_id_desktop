@@ -729,5 +729,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantTapToStart => 'Tap to start';
 
   @override
+  String get assistantTapToTalk => 'Tap to talk to AI';
+
+  @override
+  String get assistantRealtimeDesc =>
+      'Assistant responds with voice in real time';
+
+  @override
+  String get assistantConnectingToAssistant => 'Connecting to assistant...';
+
+  @override
+  String get assistantAiSpeaking => 'AI speaking...';
+
+  @override
+  String get assistantAiListening => 'AI listening';
+
+  @override
+  String get assistantSpeakerOn => 'Speaker on';
+
+  @override
+  String get assistantSpeaker => 'Speaker';
+
+  @override
+  String get assistantEnd => 'End';
+
+  @override
+  String get assistantUnmute => 'Unmute';
+
+  @override
+  String get assistantMicrophone => 'Microphone';
+
+  @override
+  String get assistantConnectionError => 'Connection error';
+
+  @override
   String get tabMessenger => 'Messages';
 }

@@ -21,6 +21,7 @@ import '../../features/chat/presentation/screens/chat_screen.dart';
 import '../../features/messenger/presentation/screens/conversations_screen.dart';
 import '../../features/messenger/presentation/screens/chat_room_screen.dart';
 import '../../features/messenger/presentation/screens/user_search_screen.dart';
+import '../../features/messenger/presentation/screens/user_profile_screen.dart';
 import '../../features/voice/presentation/screens/voice_call_screen.dart';
 import '../storage/secure_storage_service.dart';
 import '../di/service_locator.dart';
@@ -126,6 +127,13 @@ final appRouter = GoRouter(
         GoRoute(
           path: RouteConstants.settings,
           builder: (_, __) => const SettingsScreen(),
+        ),
+        // User profile
+        GoRoute(
+          path: '/dashboard/user/:userId',
+          builder: (_, state) => UserProfileScreen(
+            userId: state.pathParameters['userId']!,
+          ),
         ),
         // Messenger
         GoRoute(

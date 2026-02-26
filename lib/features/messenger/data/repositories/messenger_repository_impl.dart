@@ -48,5 +48,14 @@ class MessengerRepositoryImpl implements IMessengerRepository {
   Stream<Map<String, dynamic>> get callInviteStream => _remote.callInviteStream;
 
   @override
+  Stream<Map<String, dynamic>> get messageUpdatedStream => _remote.messageUpdatedStream;
+
+  @override
+  Stream<Map<String, dynamic>> get messagesReadStream => _remote.messagesReadStream;
+
+  @override
+  void markRead(String conversationId) => _remote.markRead(conversationId);
+
+  @override
   void dispose() => _remote.dispose();
 }

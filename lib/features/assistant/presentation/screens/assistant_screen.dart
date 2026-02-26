@@ -303,15 +303,15 @@ class _AssistantScreenState extends State<AssistantScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(title: Text(l10n.tabAssistant)),
       body: switch (_state) {
-        _CallState.idle => _buildIdle(),
-        _CallState.connecting => _buildConnecting(),
-        _CallState.connected => _buildConnected(),
-        _CallState.error => _buildError(),
+        _CallState.idle => _buildIdle(l10n),
+        _CallState.connecting => _buildConnecting(l10n),
+        _CallState.connected => _buildConnected(l10n),
+        _CallState.error => _buildError(l10n),
       },
     );
   }
 
-  Widget _buildIdle() {
+  Widget _buildIdle(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -341,39 +341,39 @@ class _AssistantScreenState extends State<AssistantScreen>
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Нажмите для разговора с AI',
-            style: TextStyle(
+          Text(
+            l10n.assistantTapToTalk,
+            style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 16,
                 fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Ассистент отвечает голосом в реальном времени',
+          Text(
+            l10n.assistantRealtimeDesc,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildConnecting() {
-    return const Center(
+  Widget _buildConnecting(AppLocalizations l10n) {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: AppColors.primary),
-          SizedBox(height: 24),
-          Text('Подключение к ассистенту...',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+          const CircularProgressIndicator(color: AppColors.primary),
+          const SizedBox(height: 24),
+          Text(l10n.assistantConnectingToAssistant,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 16)),
         ],
       ),
     );
   }
 
-  Widget _buildConnected() {
+  Widget _buildConnected(AppLocalizations l10n) {
     final speaking = _aiSpeaking;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -412,7 +412,7 @@ class _AssistantScreenState extends State<AssistantScreen>
         ),
         const SizedBox(height: 20),
         Text(
-          speaking ? 'AI говорит...' : 'AI слушает',
+          speaking ? l10n.assistantAiSpeaking : l10n.assistantAiListening,
           style: TextStyle(
             color: speaking ? AppColors.primary : AppColors.textSecondary,
             fontSize: 16,
@@ -429,7 +429,7 @@ class _AssistantScreenState extends State<AssistantScreen>
                 icon: _speakerOn
                     ? Icons.volume_up_rounded
                     : Icons.volume_off_rounded,
-                label: _speakerOn ? 'Динамик вкл' : 'Динамик',
+                label: _speakerOn ? l10n.assistantSpeakerOn : l10n.assistantSpeaker,
                 color: _speakerOn
                     ? AppColors.primary.withValues(alpha: 0.2)
                     : AppColors.card,
@@ -439,7 +439,7 @@ class _AssistantScreenState extends State<AssistantScreen>
               ),
               _CallButton(
                 icon: Icons.call_end_rounded,
-                label: 'Завершить',
+                label: l10n.assistantEnd,
                 color: AppColors.error,
                 iconColor: Colors.white,
                 onTap: _endCall,
@@ -447,7 +447,7 @@ class _AssistantScreenState extends State<AssistantScreen>
               ),
               _CallButton(
                 icon: _muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                label: _muted ? 'Включить' : 'Микрофон',
+                label: _muted ? l10n.assistantUnmute : l10n.assistantMicrophone,
                 color: _muted
                     ? AppColors.error.withValues(alpha: 0.2)
                     : AppColors.card,
@@ -461,7 +461,7 @@ class _AssistantScreenState extends State<AssistantScreen>
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -470,8 +470,8 @@ class _AssistantScreenState extends State<AssistantScreen>
           children: [
             const Icon(Icons.error_outline, size: 56, color: AppColors.error),
             const SizedBox(height: 16),
-            const Text('Ошибка подключения',
-                style: TextStyle(
+            Text(l10n.assistantConnectionError,
+                style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
@@ -486,7 +486,7 @@ class _AssistantScreenState extends State<AssistantScreen>
             ElevatedButton.icon(
               onPressed: _connect,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Повторить'),
+              label: Text(l10n.retry),
               style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.black),

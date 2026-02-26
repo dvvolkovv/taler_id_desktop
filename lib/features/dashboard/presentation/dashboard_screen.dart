@@ -36,22 +36,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   StreamSubscription? _disconnectSub;
   StreamSubscription? _callEndedSub;
+  StreamSubscription? _callAnsweredSub;
   StreamSubscription? _callkitSub;
 
   @override
   void initState() {
     super.initState();
-    // Listen for CallKit accept events at all times — this catches the race condition
-    // where the ActionCallAccept event fires AFTER addPostFrameCallback already ran.
+    // Listen for CallKit events (accept / decline) at all times.
     _callkitSub = FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
-      if (event?.event != Event.actionCallAccept) return;
-      final extra = event!.body['extra'] as Map?;
+      if (event == null) return;
+      final extra = event.body['extra'] as Map?;
       final roomName = extra?['roomName'] as String?;
       final convId = extra?['conversationId'] as String?;
-      if (roomName != null && roomName.isNotEmpty && mounted) {
-        context.go(
-          '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1',
-        );
+
+      if (event.event == Event.actionCallAccept) {
+        if (roomName != null && roomName.isNotEmpty && mounted) {
+          context.go(
+            '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1',
+          );
+        }
+      } else if (event.event == Event.actionCallDecline ||
+                 event.event == Event.actionCallTimeout) {
+        // User declined from native CallKit UI — notify caller via socket
+        if (roomName != null && convId != null) {
+          try {
+            sl<MessengerRemoteDataSource>().sendCallEnded(convId, roomName);
+          } catch (_) {}
+        }
+        FlutterCallkitIncoming.endAllCalls();
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -69,9 +81,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           context.go(route);
         }
       }
+      // Re-register FCM token now that the user is authenticated.
+      // NotificationService.init() runs before login so the initial save fails with 401.
+      NotificationService.refreshToken();
       _connectMessenger();
       _listenForDisconnect();
       _listenForCallEnded();
+      _listenForCallAnswered();
     });
   }
 
@@ -80,7 +96,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _callEndedSub = sl<MessengerRemoteDataSource>()
         .callEndedStream
         .listen((_) {
+      // End the active LiveKit room (remote party hung up)
+      CallStateService.instance.endCall();
       // Dismiss callkit UI if it's still showing
+      FlutterCallkitIncoming.endAllCalls();
+      if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
+      // Navigate back if currently on voice screen
+      if (mounted) {
+        final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+        if (location.startsWith('/dashboard/voice')) {
+          context.go(RouteConstants.assistant);
+        }
+      }
+    });
+  }
+
+  void _listenForCallAnswered() {
+    _callAnsweredSub?.cancel();
+    _callAnsweredSub = sl<MessengerRemoteDataSource>()
+        .callAnsweredStream
+        .listen((_) {
+      // Another device of the same user answered this call — dismiss CallKit
       FlutterCallkitIncoming.endAllCalls();
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
     });
@@ -114,6 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _disconnectSub?.cancel();
     _callEndedSub?.cancel();
+    _callAnsweredSub?.cancel();
     _callkitSub?.cancel();
     super.dispose();
   }
@@ -150,9 +187,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
 
-    // When the app is in foreground (WebSocket path), always show in-app dialog.
-    // CallKit is used only for background/killed app (via FCM push handler).
-    _showIncomingCallDialog(context, fromName: fromName, roomName: roomName, convId: convId);
+    // Check if app is in the foreground
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    final isForegrounded = lifecycle == AppLifecycleState.resumed;
+
+    if (isForegrounded) {
+      // App is visible: show in-app dialog
+      _showIncomingCallDialog(context, fromName: fromName, roomName: roomName, convId: convId);
+    } else {
+      // App is backgrounded/paused: use native CallKit UI
+      showCallkitIncoming(
+        fromName: fromName,
+        roomName: roomName,
+        convId: convId,
+      );
+    }
     if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
   }
 
@@ -186,6 +235,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ElevatedButton.icon(
             onPressed: () {
               Navigator.of(context, rootNavigator: true).pop();
+              // Dismiss native CallKit ringing (may have started from FCM background handler)
+              FlutterCallkitIncoming.endAllCalls();
               final uri = '/dashboard/voice?room=$roomName'
                   '${convId.isNotEmpty ? '&convId=$convId' : ''}';
               context.push(uri);
@@ -195,7 +246,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
           ),
           ElevatedButton.icon(
-            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              // Dismiss native CallKit ringing
+              FlutterCallkitIncoming.endAllCalls();
+              // Notify caller that the call was declined
+              if (convId.isNotEmpty && roomName.isNotEmpty) {
+                try {
+                  sl<MessengerRemoteDataSource>().sendCallEnded(convId, roomName);
+                } catch (_) {}
+              }
+            },
             icon: const Icon(Icons.call_end, color: Colors.white),
             label: const Text('Отклонить'),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -307,7 +368,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 label: l10n.tabSettings,
               ),
               BottomNavigationBarItem(
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
+                icon: BlocBuilder<MessengerBloc, MessengerState>(
+                  buildWhen: (p, c) =>
+                      p.conversations.fold<int>(0, (s, e) => s + e.unreadCount) !=
+                      c.conversations.fold<int>(0, (s, e) => s + e.unreadCount),
+                  builder: (ctx, state) {
+                    final total =
+                        state.conversations.fold<int>(0, (s, c) => s + c.unreadCount);
+                    if (total == 0) {
+                      return const Icon(Icons.chat_bubble_outline_rounded);
+                    }
+                    return Badge(
+                      label: Text('$total'),
+                      backgroundColor: AppColors.error,
+                      child: const Icon(Icons.chat_bubble_outline_rounded),
+                    );
+                  },
+                ),
                 activeIcon: const Icon(Icons.chat_bubble_rounded),
                 label: l10n.tabMessenger,
               ),

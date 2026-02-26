@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -7,9 +8,47 @@ import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../api/dio_client.dart';
 import '../di/service_locator.dart';
 import '../../firebase_options.dart';
+
+final _localNotifications = FlutterLocalNotificationsPlugin();
+
+Future<void> _initLocalNotifications() async {
+  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const ios = DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+  );
+  await _localNotifications.initialize(
+    const InitializationSettings(android: android, iOS: ios),
+  );
+}
+
+Future<void> _showLocalNotification({
+  required String title,
+  required String body,
+  required String conversationId,
+}) async {
+  const androidDetails = AndroidNotificationDetails(
+    'messages',
+    'Сообщения',
+    channelDescription: 'Уведомления о новых сообщениях',
+    importance: Importance.high,
+    priority: Priority.high,
+    playSound: true,
+  );
+  const iosDetails = DarwinNotificationDetails(sound: 'default');
+  await _localNotifications.show(
+    conversationId.hashCode,
+    title,
+    body,
+    const NotificationDetails(android: androidDetails, iOS: iosDetails),
+    payload: conversationId,
+  );
+}
 
 bool get _isIosSimulator =>
     !kIsWeb &&
@@ -85,12 +124,16 @@ Future<void> showCallkitIncoming({
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  if (message.data['type'] == 'call_invite') {
+  final type = message.data['type'] as String?;
+  if (type == 'call_invite') {
     await showCallkitIncoming(
       roomName: message.data['roomName'] ?? '',
       fromName: message.data['fromName'] ?? 'Входящий звонок',
       convId: message.data['conversationId'] ?? '',
     );
+  } else if (type == 'call_cancelled') {
+    // Caller hung up before answer — dismiss CallKit UI
+    await FlutterCallkitIncoming.endAllCalls();
   }
 }
 
@@ -110,6 +153,9 @@ class NotificationService {
   static Future<void> init() async {
     // Register background handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // Initialize local notifications for foreground FCM display
+    await _initLocalNotifications();
 
     // Request permission
     await _fcm.requestPermission(
@@ -135,26 +181,53 @@ class NotificationService {
     try {
       final client = sl<DioClient>();
       await client.put('/profile', data: {'fcmToken': token});
+      debugPrint('FCM token saved to backend');
     } catch (e) {
       debugPrint('Failed to save FCM token: $e');
+    }
+  }
+
+  /// Call this after the user logs in to ensure FCM token is registered.
+  /// Needed because init() runs before login and the PUT /profile call fails with 401.
+  static Future<void> refreshToken() async {
+    try {
+      final token = _currentToken ?? await _fcm.getToken();
+      if (token != null) {
+        _currentToken = token;
+        await _saveTokenToBackend(token);
+      }
+    } catch (e) {
+      debugPrint('FCM getToken failed (simulator?): $e');
+    }
+    // Ask Android to exclude app from battery optimization → instant push delivery
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        await const MethodChannel('taler_id/audio')
+            .invokeMethod('requestBatteryOptimizationExemption');
+      } catch (_) {}
     }
   }
 
   /// Set up foreground notification tap handlers
   /// Call this after GoRouter is initialized
   static void setupForegroundHandlers({required Function(RemoteMessage) onTap}) {
-    // Foreground FCM messages — show callkit for incoming calls
+    // Foreground FCM messages.
+    // - call_invite: handled by WebSocket (in-app dialog) — skip to avoid double ringing.
+    // - new_message: show local notification (Android won't auto-show FCM when app is open).
     FirebaseMessaging.onMessage.listen((message) {
-      if (message.data['type'] == 'call_invite') {
-        showCallkitIncoming(
-          roomName: message.data['roomName'] ?? '',
-          fromName: message.data['fromName'] ?? 'Входящий звонок',
-          convId: message.data['conversationId'] ?? '',
-        );
+      final type = message.data['type'] as String?;
+      if (type == 'new_message') {
+        final convId = message.data['conversationId'] as String? ?? '';
+        final title = message.notification?.title ?? '';
+        final body = message.notification?.body ?? '';
+        if (title.isNotEmpty && body.isNotEmpty) {
+          _showLocalNotification(title: title, body: body, conversationId: convId);
+        }
       }
+      // call_invite is intentionally ignored here — socket handles it.
     });
 
-    // App opened from notification (background)
+    // App opened from background notification tap
     FirebaseMessaging.onMessageOpenedApp.listen(onTap);
   }
 

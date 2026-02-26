@@ -1,5 +1,13 @@
 package tirol.taler.taler_id_mobile
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.os.PowerManager
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
 import android.media.AudioFocusRequest
@@ -10,6 +18,26 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
     private var audioFocusRequest: AudioFocusRequest? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        createNotificationChannels()
+    }
+
+    private fun createNotificationChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val messagesChannel = NotificationChannel(
+                "messages",
+                "Сообщения",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Уведомления о новых сообщениях"
+                enableVibration(true)
+            }
+            nm.createNotificationChannel(messagesChannel)
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -24,6 +52,58 @@ class MainActivity : FlutterFragmentActivity() {
                         if (on) requestAudioFocus(am)
                         result.success(null)
                     }
+                    "getAudioOutputs" -> {
+                        val am = getSystemService(AUDIO_SERVICE) as AudioManager
+                        val outputs = mutableListOf<Map<String, String>>()
+                        outputs.add(mapOf("id" to "earpiece", "name" to "Телефон", "type" to "earpiece"))
+                        outputs.add(mapOf("id" to "speaker", "name" to "Динамик", "type" to "speaker"))
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            val devices = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                            val hasWired = devices.any { d ->
+                                d.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                                d.type == AudioDeviceInfo.TYPE_WIRED_HEADSET
+                            }
+                            val btDevice = devices.firstOrNull { d ->
+                                d.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+                                d.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                                    (d.type == AudioDeviceInfo.TYPE_BLE_HEADSET ||
+                                     d.type == AudioDeviceInfo.TYPE_BLE_SPEAKER))
+                            }
+                            if (hasWired) {
+                                outputs.add(mapOf("id" to "headphones", "name" to "Наушники", "type" to "headphones"))
+                            }
+                            if (btDevice != null) {
+                                val btName = btDevice.productName?.toString() ?: "Bluetooth"
+                                outputs.add(mapOf("id" to "bluetooth", "name" to btName, "type" to "bluetooth"))
+                            }
+                        }
+                        result.success(outputs)
+                    }
+                    "setAudioOutput" -> {
+                        val type = call.arguments as? String ?: "earpiece"
+                        val am = getSystemService(AUDIO_SERVICE) as AudioManager
+                        am.mode = AudioManager.MODE_IN_COMMUNICATION
+                        when (type) {
+                            "speaker" -> {
+                                am.stopBluetoothSco()
+                                am.isBluetoothScoOn = false
+                                am.isSpeakerphoneOn = true
+                            }
+                            "bluetooth" -> {
+                                am.isSpeakerphoneOn = false
+                                am.startBluetoothSco()
+                                am.isBluetoothScoOn = true
+                            }
+                            else -> { // earpiece, headphones
+                                am.stopBluetoothSco()
+                                am.isBluetoothScoOn = false
+                                am.isSpeakerphoneOn = false
+                            }
+                        }
+                        requestAudioFocus(am)
+                        result.success(null)
+                    }
                     "requestAudioFocus" -> {
                         val am = getSystemService(AUDIO_SERVICE) as AudioManager
                         requestAudioFocus(am)
@@ -32,6 +112,20 @@ class MainActivity : FlutterFragmentActivity() {
                     "abandonAudioFocus" -> {
                         val am = getSystemService(AUDIO_SERVICE) as AudioManager
                         abandonAudioFocus(am)
+                        result.success(null)
+                    }
+                    "requestBatteryOptimizationExemption" -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+                            val pkg = packageName
+                            if (!pm.isIgnoringBatteryOptimizations(pkg)) {
+                                val intent = Intent(
+                                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                    Uri.parse("package:$pkg")
+                                )
+                                startActivity(intent)
+                            }
+                        }
                         result.success(null)
                     }
                     else -> result.notImplemented()

@@ -30,6 +30,8 @@ mixin _$MessageEntity {
   String? get fileName => throw _privateConstructorUsedError;
   int? get fileSize => throw _privateConstructorUsedError;
   String? get fileType => throw _privateConstructorUsedError;
+  bool get isDelivered => throw _privateConstructorUsedError;
+  bool get isRead => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -53,7 +55,9 @@ abstract class $MessageEntityCopyWith<$Res> {
       String? fileUrl,
       String? fileName,
       int? fileSize,
-      String? fileType});
+      String? fileType,
+      bool isDelivered,
+      bool isRead});
 }
 
 /// @nodoc
@@ -79,6 +83,8 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
     Object? fileName = freezed,
     Object? fileSize = freezed,
     Object? fileType = freezed,
+    Object? isDelivered = null,
+    Object? isRead = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -121,6 +127,14 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
           ? _value.fileType
           : fileType // ignore: cast_nullable_to_non_nullable
               as String?,
+      isDelivered: null == isDelivered
+          ? _value.isDelivered
+          : isDelivered // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isRead: null == isRead
+          ? _value.isRead
+          : isRead // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -143,7 +157,9 @@ abstract class _$$MessageEntityImplCopyWith<$Res>
       String? fileUrl,
       String? fileName,
       int? fileSize,
-      String? fileType});
+      String? fileType,
+      bool isDelivered,
+      bool isRead});
 }
 
 /// @nodoc
@@ -167,6 +183,8 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
     Object? fileName = freezed,
     Object? fileSize = freezed,
     Object? fileType = freezed,
+    Object? isDelivered = null,
+    Object? isRead = null,
   }) {
     return _then(_$MessageEntityImpl(
       id: null == id
@@ -209,6 +227,14 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
           ? _value.fileType
           : fileType // ignore: cast_nullable_to_non_nullable
               as String?,
+      isDelivered: null == isDelivered
+          ? _value.isDelivered
+          : isDelivered // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isRead: null == isRead
+          ? _value.isRead
+          : isRead // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -226,7 +252,9 @@ class _$MessageEntityImpl implements _MessageEntity {
       this.fileUrl,
       this.fileName,
       this.fileSize,
-      this.fileType});
+      this.fileType,
+      this.isDelivered = false,
+      this.isRead = false});
 
   factory _$MessageEntityImpl.fromJson(Map<String, dynamic> json) =>
       _$$MessageEntityImplFromJson(json);
@@ -251,10 +279,16 @@ class _$MessageEntityImpl implements _MessageEntity {
   final int? fileSize;
   @override
   final String? fileType;
+  @override
+  @JsonKey()
+  final bool isDelivered;
+  @override
+  @JsonKey()
+  final bool isRead;
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType)';
+    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType, isDelivered: $isDelivered, isRead: $isRead)';
   }
 
   @override
@@ -272,15 +306,33 @@ class _$MessageEntityImpl implements _MessageEntity {
             (identical(other.content, content) || other.content == content) &&
             (identical(other.sentAt, sentAt) || other.sentAt == sentAt) &&
             (identical(other.fileUrl, fileUrl) || other.fileUrl == fileUrl) &&
-            (identical(other.fileName, fileName) || other.fileName == fileName) &&
-            (identical(other.fileSize, fileSize) || other.fileSize == fileSize) &&
-            (identical(other.fileType, fileType) || other.fileType == fileType));
+            (identical(other.fileName, fileName) ||
+                other.fileName == fileName) &&
+            (identical(other.fileSize, fileSize) ||
+                other.fileSize == fileSize) &&
+            (identical(other.fileType, fileType) ||
+                other.fileType == fileType) &&
+            (identical(other.isDelivered, isDelivered) ||
+                other.isDelivered == isDelivered) &&
+            (identical(other.isRead, isRead) || other.isRead == isRead));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
-      runtimeType, id, conversationId, senderId, senderName, content, sentAt, fileUrl, fileName, fileSize, fileType);
+      runtimeType,
+      id,
+      conversationId,
+      senderId,
+      senderName,
+      content,
+      sentAt,
+      fileUrl,
+      fileName,
+      fileSize,
+      fileType,
+      isDelivered,
+      isRead);
 
   @JsonKey(ignore: true)
   @override
@@ -307,7 +359,9 @@ abstract class _MessageEntity implements MessageEntity {
       final String? fileUrl,
       final String? fileName,
       final int? fileSize,
-      final String? fileType}) = _$MessageEntityImpl;
+      final String? fileType,
+      final bool isDelivered,
+      final bool isRead}) = _$MessageEntityImpl;
 
   factory _MessageEntity.fromJson(Map<String, dynamic> json) =
       _$MessageEntityImpl.fromJson;
@@ -332,6 +386,10 @@ abstract class _MessageEntity implements MessageEntity {
   int? get fileSize;
   @override
   String? get fileType;
+  @override
+  bool get isDelivered;
+  @override
+  bool get isRead;
   @override
   @JsonKey(ignore: true)
   _$$MessageEntityImplCopyWith<_$MessageEntityImpl> get copyWith =>

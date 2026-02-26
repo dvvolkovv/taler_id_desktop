@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
@@ -6,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
@@ -28,6 +32,10 @@ class ChatRoomScreen extends StatefulWidget {
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   late final TextEditingController _ctrl;
   late final ScrollController _scrollCtrl;
+  final _recorder = AudioRecorder();
+  bool _isRecording = false;
+  String? _recordingPath;
+  double _prevKeyboardHeight = 0;
 
   @override
   void initState() {
@@ -35,6 +43,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _ctrl = TextEditingController();
     _scrollCtrl = ScrollController();
     context.read<MessengerBloc>().add(OpenConversation(widget.conversationId));
+    // Mark messages as read when opening conversation
+    context.read<MessengerBloc>().add(MarkConversationRead(widget.conversationId));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final kh = MediaQuery.of(context).viewInsets.bottom;
+    if (kh > _prevKeyboardHeight) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollCtrl.hasClients) {
+          _scrollCtrl.animateTo(
+            _scrollCtrl.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+    _prevKeyboardHeight = kh;
   }
 
   Future<void> _startCall() async {
@@ -86,12 +114,42 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _sendFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
-    );
+    // Allow any file type
+    final result = await FilePicker.platform.pickFiles(type: FileType.any);
     if (result == null || result.files.single.path == null || !mounted) return;
     final file = result.files.single;
+
+    // Optional caption
+    final captionCtrl = TextEditingController();
+    final caption = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Подпись к файлу', style: TextStyle(color: AppColors.textPrimary)),
+        content: TextField(
+          controller: captionCtrl,
+          style: const TextStyle(color: AppColors.textPrimary),
+          decoration: const InputDecoration(
+            hintText: 'Необязательно...',
+            hintStyle: TextStyle(color: AppColors.textSecondary),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, ''),
+            child: const Text('Без подписи'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, captionCtrl.text.trim()),
+            child: const Text('Отправить', style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+    captionCtrl.dispose();
+    if (caption == null || !mounted) return;
+
     try {
       final client = sl<DioClient>();
       final formData = FormData.fromMap({
@@ -105,7 +163,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (!mounted) return;
       context.read<MessengerBloc>().add(SendMessage(
         widget.conversationId,
-        file.name,
+        caption.isNotEmpty ? caption : file.name,
         fileUrl: res['fileUrl'] as String,
         fileName: res['fileName'] as String,
         fileSize: res['fileSize'] as int?,
@@ -138,10 +196,53 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
+  Future<void> _startRecording() async {
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission || !mounted) return;
+    final dir = await getTemporaryDirectory();
+    final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+    setState(() { _isRecording = true; _recordingPath = path; });
+  }
+
+  Future<void> _stopRecordingAndSend() async {
+    final path = await _recorder.stop();
+    setState(() { _isRecording = false; });
+    if (path == null || !mounted) return;
+    try {
+      final client = sl<DioClient>();
+      final file = File(path);
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(path, filename: 'voice.m4a'),
+      });
+      final res = await client.post(
+        '/messenger/files',
+        data: formData,
+        fromJson: (d) => Map<String, dynamic>.from(d as Map),
+      );
+      if (!mounted) return;
+      context.read<MessengerBloc>().add(SendMessage(
+        widget.conversationId,
+        '🎤 Голосовое сообщение',
+        fileUrl: res['fileUrl'] as String,
+        fileName: res['fileName'] as String,
+        fileSize: res['fileSize'] as int?,
+        fileType: 'audio',
+      ));
+      file.deleteSync();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _ctrl.dispose();
     _scrollCtrl.dispose();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -157,7 +258,40 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 .where((c) => c.id == widget.conversationId)
                 .firstOrNull;
             final name = conv?.otherUserName;
-            return Text(name != null && name.isNotEmpty ? name : 'Диалог');
+            final avatarUrl = conv?.otherUserAvatar;
+            final otherUserId = conv?.otherUserId;
+            return Row(
+              children: [
+                GestureDetector(
+                  onTap: otherUserId != null
+                      ? () => context.push('/dashboard/user/$otherUserId')
+                      : null,
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                    child: avatarUrl != null && avatarUrl.isNotEmpty
+                        ? ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: avatarUrl,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => Text(
+                                name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          )
+                        : Text(
+                            name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(name != null && name.isNotEmpty ? name : 'Диалог'),
+              ],
+            );
           },
         ),
         actions: [
@@ -205,6 +339,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       )
                     : ListView.builder(
                         controller: _scrollCtrl,
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                         padding: const EdgeInsets.all(16),
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
@@ -220,7 +355,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         },
                       ),
               ),
-              _InputBar(controller: _ctrl, onSend: _sendMessage, onAttach: _sendFile),
+              _InputBar(
+                controller: _ctrl,
+                onSend: _sendMessage,
+                onAttach: _sendFile,
+                isRecording: _isRecording,
+                onRecordStart: _startRecording,
+                onRecordStop: _stopRecordingAndSend,
+              ),
             ],
           );
         },
@@ -288,6 +430,8 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
               )
+            else if (message.fileUrl != null && message.fileType == 'audio')
+              _AudioMessagePlayer(fileUrl: message.fileUrl!, isMe: isMe)
             else if (message.fileUrl != null && message.fileType == 'document')
               GestureDetector(
                 onTap: () async {
@@ -322,14 +466,33 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 4),
-            Text(
-              DateFormat('HH:mm').format(message.sentAt.toLocal()),
-              style: TextStyle(
-                color: isMe
-                    ? Colors.black.withValues(alpha: 0.6)
-                    : AppColors.textSecondary,
-                fontSize: 11,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormat('HH:mm').format(message.sentAt.toLocal()),
+                  style: TextStyle(
+                    color: isMe
+                        ? Colors.black.withValues(alpha: 0.6)
+                        : AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    message.isRead
+                        ? Icons.done_all_rounded
+                        : message.isDelivered
+                            ? Icons.done_all_rounded
+                            : Icons.done_rounded,
+                    size: 14,
+                    color: message.isRead
+                        ? AppColors.primary
+                        : Colors.black.withValues(alpha: 0.5),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -422,7 +585,18 @@ class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
   final VoidCallback onAttach;
-  const _InputBar({required this.controller, required this.onSend, required this.onAttach});
+  final bool isRecording;
+  final VoidCallback onRecordStart;
+  final VoidCallback onRecordStop;
+
+  const _InputBar({
+    required this.controller,
+    required this.onSend,
+    required this.onAttach,
+    required this.isRecording,
+    required this.onRecordStart,
+    required this.onRecordStop,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -437,27 +611,110 @@ class _InputBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: onAttach,
+            onPressed: isRecording ? null : onAttach,
             icon: const Icon(Icons.attach_file_rounded, color: AppColors.textSecondary),
           ),
           Expanded(
-            child: TextField(
-              controller: controller,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(
-                hintText: 'Сообщение...',
-                hintStyle:
-                    TextStyle(color: AppColors.textSecondary),
-                border: InputBorder.none,
-              ),
-              onSubmitted: (_) => onSend(),
-              textInputAction: TextInputAction.send,
-            ),
+            child: isRecording
+                ? const Row(
+                    children: [
+                      Icon(Icons.circle, color: AppColors.error, size: 12),
+                      SizedBox(width: 8),
+                      Text('Запись...', style: TextStyle(color: AppColors.error, fontSize: 14)),
+                    ],
+                  )
+                : TextField(
+                    controller: controller,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      hintText: 'Сообщение...',
+                      hintStyle: TextStyle(color: AppColors.textSecondary),
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: (_) => onSend(),
+                    textInputAction: TextInputAction.send,
+                  ),
           ),
           IconButton(
-            onPressed: onSend,
-            icon: const Icon(Icons.send_rounded,
-                color: AppColors.primary),
+            onPressed: () => FocusScope.of(context).unfocus(),
+            icon: const Icon(Icons.keyboard_hide_rounded, color: AppColors.textSecondary),
+            tooltip: 'Скрыть клавиатуру',
+          ),
+          // Voice button: hold to record
+          GestureDetector(
+            onLongPressStart: (_) => onRecordStart(),
+            onLongPressEnd: (_) => onRecordStop(),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                isRecording ? Icons.stop_circle_rounded : Icons.mic_rounded,
+                color: isRecording ? AppColors.error : AppColors.textSecondary,
+              ),
+            ),
+          ),
+          if (!isRecording)
+            IconButton(
+              onPressed: onSend,
+              icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AudioMessagePlayer extends StatefulWidget {
+  final String fileUrl;
+  final bool isMe;
+  const _AudioMessagePlayer({required this.fileUrl, required this.isMe});
+
+  @override
+  State<_AudioMessagePlayer> createState() => _AudioMessagePlayerState();
+}
+
+class _AudioMessagePlayerState extends State<_AudioMessagePlayer> {
+  final _player = AudioPlayer();
+  bool _playing = false;
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggle() async {
+    if (_playing) {
+      await _player.pause();
+      setState(() => _playing = false);
+    } else {
+      await _player.play(UrlSource(widget.fileUrl));
+      setState(() => _playing = true);
+      _player.onPlayerComplete.listen((_) {
+        if (mounted) setState(() => _playing = false);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _toggle,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+            color: widget.isMe ? Colors.black : AppColors.primary,
+            size: 32,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Голосовое сообщение',
+            style: TextStyle(
+              color: widget.isMe ? Colors.black : AppColors.textPrimary,
+              fontSize: 13,
+            ),
           ),
         ],
       ),

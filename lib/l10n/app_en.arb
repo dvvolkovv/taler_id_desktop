@@ -255,6 +255,17 @@
   "assistantSpeaking": "Speaking…",
   "assistantListening": "Listening…",
   "assistantTapToStart": "Tap to start",
+  "assistantTapToTalk": "Tap to talk to AI",
+  "assistantRealtimeDesc": "Assistant responds with voice in real time",
+  "assistantConnectingToAssistant": "Connecting to assistant...",
+  "assistantAiSpeaking": "AI speaking...",
+  "assistantAiListening": "AI listening",
+  "assistantSpeakerOn": "Speaker on",
+  "assistantSpeaker": "Speaker",
+  "assistantEnd": "End",
+  "assistantUnmute": "Unmute",
+  "assistantMicrophone": "Microphone",
+  "assistantConnectionError": "Connection error",
 
   "tabMessenger": "Messages"
 }

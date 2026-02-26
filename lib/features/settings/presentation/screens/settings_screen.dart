@@ -113,6 +113,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Profile section
+            _sectionHeader(l10n.profile),
+            AppCard(
+              child: _navTile(
+                icon: Icons.person_outline,
+                iconColor: AppColors.primary,
+                title: l10n.editProfile,
+                onTap: () => context.push(RouteConstants.profile),
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // Security section
             _sectionHeader(l10n.security),
             AppCard(

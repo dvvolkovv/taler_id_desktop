@@ -1472,6 +1472,72 @@ abstract class AppLocalizations {
   /// **'Tap to start'**
   String get assistantTapToStart;
 
+  /// No description provided for @assistantTapToTalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to talk to AI'**
+  String get assistantTapToTalk;
+
+  /// No description provided for @assistantRealtimeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant responds with voice in real time'**
+  String get assistantRealtimeDesc;
+
+  /// No description provided for @assistantConnectingToAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to assistant...'**
+  String get assistantConnectingToAssistant;
+
+  /// No description provided for @assistantAiSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'AI speaking...'**
+  String get assistantAiSpeaking;
+
+  /// No description provided for @assistantAiListening.
+  ///
+  /// In en, this message translates to:
+  /// **'AI listening'**
+  String get assistantAiListening;
+
+  /// No description provided for @assistantSpeakerOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker on'**
+  String get assistantSpeakerOn;
+
+  /// No description provided for @assistantSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker'**
+  String get assistantSpeaker;
+
+  /// No description provided for @assistantEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get assistantEnd;
+
+  /// No description provided for @assistantUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get assistantUnmute;
+
+  /// No description provided for @assistantMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get assistantMicrophone;
+
+  /// No description provided for @assistantConnectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error'**
+  String get assistantConnectionError;
+
   /// No description provided for @tabMessenger.
   ///
   /// In en, this message translates to:

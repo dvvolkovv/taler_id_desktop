@@ -21,6 +21,7 @@ _$ConversationEntityImpl _$$ConversationEntityImplFromJson(
       otherUserName: json['otherUserName'] as String?,
       otherUserId: json['otherUserId'] as String?,
       otherUserAvatar: json['otherUserAvatar'] as String?,
+      unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$$ConversationEntityImplToJson(
@@ -34,4 +35,5 @@ Map<String, dynamic> _$$ConversationEntityImplToJson(
       'otherUserName': instance.otherUserName,
       'otherUserId': instance.otherUserId,
       'otherUserAvatar': instance.otherUserAvatar,
+      'unreadCount': instance.unreadCount,
     };
