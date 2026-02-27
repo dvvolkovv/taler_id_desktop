@@ -52,7 +52,14 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Initialize Firebase (mobile only)
+  // Init web token storage (Hive-based, avoids flutter_secure_storage hang)
+  await SecureStorageService.initWeb();
+
+  // Setup DI first — must happen before NotificationService.init() so that
+  // DioClient is registered when we try to save FCM/VoIP tokens.
+  await setupDependencies();
+
+  // Initialize Firebase (mobile only) — after DI so DioClient is available
   if (!kIsWeb) {
     try {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -71,12 +78,6 @@ Future<void> main() async {
       debugPrint('Firebase initialization failed: $e');
     }
   }
-
-  // Init web token storage (Hive-based, avoids flutter_secure_storage hang)
-  await SecureStorageService.initWeb();
-
-  // Setup DI
-  await setupDependencies();
 
   // Load saved language
   final storage = sl<SecureStorageService>();

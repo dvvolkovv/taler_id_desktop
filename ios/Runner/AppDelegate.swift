@@ -7,70 +7,78 @@ import flutter_callkit_incoming
 @main
 @objc class AppDelegate: FlutterAppDelegate {
   private var audioChannel: FlutterMethodChannel?
+  private var voipRegistry: PKPushRegistry?
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    let controller = window?.rootViewController as! FlutterViewController
-    let channel = FlutterMethodChannel(
-      name: "taler_id/audio",
-      binaryMessenger: controller.binaryMessenger
-    )
-    audioChannel = channel
-    channel.setMethodCallHandler { call, result in
-      let session = AVAudioSession.sharedInstance()
-      switch call.method {
-      case "setSpeaker":
-        let on = call.arguments as? Bool ?? false
-        do {
-          try session.setCategory(.playAndRecord, options: [.allowBluetooth, .allowBluetoothA2DP])
-          try session.overrideOutputAudioPort(on ? .speaker : .none)
-          result(nil)
-        } catch {
-          result(FlutterError(code: "AUDIO_ERROR", message: error.localizedDescription, details: nil))
-        }
-      case "getAudioOutputs":
-        var outputs: [[String: String]] = []
-        let currentOutputs = session.currentRoute.outputs
-        let hasWired = currentOutputs.contains {
-          $0.portType == .headphones || $0.portType == .headsetMic
-        }
-        let btOutput = currentOutputs.first {
-          $0.portType == .bluetoothHFP || $0.portType == .bluetoothA2DP || $0.portType == .bluetoothLE
-        }
-        outputs.append(["id": "earpiece", "name": "Телефон", "type": "earpiece"])
-        outputs.append(["id": "speaker", "name": "Динамик", "type": "speaker"])
-        if hasWired {
-          outputs.append(["id": "headphones", "name": "Наушники", "type": "headphones"])
-        }
-        if let bt = btOutput {
-          outputs.append(["id": "bluetooth", "name": bt.portName, "type": "bluetooth"])
-        }
-        result(outputs)
-      case "setAudioOutput":
-        let type = call.arguments as? String ?? "earpiece"
-        do {
-          switch type {
-          case "speaker":
+    // Register Flutter plugins FIRST — ensures SwiftFlutterCallkitIncomingPlugin.sharedInstance
+    // is non-nil before PushKit delegate fires (critical for killed-app VoIP push handling).
+    // Also must happen before accessing binaryMessenger below.
+    GeneratedPluginRegistrant.register(with: self)
+
+    // Set up audio method channel (safe cast — nil-safe if window not ready on VoIP cold start)
+    if let controller = window?.rootViewController as? FlutterViewController {
+      let channel = FlutterMethodChannel(
+        name: "taler_id/audio",
+        binaryMessenger: controller.binaryMessenger
+      )
+      audioChannel = channel
+      channel.setMethodCallHandler { call, result in
+        let session = AVAudioSession.sharedInstance()
+        switch call.method {
+        case "setSpeaker":
+          let on = call.arguments as? Bool ?? false
+          do {
             try session.setCategory(.playAndRecord, options: [.allowBluetooth, .allowBluetoothA2DP])
-            try session.setActive(true)
-            try session.overrideOutputAudioPort(.speaker)
-          case "bluetooth":
-            try session.setCategory(.playAndRecord, options: [.allowBluetooth])
-            try session.setActive(true)
-            try session.overrideOutputAudioPort(.none)
-          default: // earpiece, headphones
-            try session.setCategory(.playAndRecord, options: [.allowBluetooth, .allowBluetoothA2DP])
-            try session.setActive(true)
-            try session.overrideOutputAudioPort(.none)
+            try session.overrideOutputAudioPort(on ? .speaker : .none)
+            result(nil)
+          } catch {
+            result(FlutterError(code: "AUDIO_ERROR", message: error.localizedDescription, details: nil))
           }
-          result(nil)
-        } catch {
-          result(FlutterError(code: "AUDIO_ERROR", message: error.localizedDescription, details: nil))
+        case "getAudioOutputs":
+          var outputs: [[String: String]] = []
+          let currentOutputs = session.currentRoute.outputs
+          let hasWired = currentOutputs.contains {
+            $0.portType == .headphones || $0.portType == .headsetMic
+          }
+          let btOutput = currentOutputs.first {
+            $0.portType == .bluetoothHFP || $0.portType == .bluetoothA2DP || $0.portType == .bluetoothLE
+          }
+          outputs.append(["id": "earpiece", "name": "Телефон", "type": "earpiece"])
+          outputs.append(["id": "speaker", "name": "Динамик", "type": "speaker"])
+          if hasWired {
+            outputs.append(["id": "headphones", "name": "Наушники", "type": "headphones"])
+          }
+          if let bt = btOutput {
+            outputs.append(["id": "bluetooth", "name": bt.portName, "type": "bluetooth"])
+          }
+          result(outputs)
+        case "setAudioOutput":
+          let type = call.arguments as? String ?? "earpiece"
+          do {
+            switch type {
+            case "speaker":
+              try session.setCategory(.playAndRecord, options: [.allowBluetooth, .allowBluetoothA2DP])
+              try session.setActive(true)
+              try session.overrideOutputAudioPort(.speaker)
+            case "bluetooth":
+              try session.setCategory(.playAndRecord, options: [.allowBluetooth])
+              try session.setActive(true)
+              try session.overrideOutputAudioPort(.none)
+            default: // earpiece, headphones
+              try session.setCategory(.playAndRecord, options: [.allowBluetooth, .allowBluetoothA2DP])
+              try session.setActive(true)
+              try session.overrideOutputAudioPort(.none)
+            }
+            result(nil)
+          } catch {
+            result(FlutterError(code: "AUDIO_ERROR", message: error.localizedDescription, details: nil))
+          }
+        default:
+          result(FlutterMethodNotImplemented)
         }
-      default:
-        result(FlutterMethodNotImplemented)
       }
     }
 
@@ -82,12 +90,13 @@ import flutter_callkit_incoming
       object: nil
     )
 
-    // Register for VoIP push notifications via PushKit
-    let voipRegistry = PKPushRegistry(queue: .main)
-    voipRegistry.delegate = self
-    voipRegistry.desiredPushTypes = [.voIP]
+    // Register for VoIP push notifications via PushKit.
+    // Store as instance property so the registry is not deallocated after this method returns.
+    let registry = PKPushRegistry(queue: .main)
+    registry.delegate = self
+    registry.desiredPushTypes = [.voIP]
+    voipRegistry = registry
 
-    GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -122,9 +131,32 @@ extension AppDelegate: PKPushRegistryDelegate {
                     for type: PKPushType,
                     completion: @escaping () -> Void) {
     guard type == .voIP else { completion(); return }
-    // MUST call showCallkitIncoming synchronously — iOS kills app if delayed
-    let data = flutter_callkit_incoming.Data(args: payload.dictionaryPayload as NSDictionary)
-    SwiftFlutterCallkitIncomingPlugin.sharedInstance?.showCallkitIncoming(data, fromPushKit: true) {
+    // iOS 13+ REQUIRES reporting the call to CallKit synchronously here.
+    // If the plugin is ready, delegate to it; otherwise call completion immediately
+    // to avoid iOS blacklisting the app for failing to report the call in time.
+    if let instance = SwiftFlutterCallkitIncomingPlugin.sharedInstance {
+      // Build a mutable args dict — ensure 'id' is a valid UUID.
+      // The plugin does uuid! (force-unwrap) at line 324, so it crashes if uuid is nil or invalid.
+      var args = payload.dictionaryPayload as [AnyHashable: Any]
+      let rawId = args["id"] as? String ?? ""
+      NSLog("[VoIP] payload id=%@ rawId=%@", String(describing: args["id"]), rawId)
+      if UUID(uuidString: rawId) == nil {
+        args["id"] = UUID().uuidString
+        NSLog("[VoIP] generated fallback UUID=%@", args["id"] as! String)
+      }
+      // Wrap roomName/conversationId in 'extra' so activeCalls() can identify the call by room.
+      // The plugin reads extra from args["extra"], not from top-level keys.
+      var extra: [AnyHashable: Any] = [:]
+      if let rn = args["roomName"] { extra["roomName"] = rn }
+      if let ci = args["conversationId"] { extra["conversationId"] = ci }
+      if !extra.isEmpty { args["extra"] = extra }
+      let data = flutter_callkit_incoming.Data(args: args as NSDictionary)
+      instance.showCallkitIncoming(data, fromPushKit: true) {
+        completion()
+      }
+    } else {
+      // Plugin not initialized — should not happen since GeneratedPluginRegistrant
+      // is now called before PushKit setup, but guard just in case.
       completion()
     }
   }

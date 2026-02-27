@@ -151,32 +151,40 @@ class NotificationService {
   }
 
   static Future<void> init() async {
-    // Register background handler
+    // Register background handler — must be registered synchronously before any isolate runs.
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    // Initialize local notifications for foreground FCM display
+    // Initialize local notifications plugin (required for channel creation on Android).
     await _initLocalNotifications();
 
-    // Request permission
-    await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
-    // Get token
-    _currentToken = await _fcm.getToken();
-    if (_currentToken != null) {
-      await _saveTokenToBackend(_currentToken!);
-    }
-
-    // Listen for token refresh
+    // Set up token refresh listener.
     _fcm.onTokenRefresh.listen((token) async {
       _currentToken = token;
       await _saveTokenToBackend(token);
     });
 
-    // Register VoIP push token for iOS (real device only, not simulator)
+    // Everything else (permission request, token fetch, VoIP token) is fire-and-forget
+    // so we don't block runApp(). Tokens will be reliably saved in refreshToken() after login.
+    _initPermissionsAndTokens();
+  }
+
+  static Future<void> _initPermissionsAndTokens() async {
+    try {
+      await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      final token = await _fcm.getToken();
+      if (token != null) {
+        _currentToken = token;
+        await _saveTokenToBackend(token);
+      }
+    } catch (e) {
+      debugPrint('FCM init failed: $e');
+    }
+
+    // Register VoIP push token for iOS (real device only, not simulator).
     if (!kIsWeb && Platform.isIOS && !_isIosSimulator) {
       try {
         final voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
@@ -212,6 +220,21 @@ class NotificationService {
       }
     } catch (e) {
       debugPrint('FCM getToken failed (simulator?): $e');
+    }
+    // Re-save VoIP token on iOS after login.
+    // init() runs before authentication, so the initial save may fail with 401.
+    // This call runs from DashboardScreen (post-login) to ensure the token is persisted.
+    if (!kIsWeb && Platform.isIOS && !_isIosSimulator) {
+      try {
+        final voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
+        if (voipToken != null && voipToken.isNotEmpty) {
+          final client = sl<DioClient>();
+          await client.put('/profile', data: {'voipToken': voipToken}, fromJson: (d) => d);
+          debugPrint('VoIP token refreshed to backend');
+        }
+      } catch (e) {
+        debugPrint('Failed to refresh VoIP token: $e');
+      }
     }
     // Ask Android to exclude app from battery optimization → instant push delivery
     if (!kIsWeb && Platform.isAndroid) {

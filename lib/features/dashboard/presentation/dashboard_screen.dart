@@ -63,7 +63,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             sl<MessengerRemoteDataSource>().sendCallEnded(convId, roomName);
           } catch (_) {}
         }
-        FlutterCallkitIncoming.endAllCalls();
+        // End only this specific call, not all calls
+        final callId = (event.body['id'] ?? event.body['uuid']) as String?;
+        if (callId != null) {
+          FlutterCallkitIncoming.endCall(callId);
+        } else {
+          FlutterCallkitIncoming.endAllCalls();
+        }
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -95,12 +101,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _callEndedSub?.cancel();
     _callEndedSub = sl<MessengerRemoteDataSource>()
         .callEndedStream
-        .listen((_) {
+        .listen((roomName) async {
+      // Capture the active room before ending it
+      final wasInCallRoom = CallStateService.instance.roomName;
       // End the active LiveKit room (remote party hung up)
       CallStateService.instance.endCall();
-      // Dismiss callkit UI if it's still showing
-      FlutterCallkitIncoming.endAllCalls();
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
+      // Dismiss CallKit only for this specific room — not all calls.
+      // endAllCalls() would kill an unrelated incoming call arriving at the same time.
+      await _endCallKitCallForRoom(roomName, wasInCallRoom: wasInCallRoom);
       // Navigate back if currently on voice screen
       if (mounted) {
         final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
@@ -115,11 +124,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _callAnsweredSub?.cancel();
     _callAnsweredSub = sl<MessengerRemoteDataSource>()
         .callAnsweredStream
-        .listen((_) {
-      // Another device of the same user answered this call — dismiss CallKit
-      FlutterCallkitIncoming.endAllCalls();
+        .listen((roomName) async {
+      // Another device of the same user answered — dismiss this device's CallKit UI
+      await _endCallKitCallForRoom(roomName, fallbackEndAll: true);
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
     });
+  }
+
+  /// Ends the CallKit call identified by [roomName] stored in its extra data.
+  /// Falls back to endAllCalls() only when [wasInCallRoom] matches or [fallbackEndAll] is true.
+  /// This prevents stale `call_ended` events from killing an unrelated incoming VoIP call.
+  Future<void> _endCallKitCallForRoom(
+    String roomName, {
+    String? wasInCallRoom,
+    bool fallbackEndAll = false,
+  }) async {
+    try {
+      final calls = await FlutterCallkitIncoming.activeCalls() as List;
+      for (final call in calls) {
+        final callMap = call as Map;
+        final extra = callMap['extra'] as Map?;
+        final callRoom = extra?['roomName'] as String?;
+        if (callRoom == roomName) {
+          await FlutterCallkitIncoming.endCall(callMap['id'] as String);
+          return;
+        }
+      }
+      // No matching call found by roomName
+      if (fallbackEndAll || wasInCallRoom == roomName) {
+        await FlutterCallkitIncoming.endAllCalls();
+      }
+      // Otherwise: stale/unrelated event — leave other CallKit calls untouched
+    } catch (_) {
+      if (fallbackEndAll || wasInCallRoom == roomName) {
+        FlutterCallkitIncoming.endAllCalls();
+      }
+    }
   }
 
   void _listenForDisconnect() {
