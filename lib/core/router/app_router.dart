@@ -23,6 +23,7 @@ import '../../features/messenger/presentation/screens/chat_room_screen.dart';
 import '../../features/messenger/presentation/screens/user_search_screen.dart';
 import '../../features/messenger/presentation/screens/user_profile_screen.dart';
 import '../../features/voice/presentation/screens/voice_call_screen.dart';
+import '../../features/call_history/presentation/screens/call_history_screen.dart';
 import '../storage/secure_storage_service.dart';
 import '../di/service_locator.dart';
 import '../utils/constants.dart';
@@ -119,6 +120,10 @@ final appRouter = GoRouter(
               ),
             ),
           ],
+        ),
+        GoRoute(
+          path: RouteConstants.callHistory,
+          builder: (_, __) => const CallHistoryScreen(),
         ),
         GoRoute(
           path: RouteConstants.sessions,

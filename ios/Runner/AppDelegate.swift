@@ -76,6 +76,20 @@ import flutter_callkit_incoming
           } catch {
             result(FlutterError(code: "AUDIO_ERROR", message: error.localizedDescription, details: nil))
           }
+        case "requestAudioFocus":
+          do {
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+            result(nil)
+          } catch {
+            result(nil) // Non-fatal
+          }
+        case "deactivateAudioSession":
+          do {
+            try session.setActive(false, options: .notifyOthersOnDeactivation)
+            result(nil)
+          } catch {
+            result(nil) // Non-fatal
+          }
         default:
           result(FlutterMethodNotImplemented)
         }

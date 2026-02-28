@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -78,6 +79,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   Future<dynamic> _onNativeAudioEvent(MethodCall call) async {
     if (call.method == 'audioInterrupted') {
       _playInterruptionBeeps();
+    } else if (call.method == 'audioResumed') {
+      // Reactivate audio focus so LiveKit resumes after parallel call ends
+      try {
+        await _audioChannel.invokeMethod('requestAudioFocus');
+      } catch (_) {}
     }
     return null;
   }
@@ -196,9 +202,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       ..on<lk.RoomReconnectedEvent>((_) {
         if (mounted) setState(() => _reconnecting = false);
       })
-      ..on<lk.ParticipantConnectedEvent>((_) async {
-        // Stop ringback when someone answers the call
-        await _ringPlayer.stop();
+      ..on<lk.ParticipantConnectedEvent>((event) async {
+        // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
+        if (event.participant.identity != 'ai-assistant') {
+          await _ringPlayer.stop();
+        }
       });
   }
 
@@ -209,6 +217,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
     // Handle disconnection (navigate before setState)
     if (room.connectionState == lk.ConnectionState.disconnected) {
+      // If LiveKit is in the middle of reconnecting, stay on screen
+      if (_reconnecting) return;
       CallStateService.instance.notifyEnded();
       _navigateBack();
       return;
@@ -313,6 +323,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _hangUp() async {
+    // Disable microphone first to release audio track
+    try {
+      await _room?.localParticipant?.setMicrophoneEnabled(false);
+    } catch (_) {}
     // Notify the other party that the call ended
     final convId = widget.conversationId ?? CallStateService.instance.conversationId;
     final rName = _roomName ?? CallStateService.instance.roomName;
@@ -321,11 +335,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         sl<MessengerRemoteDataSource>().sendCallEnded(convId, rName);
       } catch (_) {}
     }
-    // Release audio focus on Android
+    // Release audio focus
     try {
       await _audioChannel.invokeMethod('abandonAudioFocus');
     } catch (_) {}
+    // Deactivate iOS audio session so system call process stops
+    try {
+      await _audioChannel.invokeMethod('deactivateAudioSession');
+    } catch (_) {}
     CallStateService.instance.endCall();
+    // Tell CallKit the call ended (releases iOS background audio session)
+    try {
+      await FlutterCallkitIncoming.endAllCalls();
+    } catch (_) {}
     _navigateBack();
   }
 

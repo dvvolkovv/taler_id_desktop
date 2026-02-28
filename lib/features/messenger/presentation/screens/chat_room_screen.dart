@@ -53,10 +53,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.didChangeDependencies();
     final kh = MediaQuery.of(context).viewInsets.bottom;
     if (kh > _prevKeyboardHeight) {
-      // Wait for keyboard animation to finish before scrolling
-      Future.delayed(const Duration(milliseconds: 300), () {
+      // Scroll to bottom after keyboard animation completes (post-frame = layout settled)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _scrollCtrl.hasClients) {
-          _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+          _scrollCtrl.animateTo(
+            _scrollCtrl.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
         }
       });
     }
@@ -92,7 +96,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final client = sl<DioClient>();
       final res = await client.post(
         '/voice/rooms',
-        data: {'withAi': withAi},
+        data: {'withAi': withAi, 'conversationId': widget.conversationId},
         fromJson: (d) => Map<String, dynamic>.from(d as Map),
       );
       final roomName = res['roomName'] as String;

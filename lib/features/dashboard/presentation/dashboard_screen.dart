@@ -28,8 +28,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   static const _tabs = [
     RouteConstants.assistant,
-    RouteConstants.kyc,
-    RouteConstants.organization,
+    RouteConstants.callHistory,
     RouteConstants.settings,
     RouteConstants.messenger,
   ];
@@ -38,6 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   StreamSubscription? _callEndedSub;
   StreamSubscription? _callAnsweredSub;
   StreamSubscription? _callkitSub;
+  String? _showingCallDialogRoom;
 
   @override
   void initState() {
@@ -62,6 +62,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           try {
             sl<MessengerRemoteDataSource>().sendCallEnded(convId, roomName);
           } catch (_) {}
+        }
+        // Close in-app dialog if it's showing for this room
+        if (mounted && _showingCallDialogRoom != null &&
+            (_showingCallDialogRoom == roomName || roomName == null)) {
+          Navigator.of(context, rootNavigator: true).pop();
         }
         // End only this specific call, not all calls
         final callId = (event.body['id'] ?? event.body['uuid']) as String?;
@@ -102,16 +107,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _callEndedSub = sl<MessengerRemoteDataSource>()
         .callEndedStream
         .listen((roomName) async {
-      // Capture the active room before ending it
+      // Capture the active room before potentially ending it
       final wasInCallRoom = CallStateService.instance.roomName;
-      // End the active LiveKit room (remote party hung up)
-      CallStateService.instance.endCall();
+      // Only end the active call if the event is for our current room.
+      // A stale/unrelated call_ended (different roomName) must NOT drop an ongoing call.
+      final isOurCall = wasInCallRoom != null && wasInCallRoom == roomName;
+      if (isOurCall) {
+        CallStateService.instance.endCall();
+      }
+      // Always dismiss a pending incoming call invite from the UI.
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
       // Dismiss CallKit only for this specific room — not all calls.
-      // endAllCalls() would kill an unrelated incoming call arriving at the same time.
       await _endCallKitCallForRoom(roomName, wasInCallRoom: wasInCallRoom);
-      // Navigate back if currently on voice screen
-      if (mounted) {
+      // Navigate back only if it was our active call that ended.
+      if (isOurCall && mounted) {
         final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
         if (location.startsWith('/dashboard/voice')) {
           context.go(RouteConstants.assistant);
@@ -251,6 +260,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String roomName,
     required String convId,
   }) {
+    // Deduplicate: don't show a second dialog for the same room
+    if (_showingCallDialogRoom == roomName) return;
+    _showingCallDialogRoom = roomName;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -303,7 +315,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-    );
+    ).whenComplete(() {
+      if (_showingCallDialogRoom == roomName) _showingCallDialogRoom = null;
+    });
   }
 
   @override
@@ -392,15 +406,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 activeIcon: const Icon(Icons.headset_mic),
                 label: l10n.tabAssistant,
               ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.verified_user_outlined),
-                activeIcon: const Icon(Icons.verified_user),
-                label: l10n.tabKyc,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.business_outlined),
-                activeIcon: const Icon(Icons.business),
-                label: l10n.tabOrganization,
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.call_outlined),
+                activeIcon: Icon(Icons.call),
+                label: 'Звонки',
               ),
               BottomNavigationBarItem(
                 icon: const Icon(Icons.settings_outlined),

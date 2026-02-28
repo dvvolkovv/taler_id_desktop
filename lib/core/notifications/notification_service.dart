@@ -88,7 +88,7 @@ Future<void> showCallkitIncoming({
     type: 0,
     textAccept: 'Принять',
     textDecline: 'Отклонить',
-    duration: 30000,
+    duration: 60000,
     extra: <String, dynamic>{'roomName': roomName, 'conversationId': convId},
     android: const AndroidParams(
       isCustomNotification: true,

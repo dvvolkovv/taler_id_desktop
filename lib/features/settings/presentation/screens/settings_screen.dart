@@ -125,6 +125,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Identity & Organizations section
+            _sectionHeader('Аккаунт'),
+            AppCard(
+              child: Column(
+                children: [
+                  _navTile(
+                    icon: Icons.verified_user_outlined,
+                    iconColor: AppColors.primary,
+                    title: 'Верификация личности (KYC)',
+                    onTap: () => context.push(RouteConstants.kyc),
+                  ),
+                  const Divider(color: AppColors.border, height: 1),
+                  _navTile(
+                    icon: Icons.business_outlined,
+                    iconColor: AppColors.primary,
+                    title: 'Организации',
+                    onTap: () => context.push(RouteConstants.organization),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // Security section
             _sectionHeader(l10n.security),
             AppCard(
@@ -216,29 +239,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: l10n.language,
                     trailing: _currentLang == 'ru' ? l10n.languageRussian : l10n.languageEnglish,
                     onTap: () => _showLanguagePicker(context),
-                  ),
-                  const Divider(color: AppColors.border, height: 1),
-                  _navTile(
-                    icon: Icons.download_outlined,
-                    iconColor: AppColors.textSecondary,
-                    title: l10n.exportData,
-                    onTap: () async {
-                      try {
-                        final ds = sl<ProfileRemoteDataSource>();
-                        await ds.exportData();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(l10n.exportData), backgroundColor: AppColors.primary),
-                          );
-                        }
-                      } catch (_) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Error'), backgroundColor: AppColors.error),
-                          );
-                        }
-                      }
-                    },
                   ),
                   const Divider(color: AppColors.border, height: 1),
                   _navTile(
