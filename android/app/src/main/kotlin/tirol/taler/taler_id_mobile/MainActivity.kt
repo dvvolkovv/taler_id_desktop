@@ -136,6 +136,10 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun requestAudioFocus(am: AudioManager) {
+        // Set earpiece mode immediately — LiveKit may default to speakerphone
+        am.mode = AudioManager.MODE_IN_COMMUNICATION
+        am.isSpeakerphoneOn = false
+
         val focusListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
             when (focusChange) {
                 AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
@@ -144,7 +148,9 @@ class MainActivity : FlutterFragmentActivity() {
                     runOnUiThread { flutterChannel?.invokeMethod("audioInterrupted", null) }
                 }
                 AudioManager.AUDIOFOCUS_GAIN -> {
-                    // Focus returned (other call ended)
+                    // Focus returned (other call ended) — restore earpiece mode
+                    am.mode = AudioManager.MODE_IN_COMMUNICATION
+                    am.isSpeakerphoneOn = false
                     runOnUiThread { flutterChannel?.invokeMethod("audioResumed", null) }
                 }
                 else -> {}

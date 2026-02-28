@@ -178,16 +178,29 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       setState(() => _connecting = false);
       WakelockPlus.enable();
 
-      // Force earpiece mode — LiveKit may default to speakerphone on Android
-      await Future.delayed(const Duration(milliseconds: 300));
-      try {
-        await _audioChannel.invokeMethod('setAudioOutput', 'earpiece');
-      } catch (_) {}
+      // Force earpiece mode — LiveKit may override speakerphone asynchronously on Android.
+      // Call twice: once early, once after LiveKit audio stack fully initialises.
+      _forceEarpiece();
     } catch (e) {
       setState(() {
         _error = e.toString();
         _connecting = false;
       });
+    }
+  }
+
+  /// Sets audio output to earpiece. Called twice — after connect and after 1s —
+  /// to override any delayed speakerphone activation by the LiveKit Android stack.
+  Future<void> _forceEarpiece() async {
+    for (final delay in [200, 1000]) {
+      await Future.delayed(Duration(milliseconds: delay));
+      if (!mounted) return;
+      // Only force earpiece if user hasn't manually switched to another output
+      if (_audioOutputType == 'earpiece') {
+        try {
+          await _audioChannel.invokeMethod('setAudioOutput', 'earpiece');
+        } catch (_) {}
+      }
     }
   }
 
