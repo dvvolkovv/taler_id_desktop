@@ -45,5 +45,8 @@ class AuthRemoteDataSource {
     );
   }
 
-  Future<void> logout() => client.post('/auth/logout', data: {});
+  Future<void> logout({String? fcmToken, String? voipToken}) => client.post('/auth/logout', data: {
+    if (fcmToken != null) 'fcmToken': fcmToken,
+    if (voipToken != null) 'voipToken': voipToken,
+  });
 }

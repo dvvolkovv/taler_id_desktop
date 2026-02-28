@@ -356,7 +356,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       );
       // Send call invite to selected user via messenger
       if (convId != null) {
-        sl<MessengerRemoteDataSource>().sendCallInvite(convId, rName);
+        sl<MessengerRemoteDataSource>().sendCallInvite(convId, rName, inviteeId: selected.id);
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

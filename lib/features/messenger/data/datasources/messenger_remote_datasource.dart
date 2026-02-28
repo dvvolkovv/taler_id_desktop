@@ -108,8 +108,12 @@ class MessengerRemoteDataSource {
   void sendTyping(String id, bool isTyping) =>
       _socket?.emit('typing', {'conversationId': id, 'isTyping': isTyping});
 
-  void sendCallInvite(String conversationId, String roomName) =>
-      _socket?.emit('call_invite', {'conversationId': conversationId, 'roomName': roomName});
+  void sendCallInvite(String conversationId, String roomName, {String? inviteeId}) =>
+      _socket?.emit('call_invite', {
+        'conversationId': conversationId,
+        'roomName': roomName,
+        if (inviteeId != null) 'inviteeId': inviteeId,
+      });
 
   void sendCallEnded(String conversationId, String roomName) =>
       _socket?.emit('call_ended', {'conversationId': conversationId, 'roomName': roomName});
