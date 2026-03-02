@@ -34,6 +34,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _muted = false;
   String _audioOutputType = 'earpiece'; // earpiece, speaker, bluetooth, headphones
   bool _reconnecting = false;
+  bool _manualReconnecting = false;
+  int _reconnectAttempts = 0;
+  static const _kMaxReconnectAttempts = 8;
+  static const _kReconnectDelays = [2, 3, 4, 5, 8, 10, 15, 20];
   final AudioPlayer _ringPlayer = AudioPlayer();
 
   static const _outputIcons = <String, IconData>{
@@ -212,8 +216,21 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       ..on<lk.RoomReconnectingEvent>((_) {
         if (mounted) setState(() => _reconnecting = true);
       })
-      ..on<lk.RoomReconnectedEvent>((_) {
-        if (mounted) setState(() => _reconnecting = false);
+      ..on<lk.RoomReconnectedEvent>((_) async {
+        if (!mounted) return;
+        _reconnectAttempts = 0;
+        // Restore mic and audio focus after LiveKit auto-reconnect
+        try { await _room?.localParticipant?.setMicrophoneEnabled(!_muted); } catch (_) {}
+        try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+        _forceEarpiece();
+        setState(() => _reconnecting = false);
+      })
+      ..on<lk.RoomDisconnectedEvent>((_) {
+        // LiveKit gave up — start our own reconnect loop
+        if (mounted && !_navigatedAway && !_manualReconnecting) {
+          if (mounted) setState(() => _reconnecting = false);
+          _startManualReconnect();
+        }
       })
       ..on<lk.ParticipantConnectedEvent>((event) async {
         // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
@@ -228,12 +245,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     final room = _room;
     if (room == null) return;
 
-    // Handle disconnection (navigate before setState)
     if (room.connectionState == lk.ConnectionState.disconnected) {
-      // If LiveKit is in the middle of reconnecting, stay on screen
-      if (_reconnecting) return;
-      CallStateService.instance.notifyEnded();
-      _navigateBack();
+      if (_navigatedAway || _reconnecting || _manualReconnecting) return;
+      // Connection dropped without LiveKit's reconnect starting — try ours
+      _startManualReconnect();
       return;
     }
 
@@ -245,6 +260,90 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           ..addAll(room.remoteParticipants.values);
       });
     }
+  }
+
+  Future<void> _startManualReconnect() async {
+    if (_manualReconnecting || _navigatedAway || !mounted) return;
+    final roomName = _roomName;
+    if (roomName == null) {
+      CallStateService.instance.notifyEnded();
+      _navigateBack();
+      return;
+    }
+    _manualReconnecting = true;
+    if (mounted) setState(() => _reconnecting = true);
+    _playReconnectBeep();
+
+    while (_reconnectAttempts < _kMaxReconnectAttempts && mounted && !_navigatedAway) {
+      final delay = _kReconnectDelays[_reconnectAttempts.clamp(0, _kReconnectDelays.length - 1)];
+      _reconnectAttempts++;
+      await Future.delayed(Duration(seconds: delay));
+      if (!mounted || _navigatedAway) break;
+
+      try {
+        final res = await sl<DioClient>().post<Map<String, dynamic>>(
+          '/voice/rooms/$roomName/join',
+          data: {},
+          fromJson: (d) => Map<String, dynamic>.from(d as Map),
+        );
+        final token = res['token'] as String;
+
+        // Teardown old room
+        _eventsListener?.dispose();
+        _eventsListener = null;
+        _room?.removeListener(_onRoomChanged);
+
+        // Fresh room instance
+        final newRoom = lk.Room();
+        _room = newRoom;
+        newRoom.addListener(_onRoomChanged);
+        _subscribeRoomEvents();
+
+        await newRoom.connect(
+          'wss://id.taler.tirol/livekit/',
+          token,
+          roomOptions: const lk.RoomOptions(
+            defaultAudioPublishOptions: lk.AudioPublishOptions(audioBitrate: 32000),
+          ),
+        );
+
+        CallStateService.instance.setRoom(newRoom, roomName, widget.conversationId);
+
+        try { await newRoom.localParticipant?.setMicrophoneEnabled(!_muted); } catch (_) {}
+        try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+        _forceEarpiece();
+
+        _manualReconnecting = false;
+        _reconnectAttempts = 0;
+        if (mounted) {
+          setState(() {
+            _reconnecting = false;
+            _participants
+              ..clear()
+              ..addAll(newRoom.remoteParticipants.values);
+          });
+        }
+        return; // success
+      } catch (_) {
+        if (mounted && !_navigatedAway) _playReconnectBeep();
+      }
+    }
+
+    // All attempts exhausted
+    _manualReconnecting = false;
+    if (mounted && !_navigatedAway) {
+      CallStateService.instance.notifyEnded();
+      _navigateBack();
+    }
+  }
+
+  Future<void> _playReconnectBeep() async {
+    try {
+      await _ringPlayer.stop();
+      await _ringPlayer.play(AssetSource('audio/ringback.wav'), volume: 0.5);
+      await Future.delayed(const Duration(milliseconds: 300));
+      await _ringPlayer.stop();
+    } catch (_) {}
   }
 
   void _navigateBack() {

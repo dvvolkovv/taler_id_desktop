@@ -25,7 +25,7 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   static const _tabs = [
     RouteConstants.assistant,
     RouteConstants.callHistory,
@@ -38,10 +38,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   StreamSubscription? _callAnsweredSub;
   StreamSubscription? _callkitSub;
   String? _showingCallDialogRoom;
+  String? _pendingCallRoute; // queued when accept fires while phone is locked
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Listen for CallKit events (accept / decline) at all times.
     _callkitSub = FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
       if (event == null) return;
@@ -51,9 +53,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (event.event == Event.actionCallAccept) {
         if (roomName != null && roomName.isNotEmpty && mounted) {
-          context.go(
-            '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1',
-          );
+          final route = '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
+          final lifecycle = WidgetsBinding.instance.lifecycleState;
+          if (lifecycle == AppLifecycleState.resumed) {
+            // App is in foreground — navigate immediately
+            context.go(route);
+          } else {
+            // App is backgrounded / screen is locked — connect to LiveKit
+            // immediately so the caller hears us, defer UI navigation until unlock
+            CallStateService.connectInBackground(roomName, convId);
+            _pendingCallRoute = route;
+          }
         }
       } else if (event.event == Event.actionCallDecline ||
                  event.event == Event.actionCallTimeout) {
@@ -107,25 +117,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _callEndedSub = sl<MessengerRemoteDataSource>()
         .callEndedStream
         .listen((roomName) async {
-      // Capture the active room before potentially ending it
       final wasInCallRoom = CallStateService.instance.roomName;
-      // Only end the active call if the event is for our current room.
-      // A stale/unrelated call_ended (different roomName) must NOT drop an ongoing call.
       final isOurCall = wasInCallRoom != null && wasInCallRoom == roomName;
-      if (isOurCall) {
-        CallStateService.instance.endCall();
-      }
+
       // Always dismiss a pending incoming call invite from the UI.
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
-      // Dismiss CallKit only for this specific room — not all calls.
+      // Dismiss CallKit ringing for this room.
       await _endCallKitCallForRoom(roomName, wasInCallRoom: wasInCallRoom);
-      // Navigate back only if it was our active call that ended.
-      if (isOurCall && mounted) {
-        final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
-        if (location.startsWith('/dashboard/voice')) {
-          context.go(RouteConstants.assistant);
-        }
-      }
+
+      if (!isOurCall) return;
+
+      // If user is currently on the voice screen — do NOT auto-navigate away.
+      // Each participant ends the call themselves by pressing the hang-up button.
+      // The participant list will reflect the other party leaving.
+      if (!mounted) return;
+      final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+      if (location.startsWith('/dashboard/voice')) return;
+
+      // User is NOT on the voice screen (banner mode) — end call state and hide banner.
+      CallStateService.instance.endCall();
     });
   }
 
@@ -196,7 +206,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _pendingCallRoute != null && mounted) {
+      final route = _pendingCallRoute!;
+      _pendingCallRoute = null;
+      // Use postFrameCallback so the router is ready after resume
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go(route);
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _disconnectSub?.cancel();
     _callEndedSub?.cancel();
     _callAnsweredSub?.cancel();

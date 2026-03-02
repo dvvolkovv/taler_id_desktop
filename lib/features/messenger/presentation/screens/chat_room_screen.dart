@@ -36,7 +36,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isRecording = false;
   String? _recordingPath;
   double _prevKeyboardHeight = 0;
-  bool _initialScrollDone = false;
 
   @override
   void initState() {
@@ -53,11 +52,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.didChangeDependencies();
     final kh = MediaQuery.of(context).viewInsets.bottom;
     if (kh > _prevKeyboardHeight) {
-      // Scroll to bottom after keyboard animation completes (post-frame = layout settled)
+      // With reverse:true, bottom of chat is offset 0
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _scrollCtrl.hasClients) {
+        if (mounted && _scrollCtrl.hasClients && _scrollCtrl.offset > 0) {
           _scrollCtrl.animateTo(
-            _scrollCtrl.position.maxScrollExtent,
+            0,
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
           );
@@ -186,12 +185,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         .read<MessengerBloc>()
         .add(SendMessage(widget.conversationId, text));
     _ctrl.clear();
-    // Scroll to bottom after message is added
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollCtrl.hasClients) {
+    // With reverse:true, new messages appear at offset 0
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (_scrollCtrl.hasClients && _scrollCtrl.offset > 0) {
         _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          0,
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
         );
       }
@@ -311,16 +310,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           return currCount > prevCount;
         },
         listener: (context, state) {
+          // With reverse:true the list starts at bottom — only scroll if user scrolled up
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || !_scrollCtrl.hasClients) return;
-            if (!_initialScrollDone) {
-              // Jump instantly to bottom on first load (no animation flash)
-              _initialScrollDone = true;
-              _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
-            } else {
+            if (_scrollCtrl.offset > 0) {
               _scrollCtrl.animateTo(
-                _scrollCtrl.position.maxScrollExtent,
-                duration: const Duration(milliseconds: 300),
+                0,
+                duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOut,
               );
             }
@@ -346,11 +342,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       )
                     : ListView.builder(
                         controller: _scrollCtrl,
+                        reverse: true,
                         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                         padding: const EdgeInsets.all(16),
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
-                          final msg = messages[index];
+                          final msg = messages[messages.length - 1 - index];
                           final isMe = _isMyMessage(msg, state);
                           return _MessageBubble(
                             message: msg,
