@@ -45,20 +45,19 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
   Future<void> _checkUsername() async {
     if (!mounted) return;
-    // Check cache first, then API
     final cache = sl<CacheService>();
-    Map<String, dynamic>? profile = cache.getProfile();
-    if (profile == null) {
-      try {
-        final client = sl<DioClient>();
-        profile = await client.get(
-          '/profile',
-          fromJson: (d) => Map<String, dynamic>.from(d as Map),
-        );
-        if (profile != null) await cache.saveProfile(profile);
-      } catch (_) {
-        return;
-      }
+    Map<String, dynamic>? profile;
+    // Always fetch fresh profile from API to get current username
+    try {
+      final client = sl<DioClient>();
+      profile = await client.get(
+        '/profile',
+        fromJson: (d) => Map<String, dynamic>.from(d as Map),
+      );
+      if (profile != null) await cache.saveProfile(profile);
+    } catch (_) {
+      // API failed — fall back to cache
+      profile = cache.getProfile();
     }
     if (!mounted) return;
     final username = profile?['username'] as String?;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,6 +59,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   String? _roomName; // actual room name (resolved after connect)
   final List<lk.RemoteParticipant> _participants = [];
   lk.EventsListener<lk.RoomEvent>? _eventsListener;
+  StreamSubscription? _callEndedSub;
 
   static const _audioChannel = MethodChannel('taler_id/audio');
 
@@ -66,6 +68,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     super.initState();
     // Listen for audio interruptions from native (parallel call from phone/other app)
     _audioChannel.setMethodCallHandler(_onNativeAudioEvent);
+    // Listen for call_ended socket event — the other party hung up
+    _callEndedSub = sl<MessengerRemoteDataSource>()
+        .callEndedStream
+        .listen((roomName) {
+      if (!mounted || _navigatedAway) return;
+      final ourRoom = _roomName ?? CallStateService.instance.roomName;
+      if (ourRoom == roomName) {
+        _hangUp();
+      }
+    });
     final cs = CallStateService.instance;
     // Resume existing room if already connected
     if (cs.isInCall && cs.room != null) {
@@ -250,6 +262,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
         if (event.participant.identity != 'ai-assistant') {
           await _ringPlayer.stop();
+        }
+      })
+      ..on<lk.ParticipantDisconnectedEvent>((event) {
+        if (!mounted || _navigatedAway) return;
+        // If the disconnected participant is human (not AI), check if any humans remain
+        final hasHumanParticipants = _room?.remoteParticipants.values
+            .any((p) => p.identity != 'ai-assistant') ?? false;
+        if (!hasHumanParticipants) {
+          // No human participants left — auto-end the call
+          _hangUp();
         }
       });
   }
@@ -530,6 +552,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   @override
   void dispose() {
+    _callEndedSub?.cancel();
     _audioChannel.setMethodCallHandler(null);
     WakelockPlus.disable();
     _eventsListener?.dispose();

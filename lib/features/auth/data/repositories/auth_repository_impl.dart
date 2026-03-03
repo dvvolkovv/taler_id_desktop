@@ -7,6 +7,8 @@ import '../../domain/entities/auth_entities.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../../../../core/storage/secure_storage_service.dart';
+import '../../../../core/storage/cache_service.dart';
+import '../../../../core/di/service_locator.dart';
 
 class AuthRepositoryImpl implements IAuthRepository {
   final AuthRemoteDataSource remote;
@@ -121,6 +123,10 @@ class AuthRepositoryImpl implements IAuthRepository {
       // Server call may fail (expired token, network error) — ignore
     }
     await storage.clearTokens();
+    // Clear cached profile so the next login gets fresh data
+    try {
+      await sl<CacheService>().clearAll();
+    } catch (_) {}
   }
 }
 

@@ -412,16 +412,26 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   child: Container(
                     width: double.infinity,
                     color: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.call_rounded, color: Colors.black, size: 16),
-                        SizedBox(width: 8),
-                        Text(
-                          'Активный звонок — нажмите, чтобы вернуться',
-                          style: TextStyle(color: Colors.black, fontSize: 13),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.call_rounded, color: Colors.black, size: 18),
+                            SizedBox(width: 10),
+                            Text(
+                              'Активный звонок — нажмите, чтобы вернуться',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 );
