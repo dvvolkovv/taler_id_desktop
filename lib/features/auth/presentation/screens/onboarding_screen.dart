@@ -55,7 +55,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     final pages = [
       _OnboardingPage(
-        icon: Icons.verified_user,
+        icon: Icons.shield_outlined,
         title: l10n.onboardingTitle1,
         description: l10n.onboardingDesc1,
         colors: colors,

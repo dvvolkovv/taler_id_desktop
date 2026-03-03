@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:video_player/video_player.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/constants.dart';
@@ -18,6 +19,8 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
+  late VideoPlayerController _videoController;
+  bool _videoReady = false;
 
   @override
   void initState() {
@@ -27,7 +30,18 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 800),
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
-    _animController.forward();
+
+    _videoController = VideoPlayerController.asset('assets/video.mp4')
+      ..setLooping(true)
+      ..setVolume(0)
+      ..initialize().then((_) {
+        if (mounted) {
+          setState(() => _videoReady = true);
+          _videoController.play();
+          _animController.forward();
+        }
+      });
+
     _checkAuthState();
   }
 
@@ -55,7 +69,6 @@ class _SplashScreenState extends State<SplashScreen>
         if (mounted) context.go(RouteConstants.assistant);
         return;
       }
-      // Biometric failed — fallback to PIN if enabled
       if (pinEnabled) {
         if (mounted) context.go(RouteConstants.pinEntry);
         return;
@@ -85,14 +98,17 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _animController.dispose();
+    _videoController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colors = AppColors.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.of(context).background,
+      backgroundColor: colors.background,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: Center(
@@ -103,23 +119,34 @@ class _SplashScreenState extends State<SplashScreen>
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppColors.of(context).primary,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.of(context).primary.withOpacity(0.4),
+                      color: colors.primary.withOpacity(0.4),
                       blurRadius: 24,
                       spreadRadius: 4,
                     ),
                   ],
                 ),
-                child: const Icon(Icons.verified_user, color: Colors.black, size: 40),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: _videoReady
+                      ? FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width: _videoController.value.size.width,
+                            height: _videoController.value.size.height,
+                            child: VideoPlayer(_videoController),
+                          ),
+                        )
+                      : Image.asset('app_icon_1024.png', width: 80, height: 80),
+                ),
               ),
               const SizedBox(height: 20),
               Text(
                 'Taler ID',
                 style: TextStyle(
-                  color: AppColors.of(context).textPrimary,
+                  color: colors.textPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
@@ -128,7 +155,8 @@ class _SplashScreenState extends State<SplashScreen>
               const SizedBox(height: 8),
               Text(
                 l10n.appSubtitle,
-                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
+                style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

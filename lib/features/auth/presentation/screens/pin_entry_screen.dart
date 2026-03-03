@@ -103,14 +103,9 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
         child: Column(
           children: [
             const Spacer(),
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppColors.of(context).primary,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.verified_user, color: Colors.black, size: 32),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset('app_icon_1024.png', width: 64, height: 64),
             ),
             const SizedBox(height: 16),
             Text(

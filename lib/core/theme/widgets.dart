@@ -66,7 +66,7 @@ class StatusBadge extends StatelessWidget {
       );
 }
 
-/// Full-width loading button with teal gradient
+/// Full-width loading button with blue gradient
 class LoadingButton extends StatelessWidget {
   final String text;
   final bool loading;

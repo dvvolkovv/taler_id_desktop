@@ -43,7 +43,7 @@ void _setupCallkitListener() {
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     if (lifecycle == AppLifecycleState.resumed) {
       try {
-        appRouter.go(route);
+        appRouter.push(route);
       } catch (_) {}
     }
   });

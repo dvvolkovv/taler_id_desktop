@@ -74,8 +74,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           final lifecycle = WidgetsBinding.instance.lifecycleState;
           if (lifecycle == AppLifecycleState.resumed) {
             // App is already in foreground — navigate on the next rendered frame.
+            // Use push (same as in-app dialog) so DashboardScreen stays alive and
+            // avoids GoRouter full-stack rebuild that can trigger _globalRedirect issues.
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) context.go(route);
+              if (mounted) context.push(route);
             });
           } else {
             // App is backgrounded / locked screen.
@@ -125,10 +127,17 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Handle CallKit accept that happened while app was cold-starting
+      // Handle CallKit accept that happened while app was cold-starting.
+      // If lifecycle is not resumed yet (app still waking), defer navigation
+      // to didChangeAppLifecycleState so the router is ready.
       final pendingRoute = NotificationService.consumePendingCallRoute();
       if (pendingRoute != null && mounted) {
-        context.go(pendingRoute);
+        final lifecycle = WidgetsBinding.instance.lifecycleState;
+        if (lifecycle == AppLifecycleState.resumed) {
+          context.go(pendingRoute);
+        } else {
+          _pendingCallRoute = pendingRoute; // defer to didChangeAppLifecycleState
+        }
         return;
       }
       // Handle FCM notification tap when app was terminated
@@ -247,13 +256,19 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _pendingCallRoute != null && mounted) {
-      final route = _pendingCallRoute!;
-      _pendingCallRoute = null;
-      // Use postFrameCallback so the router is ready after resume
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.go(route);
-      });
+    if (state == AppLifecycleState.resumed && mounted) {
+      // Also consume NotificationService route as fallback — covers cold-start
+      // where main.dart stored the route in NotificationService but DashboardScreen
+      // was not yet mounted when actionCallAccept fired.
+      final route = _pendingCallRoute ?? NotificationService.consumePendingCallRoute();
+      if (route != null) {
+        _pendingCallRoute = null;
+        // Use postFrameCallback so the router is ready after resume.
+        // Use push so DashboardScreen stays alive (same mechanism as in-app dialog accept).
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) context.push(route);
+        });
+      }
     }
   }
 

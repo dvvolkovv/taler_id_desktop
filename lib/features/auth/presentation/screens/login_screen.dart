@@ -63,14 +63,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Logo
                   Row(
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.of(context).primary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.verified_user, color: Colors.black, size: 22),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset('app_icon_1024.png', width: 40, height: 40),
                       ),
                       const SizedBox(width: 12),
                       Text(

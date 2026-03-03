@@ -44,11 +44,11 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     required this.backgroundGradient,
   });
 
-  // ── Dark palette (Teal + Gold on navy) ──
+  // ── Dark palette (Blue + Gold on navy) ──
   static const dark = AppColorsExtension(
-    primary: Color(0xFF14B8A6),
-    primaryDark: Color(0xFF0D9488),
-    secondary: Color(0xFF0D9488),
+    primary: Color(0xFF167EF2),
+    primaryDark: Color(0xFF0D5FD8),
+    secondary: Color(0xFF0D5FD8),
     accent: Color(0xFFFBBF24),
     surface: Color(0xFF142338),
     background: Color(0xFF0A1628),
@@ -63,7 +63,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     glassBorderOpacity: 0.15,
     glassBlurSigma: 24.0,
     primaryGradient: LinearGradient(
-      colors: [Color(0xFF14B8A6), Color(0xFF0D9488)],
+      colors: [Color(0xFF167EF2), Color(0xFF0D5FD8)],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
@@ -74,11 +74,11 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     ),
   );
 
-  // ── Light palette (Teal + Gold on slate) ──
+  // ── Light palette (Blue + Gold on slate) ──
   static const light = AppColorsExtension(
-    primary: Color(0xFF0D9488),
-    primaryDark: Color(0xFF0F766E),
-    secondary: Color(0xFF0D9488),
+    primary: Color(0xFF1570D6),
+    primaryDark: Color(0xFF0D5FD8),
+    secondary: Color(0xFF1570D6),
     accent: Color(0xFFD97706),
     surface: Color(0xFFF8FAFC),
     background: Color(0xFFF1F5F9),
@@ -93,7 +93,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     glassBorderOpacity: 0.08,
     glassBlurSigma: 20.0,
     primaryGradient: LinearGradient(
-      colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
+      colors: [Color(0xFF1570D6), Color(0xFF0D5FD8)],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),

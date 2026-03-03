@@ -451,7 +451,7 @@ class _MessageBubble extends StatelessWidget {
                       child: Text(
                         message.fileName ?? message.content,
                         style: TextStyle(
-                          color: isMe ? Colors.black : AppColors.of(context).primary,
+                          color: isMe ? Colors.white : AppColors.of(context).primary,
                           fontSize: 13,
                           decoration: TextDecoration.underline,
                         ),
@@ -465,7 +465,7 @@ class _MessageBubble extends StatelessWidget {
               Text(
                 message.content,
                 style: TextStyle(
-                  color: isMe ? Colors.black : AppColors.of(context).textPrimary,
+                  color: isMe ? Colors.white : AppColors.of(context).textPrimary,
                   fontSize: 14,
                 ),
               ),
@@ -477,7 +477,7 @@ class _MessageBubble extends StatelessWidget {
                   DateFormat('HH:mm').format(message.sentAt.toLocal()),
                   style: TextStyle(
                     color: isMe
-                        ? Colors.black.withValues(alpha: 0.6)
+                        ? Colors.white.withValues(alpha: 0.7)
                         : AppColors.of(context).textSecondary,
                     fontSize: 11,
                   ),
@@ -493,7 +493,7 @@ class _MessageBubble extends StatelessWidget {
                     size: 14,
                     color: message.isRead
                         ? AppColors.of(context).primary
-                        : Colors.black.withValues(alpha: 0.5),
+                        : Colors.white.withValues(alpha: 0.5),
                   ),
                 ],
               ],
@@ -709,14 +709,14 @@ class _AudioMessagePlayerState extends State<_AudioMessagePlayer> {
         children: [
           Icon(
             _playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
-            color: widget.isMe ? Colors.black : AppColors.of(context).primary,
+            color: widget.isMe ? Colors.white : AppColors.of(context).primary,
             size: 32,
           ),
           const SizedBox(width: 8),
           Text(
             'Голосовое сообщение',
             style: TextStyle(
-              color: widget.isMe ? Colors.black : AppColors.of(context).textPrimary,
+              color: widget.isMe ? Colors.white : AppColors.of(context).textPrimary,
               fontSize: 13,
             ),
           ),
