@@ -56,7 +56,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
         await storage.setPinEnabled(true);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.pinSet), backgroundColor: AppColors.primary),
+            SnackBar(content: Text(AppLocalizations.of(context)!.pinSet), backgroundColor: AppColors.of(context).primary),
           );
           context.pop();
         }
@@ -76,11 +76,11 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.setupPin),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.of(context).textPrimary),
           onPressed: () => context.pop(),
         ),
       ),
@@ -90,24 +90,24 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
             const Spacer(),
             Icon(
               _confirming ? Icons.lock_outlined : Icons.pin_outlined,
-              color: AppColors.primary,
+              color: AppColors.of(context).primary,
               size: 48,
             ),
             const SizedBox(height: 16),
             Text(
               _confirming ? l10n.confirmPin : l10n.setupPin,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 20, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               _confirming ? l10n.confirmPin : l10n.pinCodeDesc,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 32),
             PinDots(filled: _pin.length),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+              Text(_error!, style: TextStyle(color: AppColors.of(context).error, fontSize: 13)),
             ],
             const Spacer(),
             Padding(

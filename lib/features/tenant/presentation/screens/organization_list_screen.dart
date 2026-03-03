@@ -28,12 +28,12 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.organizations),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: AppColors.primary),
+            icon: Icon(Icons.add, color: AppColors.of(context).primary),
             onPressed: () => _showCreateDialog(context),
           ),
         ],
@@ -42,13 +42,13 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
         listener: (context, state) {
           if (state is TenantError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).error),
             );
           }
         },
         builder: (context, state) {
           if (state is TenantLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return Center(child: CircularProgressIndicator(color: AppColors.of(context).primary));
           }
 
           if (state is TenantsLoaded) {
@@ -56,7 +56,7 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
               return _buildEmpty(context);
             }
             return RefreshIndicator(
-              color: AppColors.primary,
+              color: AppColors.of(context).primary,
               onRefresh: () async => context.read<TenantBloc>().add(TenantsLoadRequested()),
               child: ListView.separated(
                 padding: const EdgeInsets.all(16),
@@ -95,10 +95,10 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.15),
+                color: AppColors.of(context).primary.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.business_outlined, color: AppColors.primary, size: 24),
+              child: Icon(Icons.business_outlined, color: AppColors.of(context).primary, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -106,7 +106,7 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(tenant.name,
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -116,18 +116,18 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: AppColors.secondary.withOpacity(0.15),
+                            color: AppColors.of(context).secondary.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(roleLabel,
-                              style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.w500)),
+                              style: TextStyle(color: AppColors.of(context).secondary, fontSize: 11, fontWeight: FontWeight.w500)),
                         ),
                     ],
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            Icon(Icons.chevron_right, color: AppColors.of(context).textSecondary),
           ],
         ),
       ),
@@ -140,12 +140,12 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.business_outlined, color: AppColors.textSecondary, size: 64),
+            Icon(Icons.business_outlined, color: AppColors.of(context).textSecondary, size: 64),
             const SizedBox(height: 16),
-            Text(l10n.noOrganizations, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+            Text(l10n.noOrganizations, style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 18)),
             const SizedBox(height: 8),
             Text(l10n.noOrganizationsDesc,
-                textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                textAlign: TextAlign.center, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14)),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => _showCreateDialog(context),
@@ -166,7 +166,7 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
@@ -179,31 +179,31 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(l10n.newOrganization,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               TextField(
                 controller: nameCtrl,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.orgName),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.orgEmail),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: websiteCtrl,
                 keyboardType: TextInputType.url,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.orgWebsite),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: addressCtrl,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.orgLegalAddress),
                 maxLines: 2,
               ),
@@ -234,10 +234,10 @@ class _OrganizationListScreenState extends State<OrganizationListScreen> {
 
   Color _kybColor(KybStatus status) {
     switch (status) {
-      case KybStatus.verified: return AppColors.primary;
-      case KybStatus.pending: return AppColors.warning;
-      case KybStatus.rejected: return AppColors.error;
-      default: return AppColors.textSecondary;
+      case KybStatus.verified: return AppColors.of(context).primary;
+      case KybStatus.pending: return AppColors.of(context).warning;
+      case KybStatus.rejected: return AppColors.of(context).error;
+      default: return AppColors.of(context).textSecondary;
     }
   }
 

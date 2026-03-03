@@ -267,5 +267,11 @@
   "assistantMicrophone": "Microphone",
   "assistantConnectionError": "Connection error",
 
-  "tabMessenger": "Messages"
+  "tabMessenger": "Messages",
+
+  "appearance": "Appearance",
+  "appearanceSelect": "Choose Theme",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeSystem": "System"
 }

@@ -75,13 +75,13 @@ class _ChatBubbleState extends State<ChatBubble> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
+                color: AppColors.of(context).primary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.smart_toy_outlined,
                 size: 18,
-                color: AppColors.primary,
+                color: AppColors.of(context).primary,
               ),
             ),
             const SizedBox(width: 8),
@@ -90,7 +90,7 @@ class _ChatBubbleState extends State<ChatBubble> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isUser ? AppColors.primary.withValues(alpha: 0.15) : AppColors.card,
+                color: isUser ? AppColors.of(context).primary.withValues(alpha: 0.15) : AppColors.of(context).card,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -104,8 +104,8 @@ class _ChatBubbleState extends State<ChatBubble> {
                   if (isUser)
                     Text(
                       widget.message.content,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: AppColors.of(context).textPrimary,
                         fontSize: 15,
                       ),
                     )
@@ -114,28 +114,28 @@ class _ChatBubbleState extends State<ChatBubble> {
                       MarkdownBody(
                         data: widget.message.content,
                         styleSheet: MarkdownStyleSheet(
-                          p: const TextStyle(
-                            color: AppColors.textPrimary,
+                          p: TextStyle(
+                            color: AppColors.of(context).textPrimary,
                             fontSize: 15,
                           ),
                           code: TextStyle(
-                            color: AppColors.primary,
-                            backgroundColor: AppColors.background.withValues(alpha: 0.5),
+                            color: AppColors.of(context).primary,
+                            backgroundColor: AppColors.of(context).background.withValues(alpha: 0.5),
                             fontSize: 13,
                           ),
                           codeblockDecoration: BoxDecoration(
-                            color: AppColors.background,
+                            color: AppColors.of(context).background,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          a: const TextStyle(color: AppColors.secondary),
-                          h1: const TextStyle(color: AppColors.textPrimary, fontSize: 20),
-                          h2: const TextStyle(color: AppColors.textPrimary, fontSize: 18),
-                          h3: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
-                          listBullet: const TextStyle(color: AppColors.textSecondary),
+                          a: TextStyle(color: AppColors.of(context).secondary),
+                          h1: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 20),
+                          h2: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 18),
+                          h3: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 16),
+                          listBullet: TextStyle(color: AppColors.of(context).textSecondary),
                           blockquoteDecoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: AppColors.of(context).surface,
                             border: Border(
-                              left: BorderSide(color: AppColors.primary.withValues(alpha: 0.5), width: 3),
+                              left: BorderSide(color: AppColors.of(context).primary.withValues(alpha: 0.5), width: 3),
                             ),
                           ),
                         ),
@@ -151,7 +151,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                           height: 12,
                           child: CircularProgressIndicator(
                             strokeWidth: 1.5,
-                            color: AppColors.primary.withValues(alpha: 0.5),
+                            color: AppColors.of(context).primary.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
@@ -168,7 +168,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                         child: Icon(
                           _isSpeaking ? Icons.stop_circle_outlined : Icons.volume_up_outlined,
                           size: 18,
-                          color: AppColors.textSecondary,
+                          color: AppColors.of(context).textSecondary,
                         ),
                       ),
                     ),
@@ -195,7 +195,7 @@ class _ChatBubbleState extends State<ChatBubble> {
             height: 6,
             margin: const EdgeInsets.symmetric(horizontal: 2),
             decoration: BoxDecoration(
-              color: AppColors.textSecondary,
+              color: AppColors.of(context).textSecondary,
               borderRadius: BorderRadius.circular(3),
             ),
           ),

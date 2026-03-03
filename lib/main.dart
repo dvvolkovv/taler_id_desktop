@@ -88,20 +88,32 @@ Future<void> main() async {
     }
   }
 
-  // Load saved language
+  // Load saved language & theme
   final storage = sl<SecureStorageService>();
   final savedLang = await storage.getLanguage();
+  final savedTheme = await storage.getThemeMode();
+  final themeMode = switch (savedTheme) {
+    'dark' => ThemeMode.dark,
+    'system' => ThemeMode.system,
+    _ => ThemeMode.light, // default = light
+  };
 
-  runApp(TalerIdApp(initialLocale: savedLang));
+  runApp(TalerIdApp(initialLocale: savedLang, initialThemeMode: themeMode));
 }
 
 class TalerIdApp extends StatefulWidget {
   final String? initialLocale;
-  const TalerIdApp({super.key, this.initialLocale});
+  final ThemeMode initialThemeMode;
+  const TalerIdApp({super.key, this.initialLocale, this.initialThemeMode = ThemeMode.light});
 
   static void setLocale(BuildContext context, Locale locale) {
     final state = context.findAncestorStateOfType<_TalerIdAppState>();
     state?._setLocale(locale);
+  }
+
+  static void setThemeMode(BuildContext context, ThemeMode mode) {
+    final state = context.findAncestorStateOfType<_TalerIdAppState>();
+    state?._setThemeMode(mode);
   }
 
   @override
@@ -110,6 +122,7 @@ class TalerIdApp extends StatefulWidget {
 
 class _TalerIdAppState extends State<TalerIdApp> {
   Locale? _locale;
+  late ThemeMode _themeMode;
 
   @override
   void initState() {
@@ -117,10 +130,15 @@ class _TalerIdAppState extends State<TalerIdApp> {
     if (widget.initialLocale != null) {
       _locale = Locale(widget.initialLocale!);
     }
+    _themeMode = widget.initialThemeMode;
   }
 
   void _setLocale(Locale locale) {
     setState(() => _locale = locale);
+  }
+
+  void _setThemeMode(ThemeMode mode) {
+    setState(() => _themeMode = mode);
   }
 
   @override
@@ -135,7 +153,9 @@ class _TalerIdAppState extends State<TalerIdApp> {
       ],
       child: MaterialApp.router(
         title: 'Taler ID',
-        theme: AppTheme.dark,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: _themeMode,
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
         locale: _locale,

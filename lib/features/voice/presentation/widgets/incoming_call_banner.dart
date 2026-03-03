@@ -19,28 +19,28 @@ class IncomingCallBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
+      decoration: BoxDecoration(
+        color: AppColors.of(context).card,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.call_rounded,
             size: 48,
-            color: AppColors.primary,
+            color: AppColors.of(context).primary,
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Входящий звонок',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14),
           ),
           const SizedBox(height: 4),
           Text(
             fromUserName,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: AppColors.of(context).textPrimary,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
@@ -56,8 +56,8 @@ class IncomingCallBanner extends StatelessWidget {
                     Container(
                       width: 64,
                       height: 64,
-                      decoration: const BoxDecoration(
-                        color: AppColors.error,
+                      decoration: BoxDecoration(
+                        color: AppColors.of(context).error,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -67,10 +67,10 @@ class IncomingCallBanner extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Отклонить',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AppColors.of(context).textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -95,10 +95,10 @@ class IncomingCallBanner extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Принять',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AppColors.of(context).textSecondary,
                         fontSize: 12,
                       ),
                     ),

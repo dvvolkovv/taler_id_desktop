@@ -98,7 +98,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       body: SafeArea(
         child: Column(
           children: [
@@ -107,26 +107,26 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: AppColors.of(context).primary,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(Icons.verified_user, color: Colors.black, size: 32),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Taler ID',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               l10n.enterPin,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
+              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 16),
             ),
             const SizedBox(height: 32),
             PinDots(filled: _pin.length),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+              Text(_error!, style: TextStyle(color: AppColors.of(context).error, fontSize: 13)),
             ],
             const Spacer(),
             Padding(
@@ -140,7 +140,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => context.go(RouteConstants.login),
-              child: Text(l10n.loginButton, style: const TextStyle(color: AppColors.textSecondary)),
+              child: Text(l10n.loginButton, style: TextStyle(color: AppColors.of(context).textSecondary)),
             ),
             const SizedBox(height: 16),
           ],

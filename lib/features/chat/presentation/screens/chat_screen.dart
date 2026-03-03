@@ -54,7 +54,7 @@ class _ChatViewState extends State<_ChatView> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.chatTitle),
         actions: [
@@ -75,7 +75,7 @@ class _ChatViewState extends State<_ChatView> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(l10n.chatError),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: AppColors.of(context).error,
                     ),
                   );
                 }
@@ -89,13 +89,13 @@ class _ChatViewState extends State<_ChatView> {
                         Icon(
                           Icons.smart_toy_outlined,
                           size: 64,
-                          color: AppColors.primary.withValues(alpha: 0.3),
+                          color: AppColors.of(context).primary.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           l10n.chatEmpty,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style: TextStyle(
+                            color: AppColors.of(context).textSecondary,
                             fontSize: 16,
                           ),
                         ),

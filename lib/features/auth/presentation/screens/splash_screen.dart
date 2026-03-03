@@ -89,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: Center(
@@ -100,11 +100,11 @@ class _SplashScreenState extends State<SplashScreen>
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: AppColors.of(context).primary,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
+                      color: AppColors.of(context).primary.withOpacity(0.4),
                       blurRadius: 24,
                       spreadRadius: 4,
                     ),
@@ -113,10 +113,10 @@ class _SplashScreenState extends State<SplashScreen>
                 child: const Icon(Icons.verified_user, color: Colors.black, size: 40),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Taler ID',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: AppColors.of(context).textPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
@@ -125,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen>
               const SizedBox(height: 8),
               Text(
                 l10n.appSubtitle,
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
               ),
             ],
           ),

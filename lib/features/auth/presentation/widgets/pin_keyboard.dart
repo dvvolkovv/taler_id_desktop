@@ -15,39 +15,40 @@ class PinKeyboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Column(
       children: [
-        _row(['1', '2', '3']),
+        _row(['1', '2', '3'], colors),
         const SizedBox(height: 16),
-        _row(['4', '5', '6']),
+        _row(['4', '5', '6'], colors),
         const SizedBox(height: 16),
-        _row(['7', '8', '9']),
+        _row(['7', '8', '9'], colors),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             if (onBiometric != null)
-              _actionButton(Icons.fingerprint, onBiometric!)
+              _actionButton(Icons.fingerprint, onBiometric!, colors)
             else
               const SizedBox(width: 72, height: 72),
-            _digitButton('0'),
-            _actionButton(Icons.backspace_outlined, onDelete),
+            _digitButton('0', colors),
+            _actionButton(Icons.backspace_outlined, onDelete, colors),
           ],
         ),
       ],
     );
   }
 
-  Widget _row(List<String> digits) => Row(
+  Widget _row(List<String> digits, AppColorsExtension colors) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: digits.map(_digitButton).toList(),
+        children: digits.map((d) => _digitButton(d, colors)).toList(),
       );
 
-  Widget _digitButton(String digit) => SizedBox(
+  Widget _digitButton(String digit, AppColorsExtension colors) => SizedBox(
         width: 72,
         height: 72,
         child: Material(
-          color: AppColors.card,
+          color: colors.card,
           borderRadius: BorderRadius.circular(36),
           child: InkWell(
             borderRadius: BorderRadius.circular(36),
@@ -55,8 +56,8 @@ class PinKeyboard extends StatelessWidget {
             child: Center(
               child: Text(
                 digit,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style: TextStyle(
+                  color: colors.textPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.w500,
                 ),
@@ -66,7 +67,7 @@ class PinKeyboard extends StatelessWidget {
         ),
       );
 
-  Widget _actionButton(IconData icon, VoidCallback onTap) => SizedBox(
+  Widget _actionButton(IconData icon, VoidCallback onTap, AppColorsExtension colors) => SizedBox(
         width: 72,
         height: 72,
         child: Material(
@@ -76,7 +77,7 @@ class PinKeyboard extends StatelessWidget {
             borderRadius: BorderRadius.circular(36),
             onTap: onTap,
             child: Center(
-              child: Icon(icon, color: AppColors.textSecondary, size: 28),
+              child: Icon(icon, color: colors.textSecondary, size: 28),
             ),
           ),
         ),
@@ -91,6 +92,7 @@ class PinDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(length, (i) {
@@ -101,9 +103,9 @@ class PinDots extends StatelessWidget {
           height: 16,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: active ? AppColors.primary : Colors.transparent,
+            color: active ? colors.primary : Colors.transparent,
             border: Border.all(
-              color: active ? AppColors.primary : AppColors.textSecondary,
+              color: active ? colors.primary : colors.textSecondary,
               width: 2,
             ),
           ),

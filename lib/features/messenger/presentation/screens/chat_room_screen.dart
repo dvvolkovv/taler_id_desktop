@@ -71,9 +71,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (CallStateService.instance.isInCall) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Уже идёт звонок'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.of(context).error,
           ),
         );
       }
@@ -83,7 +83,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     // Show bottom sheet to choose call type
     final withAi = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -107,7 +107,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Ошибка звонка: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.of(context).error,
           ),
         );
       }
@@ -125,14 +125,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final caption = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.card,
-        title: const Text('Подпись к файлу', style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: AppColors.of(context).card,
+        title: Text('Подпись к файлу', style: TextStyle(color: AppColors.of(context).textPrimary)),
         content: TextField(
           controller: captionCtrl,
-          style: const TextStyle(color: AppColors.textPrimary),
-          decoration: const InputDecoration(
+          style: TextStyle(color: AppColors.of(context).textPrimary),
+          decoration: InputDecoration(
             hintText: 'Необязательно...',
-            hintStyle: TextStyle(color: AppColors.textSecondary),
+            hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
           ),
           autofocus: true,
         ),
@@ -143,7 +143,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, captionCtrl.text.trim()),
-            child: const Text('Отправить', style: TextStyle(color: AppColors.primary)),
+            child: Text('Отправить', style: TextStyle(color: AppColors.of(context).primary)),
           ),
         ],
       ),
@@ -173,7 +173,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка загрузки файла: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('Ошибка загрузки файла: $e'), backgroundColor: AppColors.of(context).error),
       );
     }
   }
@@ -234,7 +234,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.of(context).error),
       );
     }
   }
@@ -250,7 +250,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: BlocBuilder<MessengerBloc, MessengerState>(
           buildWhen: (prev, curr) => prev.conversations != curr.conversations,
@@ -269,7 +269,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       : null,
                   child: CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                    backgroundColor: AppColors.of(context).primary.withValues(alpha: 0.2),
                     child: avatarUrl != null && avatarUrl.isNotEmpty
                         ? ClipOval(
                             child: CachedNetworkImage(
@@ -279,13 +279,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                               fit: BoxFit.cover,
                               errorWidget: (_, __, ___) => Text(
                                 name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: AppColors.of(context).primary, fontSize: 14, fontWeight: FontWeight.bold),
                               ),
                             ),
                           )
                         : Text(
                             name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
-                            style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: AppColors.of(context).primary, fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                   ),
                 ),
@@ -333,11 +333,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             children: [
               Expanded(
                 child: messages.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           'Начните переписку',
                           style:
-                              TextStyle(color: AppColors.textSecondary),
+                              TextStyle(color: AppColors.of(context).textSecondary),
                         ),
                       )
                     : ListView.builder(
@@ -403,7 +403,7 @@ class _MessageBubble extends StatelessWidget {
         constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primary : AppColors.card,
+          color: isMe ? AppColors.of(context).primary : AppColors.of(context).card,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -414,8 +414,8 @@ class _MessageBubble extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   senderName!,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: AppColors.of(context).primary,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -430,7 +430,7 @@ class _MessageBubble extends StatelessWidget {
                     imageUrl: message.fileUrl!,
                     width: 220,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: AppColors.textSecondary),
+                    errorWidget: (_, __, ___) => Icon(Icons.broken_image, color: AppColors.of(context).textSecondary),
                   ),
                 ),
               )
@@ -445,13 +445,13 @@ class _MessageBubble extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.insert_drive_file_rounded, color: AppColors.primary, size: 20),
+                    Icon(Icons.insert_drive_file_rounded, color: AppColors.of(context).primary, size: 20),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
                         message.fileName ?? message.content,
                         style: TextStyle(
-                          color: isMe ? Colors.black : AppColors.primary,
+                          color: isMe ? Colors.black : AppColors.of(context).primary,
                           fontSize: 13,
                           decoration: TextDecoration.underline,
                         ),
@@ -465,7 +465,7 @@ class _MessageBubble extends StatelessWidget {
               Text(
                 message.content,
                 style: TextStyle(
-                  color: isMe ? Colors.black : AppColors.textPrimary,
+                  color: isMe ? Colors.black : AppColors.of(context).textPrimary,
                   fontSize: 14,
                 ),
               ),
@@ -478,7 +478,7 @@ class _MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     color: isMe
                         ? Colors.black.withValues(alpha: 0.6)
-                        : AppColors.textSecondary,
+                        : AppColors.of(context).textSecondary,
                     fontSize: 11,
                   ),
                 ),
@@ -492,7 +492,7 @@ class _MessageBubble extends StatelessWidget {
                             : Icons.done_rounded,
                     size: 14,
                     color: message.isRead
-                        ? AppColors.primary
+                        ? AppColors.of(context).primary
                         : Colors.black.withValues(alpha: 0.5),
                   ),
                 ],
@@ -523,10 +523,10 @@ class _CallOptionsSheetState extends State<_CallOptionsSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Параметры звонка',
             style: TextStyle(
-              color: AppColors.textPrimary,
+              color: AppColors.of(context).textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -534,27 +534,27 @@ class _CallOptionsSheetState extends State<_CallOptionsSheet> {
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: AppColors.of(context).background,
               borderRadius: BorderRadius.circular(12),
             ),
             child: SwitchListTile(
               value: _withAi,
               onChanged: (v) => setState(() => _withAi = v),
-              activeColor: AppColors.primary,
-              title: const Text(
+              activeColor: AppColors.of(context).primary,
+              title: Text(
                 'Подключить AI ассистента',
-                style: TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
               ),
               subtitle: Text(
                 _withAi
                     ? 'AI будет участвовать в разговоре'
                     : 'Обычный звонок без AI',
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12),
+                style: TextStyle(
+                    color: AppColors.of(context).textSecondary, fontSize: 12),
               ),
               secondary: Icon(
                 Icons.smart_toy_outlined,
-                color: _withAi ? AppColors.primary : AppColors.textSecondary,
+                color: _withAi ? AppColors.of(context).primary : AppColors.of(context).textSecondary,
               ),
             ),
           ),
@@ -572,7 +572,7 @@ class _CallOptionsSheetState extends State<_CallOptionsSheet> {
                     fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: AppColors.of(context).primary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -606,34 +606,34 @@ class _InputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
+      decoration: BoxDecoration(
+        color: AppColors.of(context).card,
         border: Border(
-          top: BorderSide(color: AppColors.border),
+          top: BorderSide(color: AppColors.of(context).border),
         ),
       ),
       child: Row(
         children: [
           IconButton(
             onPressed: isRecording ? null : onAttach,
-            icon: const Icon(Icons.attach_file_rounded, color: AppColors.textSecondary),
+            icon: Icon(Icons.attach_file_rounded, color: AppColors.of(context).textSecondary),
           ),
           Expanded(
             child: isRecording
-                ? const Row(
+                ? Row(
                     children: [
-                      Icon(Icons.circle, color: AppColors.error, size: 12),
+                      Icon(Icons.circle, color: AppColors.of(context).error, size: 12),
                       SizedBox(width: 8),
-                      Text('Запись...', style: TextStyle(color: AppColors.error, fontSize: 14)),
+                      Text('Запись...', style: TextStyle(color: AppColors.of(context).error, fontSize: 14)),
                     ],
                   )
                 : TextField(
                     controller: controller,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: AppColors.of(context).textPrimary),
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Сообщение...',
-                      hintStyle: TextStyle(color: AppColors.textSecondary),
+                      hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
                       border: InputBorder.none,
                     ),
                     onSubmitted: (_) => onSend(),
@@ -642,7 +642,7 @@ class _InputBar extends StatelessWidget {
           ),
           IconButton(
             onPressed: () => FocusScope.of(context).unfocus(),
-            icon: const Icon(Icons.keyboard_hide_rounded, color: AppColors.textSecondary),
+            icon: Icon(Icons.keyboard_hide_rounded, color: AppColors.of(context).textSecondary),
             tooltip: 'Скрыть клавиатуру',
           ),
           // Voice button: hold to record
@@ -653,14 +653,14 @@ class _InputBar extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               child: Icon(
                 isRecording ? Icons.stop_circle_rounded : Icons.mic_rounded,
-                color: isRecording ? AppColors.error : AppColors.textSecondary,
+                color: isRecording ? AppColors.of(context).error : AppColors.of(context).textSecondary,
               ),
             ),
           ),
           if (!isRecording)
             IconButton(
               onPressed: onSend,
-              icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+              icon: Icon(Icons.send_rounded, color: AppColors.of(context).primary),
             ),
         ],
       ),
@@ -709,14 +709,14 @@ class _AudioMessagePlayerState extends State<_AudioMessagePlayer> {
         children: [
           Icon(
             _playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
-            color: widget.isMe ? Colors.black : AppColors.primary,
+            color: widget.isMe ? Colors.black : AppColors.of(context).primary,
             size: 32,
           ),
           const SizedBox(width: 8),
           Text(
             'Голосовое сообщение',
             style: TextStyle(
-              color: widget.isMe ? Colors.black : AppColors.textPrimary,
+              color: widget.isMe ? Colors.black : AppColors.of(context).textPrimary,
               fontSize: 13,
             ),
           ),

@@ -66,10 +66,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final initials = fullName.isNotEmpty ? fullName[0].toUpperCase() : '?';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(fullName.isNotEmpty ? fullName : 'Профиль'),
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.of(context).surface,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -78,10 +78,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                      Icon(Icons.error_outline, color: AppColors.of(context).error, size: 48),
                       const SizedBox(height: 16),
                       Text('Ошибка загрузки профиля',
-                          style: const TextStyle(color: AppColors.textPrimary)),
+                          style: TextStyle(color: AppColors.of(context).textPrimary)),
                     ],
                   ),
                 )
@@ -93,7 +93,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       const SizedBox(height: 24),
                       CircleAvatar(
                         radius: 52,
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                        backgroundColor: AppColors.of(context).primary.withValues(alpha: 0.2),
                         child: avatarUrl != null && avatarUrl.isNotEmpty
                             ? ClipOval(
                                 child: CachedNetworkImage(
@@ -103,8 +103,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   fit: BoxFit.cover,
                                   errorWidget: (_, __, ___) => Text(
                                     initials,
-                                    style: const TextStyle(
-                                        color: AppColors.primary,
+                                    style: TextStyle(
+                                        color: AppColors.of(context).primary,
                                         fontSize: 40,
                                         fontWeight: FontWeight.bold),
                                   ),
@@ -112,8 +112,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               )
                             : Text(
                                 initials,
-                                style: const TextStyle(
-                                    color: AppColors.primary,
+                                style: TextStyle(
+                                    color: AppColors.of(context).primary,
                                     fontSize: 40,
                                     fontWeight: FontWeight.bold),
                               ),
@@ -122,8 +122,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       if (fullName.isNotEmpty)
                         Text(
                           fullName,
-                          style: const TextStyle(
-                              color: AppColors.textPrimary,
+                          style: TextStyle(
+                              color: AppColors.of(context).textPrimary,
                               fontSize: 22,
                               fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
@@ -132,8 +132,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         const SizedBox(height: 6),
                         Text(
                           '@$username',
-                          style: const TextStyle(
-                              color: AppColors.textSecondary, fontSize: 15),
+                          style: TextStyle(
+                              color: AppColors.of(context).textSecondary, fontSize: 15),
                         ),
                       ],
                       const SizedBox(height: 32),
@@ -157,7 +157,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             label: const Text('Написать сообщение',
                                 style: TextStyle(color: Colors.black)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
+                              backgroundColor: AppColors.of(context).primary,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),

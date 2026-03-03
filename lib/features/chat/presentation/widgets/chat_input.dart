@@ -91,9 +91,9 @@ class _ChatInputState extends State<ChatInput> {
         top: 8,
         bottom: MediaQuery.of(context).padding.bottom + 8,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+      decoration: BoxDecoration(
+        color: AppColors.of(context).surface,
+        border: Border(top: BorderSide(color: AppColors.of(context).border, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -107,13 +107,13 @@ class _ChatInputState extends State<ChatInput> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: _isListening
-                      ? AppColors.error.withValues(alpha: 0.2)
+                      ? AppColors.of(context).error.withValues(alpha: 0.2)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
                   _isListening ? Icons.stop : Icons.mic_outlined,
-                  color: _isListening ? AppColors.error : AppColors.textSecondary,
+                  color: _isListening ? AppColors.of(context).error : AppColors.of(context).textSecondary,
                   size: 22,
                 ),
               ),
@@ -129,15 +129,15 @@ class _ChatInputState extends State<ChatInput> {
               onSubmitted: (_) => _send(),
               maxLines: 4,
               minLines: 1,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: AppColors.of(context).textPrimary,
                 fontSize: 15,
               ),
               decoration: InputDecoration(
                 hintText: _isListening ? '...' : null,
-                hintStyle: const TextStyle(color: AppColors.textSecondary),
+                hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
                 filled: true,
-                fillColor: AppColors.card,
+                fillColor: AppColors.of(context).card,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 10,
@@ -157,7 +157,7 @@ class _ChatInputState extends State<ChatInput> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: AppColors.of(context).primary,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(

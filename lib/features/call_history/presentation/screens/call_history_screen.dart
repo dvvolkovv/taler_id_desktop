@@ -39,16 +39,16 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     if (_calling) return;
     if (CallStateService.instance.isInCall) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Уже идёт звонок'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('Уже идёт звонок'), backgroundColor: AppColors.of(context).error),
       );
       return;
     }
     // AI-only calls don't need a conversationId; peer calls require one.
     if (!e.withAi && (e.conversationId == null || e.conversationId!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Не удалось определить собеседника'),
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.of(context).error,
         ),
       );
       return;
@@ -78,7 +78,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     } catch (err) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: $err'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('Ошибка: $err'), backgroundColor: AppColors.of(context).error),
         );
       }
     } finally {
@@ -89,29 +89,29 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(title: const Text('История звонков')),
       body: FutureBuilder<List<_CallEntry>>(
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return Center(child: CircularProgressIndicator(color: AppColors.of(context).primary));
           }
           if (snap.hasError) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                  Icon(Icons.error_outline, color: AppColors.of(context).error, size: 48),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Ошибка загрузки',
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 16),
+                    style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => setState(() => _future = _load()),
-                    child: const Text('Повторить', style: TextStyle(color: AppColors.primary)),
+                    child: Text('Повторить', style: TextStyle(color: AppColors.of(context).primary)),
                   ),
                 ],
               ),
@@ -119,15 +119,15 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
           }
           final entries = snap.data ?? [];
           if (entries.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'Нет звонков',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 15),
               ),
             );
           }
           return RefreshIndicator(
-            color: AppColors.primary,
+            color: AppColors.of(context).primary,
             onRefresh: () async => setState(() => _future = _load()),
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -150,13 +150,13 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
             height: 44,
             decoration: BoxDecoration(
               color: e.isOutgoing
-                  ? AppColors.primary.withOpacity(0.12)
+                  ? AppColors.of(context).primary.withOpacity(0.12)
                   : _kIncomingColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               e.isOutgoing ? Icons.call_made_rounded : Icons.call_received_rounded,
-              color: e.isOutgoing ? AppColors.primary : _kIncomingColor,
+              color: e.isOutgoing ? AppColors.of(context).primary : _kIncomingColor,
               size: 20,
             ),
           ),
@@ -167,8 +167,8 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
               children: [
                 Text(
                   e.otherPartyName,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.of(context).textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -176,7 +176,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                 const SizedBox(height: 3),
                 Text(
                   _formatDate(e.startedAt),
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
                 ),
               ],
             ),
@@ -184,22 +184,22 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
           if (e.durationSec != null) ...[
             Text(
               _formatDuration(e.durationSec!),
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
             ),
             const SizedBox(width: 8),
           ],
           // Call-back button
           _calling
-              ? const SizedBox(
+              ? SizedBox(
                   width: 36,
                   height: 36,
                   child: Padding(
                     padding: EdgeInsets.all(8),
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.of(context).primary),
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.call_outlined, color: AppColors.primary, size: 22),
+                  icon: Icon(Icons.call_outlined, color: AppColors.of(context).primary, size: 22),
                   tooltip: 'Позвонить снова',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 36, minHeight: 36),

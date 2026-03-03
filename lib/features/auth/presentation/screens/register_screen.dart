@@ -39,11 +39,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.of(context).textPrimary),
           onPressed: () => context.pop(),
         ),
       ),
@@ -53,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             context.go(RouteConstants.assistant);
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).error),
             );
           }
         },
@@ -65,12 +65,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 Text(
                   l10n.register,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Один аккаунт для всей экосистемы Taler',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14),
                 ),
                 const SizedBox(height: 32),
                 Form(
@@ -82,22 +82,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _firstNameController,
-                              style: const TextStyle(color: AppColors.textPrimary),
+                              style: TextStyle(color: AppColors.of(context).textPrimary),
                               decoration: InputDecoration(
                                 labelText: l10n.firstName,
                                 filled: true,
-                                fillColor: AppColors.card,
+                                fillColor: AppColors.of(context).card,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: BorderSide(color: AppColors.of(context).border),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: BorderSide(color: AppColors.of(context).border),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                  borderSide: BorderSide(color: AppColors.of(context).primary, width: 2),
                                 ),
                               ),
                             ),
@@ -106,22 +106,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _lastNameController,
-                              style: const TextStyle(color: AppColors.textPrimary),
+                              style: TextStyle(color: AppColors.of(context).textPrimary),
                               decoration: InputDecoration(
                                 labelText: l10n.lastName,
                                 filled: true,
-                                fillColor: AppColors.card,
+                                fillColor: AppColors.of(context).card,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: BorderSide(color: AppColors.of(context).border),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: BorderSide(color: AppColors.of(context).border),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                  borderSide: BorderSide(color: AppColors.of(context).primary, width: 2),
                                 ),
                               ),
                             ),
@@ -131,30 +131,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _usernameController,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        style: TextStyle(color: AppColors.of(context).textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Никнейм (необязательно)',
                           hintText: 'username',
                           prefixText: '@',
-                          prefixStyle: const TextStyle(color: AppColors.textSecondary),
+                          prefixStyle: TextStyle(color: AppColors.of(context).textSecondary),
                           filled: true,
-                          fillColor: AppColors.card,
-                          prefixIcon: const Icon(Icons.alternate_email, color: AppColors.textSecondary),
+                          fillColor: AppColors.of(context).card,
+                          prefixIcon: Icon(Icons.alternate_email, color: AppColors.of(context).textSecondary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide: BorderSide(color: AppColors.of(context).border),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide: BorderSide(color: AppColors.of(context).border),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                            borderSide: BorderSide(color: AppColors.of(context).primary, width: 2),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.error),
+                            borderSide: BorderSide(color: AppColors.of(context).error),
                           ),
                         ),
                         validator: (v) {
@@ -171,31 +171,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        style: TextStyle(color: AppColors.of(context).textPrimary),
                         decoration: InputDecoration(
                           labelText: l10n.email,
                           filled: true,
-                          fillColor: AppColors.card,
-                          prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                          fillColor: AppColors.of(context).card,
+                          prefixIcon: Icon(Icons.email_outlined, color: AppColors.of(context).textSecondary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide: BorderSide(color: AppColors.of(context).border),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide: BorderSide(color: AppColors.of(context).border),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                            borderSide: BorderSide(color: AppColors.of(context).primary, width: 2),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.error),
+                            borderSide: BorderSide(color: AppColors.of(context).error),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.error, width: 2),
+                            borderSide: BorderSide(color: AppColors.of(context).error, width: 2),
                           ),
                         ),
                         validator: (v) {
@@ -208,38 +208,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        style: TextStyle(color: AppColors.of(context).textPrimary),
                         decoration: InputDecoration(
                           labelText: l10n.password,
                           filled: true,
-                          fillColor: AppColors.card,
-                          prefixIcon: const Icon(Icons.lock_outlined, color: AppColors.textSecondary),
+                          fillColor: AppColors.of(context).card,
+                          prefixIcon: Icon(Icons.lock_outlined, color: AppColors.of(context).textSecondary),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                              color: AppColors.textSecondary,
+                              color: AppColors.of(context).textSecondary,
                             ),
                             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide: BorderSide(color: AppColors.of(context).border),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide: BorderSide(color: AppColors.of(context).border),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                            borderSide: BorderSide(color: AppColors.of(context).primary, width: 2),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.error),
+                            borderSide: BorderSide(color: AppColors.of(context).error),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.error, width: 2),
+                            borderSide: BorderSide(color: AppColors.of(context).error, width: 2),
                           ),
                         ),
                         validator: (v) {
@@ -273,7 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () => context.pop(),
-                        child: Text('${l10n.haveAccount} ${l10n.signIn}', style: const TextStyle(color: AppColors.primary)),
+                        child: Text('${l10n.haveAccount} ${l10n.signIn}', style: TextStyle(color: AppColors.of(context).primary)),
                       ),
                     ],
                   ),

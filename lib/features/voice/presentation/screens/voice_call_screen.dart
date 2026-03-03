@@ -117,11 +117,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _connect() async {
-    // For incoming calls, CallKit has already activated the audio session when the
-    // user tapped Accept. Do NOT call endAllCalls() here — on a locked screen iOS
-    // re-locks the phone when the call is ended immediately after accept, which
-    // interrupts room.connect(). Just ensure the session is active for LiveKit.
     if (widget.isIncoming) {
+      // Release the CallKit-owned audio session before LiveKit connects.
+      // When accepting from locked screen, CallKit activates the audio session
+      // but continues to "own" it — this blocks LiveKit's WebRTC audio stack.
+      // By the time _connect() is called, the phone is already unlocked
+      // (navigation happens only after didChangeAppLifecycleState.resumed),
+      // so endAllCalls() no longer causes iOS to re-lock the screen.
+      try {
+        await FlutterCallkitIncoming.endAllCalls();
+      } catch (_) {}
+      // Re-activate audio session independently for LiveKit
       try {
         await _audioChannel.invokeMethod('requestAudioFocus');
       } catch (_) {}
@@ -412,7 +418,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -425,14 +431,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: AppColors.of(context).border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Аудиовыход',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             ...outputs.map((o) {
@@ -441,15 +447,15 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
               final icon = _outputIcons[type] ?? Icons.volume_up_rounded;
               final isSelected = _audioOutputType == type;
               return ListTile(
-                leading: Icon(icon, color: isSelected ? AppColors.primary : AppColors.textSecondary),
+                leading: Icon(icon, color: isSelected ? AppColors.of(context).primary : AppColors.of(context).textSecondary),
                 title: Text(
                   name,
                   style: TextStyle(
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    color: isSelected ? AppColors.of(context).primary : AppColors.of(context).textPrimary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
-                trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                trailing: isSelected ? Icon(Icons.check_rounded, color: AppColors.of(context).primary) : null,
                 onTap: () async {
                   Navigator.pop(context);
                   await _setAudioOutput(type);
@@ -513,7 +519,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     final selected = await showModalBottomSheet<UserSearchEntity>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -544,7 +550,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.of(context).error),
         );
       }
     }
@@ -571,7 +577,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: const Text('Голосовой звонок'),
         leading: IconButton(
@@ -617,7 +623,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   Widget _buildBody() {
     if (_connecting) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -625,7 +631,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             SizedBox(height: 16),
             Text(
               'Подключение...',
-              style: TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.of(context).textSecondary),
             ),
           ],
         ),
@@ -638,16 +644,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline,
                 size: 48,
-                color: AppColors.error,
+                color: AppColors.of(context).error,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Ошибка подключения',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: AppColors.of(context).textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -655,8 +661,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
               const SizedBox(height: 8),
               Text(
                 _error!,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: AppColors.of(context).textSecondary,
                   fontSize: 13,
                 ),
                 textAlign: TextAlign.center,
@@ -676,7 +682,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         // Status
         Container(
           padding: const EdgeInsets.all(16),
-          color: AppColors.card,
+          color: AppColors.of(context).card,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -689,10 +695,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Звонок активен',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: AppColors.of(context).textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -707,16 +713,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person_outline,
                         size: 64,
-                        color: AppColors.textSecondary,
+                        color: AppColors.of(context).textSecondary,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Ожидание участников...',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.of(context).textSecondary,
                           fontSize: 16,
                         ),
                       ),
@@ -734,33 +740,33 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                         ? 'AI Ассистент'
                         : (p.name?.isNotEmpty == true ? p.name! : p.identity);
                     return Card(
-                      color: AppColors.card,
+                      color: AppColors.of(context).card,
                       margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: isAI
-                              ? AppColors.primary
-                              : AppColors.surface,
+                              ? AppColors.of(context).primary
+                              : AppColors.of(context).surface,
                           child: Icon(
                             isAI
                                 ? Icons.smart_toy_rounded
                                 : Icons.person_rounded,
                             color: isAI
                                 ? Colors.black
-                                : AppColors.textPrimary,
+                                : AppColors.of(context).textPrimary,
                           ),
                         ),
                         title: Text(
                           displayName,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
+                          style: TextStyle(
+                            color: AppColors.of(context).textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         trailing: isAI
-                            ? const Icon(
+                            ? Icon(
                                 Icons.graphic_eq_rounded,
-                                color: AppColors.primary,
+                                color: AppColors.of(context).primary,
                               )
                             : Icon(
                                 hasMic
@@ -768,7 +774,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                                     : Icons.mic_off_rounded,
                                 color: hasMic
                                     ? Colors.green
-                                    : AppColors.textSecondary,
+                                    : AppColors.of(context).textSecondary,
                               ),
                       ),
                     );
@@ -779,19 +785,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Card(
-            color: AppColors.card,
+            color: AppColors.of(context).card,
             child: ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: AppColors.primary,
+              leading: CircleAvatar(
+                backgroundColor: AppColors.of(context).primary,
                 child: Icon(
                   Icons.person_rounded,
                   color: Colors.black,
                 ),
               ),
-              title: const Text(
+              title: Text(
                 'Вы',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: AppColors.of(context).textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -799,7 +805,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                 _muted
                     ? Icons.mic_off_rounded
                     : Icons.mic_rounded,
-                color: _muted ? AppColors.error : Colors.green,
+                color: _muted ? AppColors.of(context).error : Colors.green,
               ),
             ),
           ),
@@ -815,13 +821,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                     ? Icons.mic_off_rounded
                     : Icons.mic_rounded,
                 label: _muted ? 'Включить' : 'Выкл. микр.',
-                color: _muted ? AppColors.error : AppColors.card,
+                color: _muted ? AppColors.of(context).error : AppColors.of(context).card,
                 onTap: _toggleMute,
               ),
               _ControlButton(
                 icon: Icons.call_end_rounded,
                 label: 'Завершить',
-                color: AppColors.error,
+                color: AppColors.of(context).error,
                 onTap: _hangUp,
                 large: true,
               ),
@@ -829,8 +835,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                 icon: _outputIcons[_audioOutputType] ?? Icons.volume_up_rounded,
                 label: _outputLabels[_audioOutputType] ?? 'Аудио',
                 color: _audioOutputType != 'earpiece'
-                    ? AppColors.primary.withValues(alpha: 0.2)
-                    : AppColors.card,
+                    ? AppColors.of(context).primary.withValues(alpha: 0.2)
+                    : AppColors.of(context).card,
                 onTap: _showAudioOutputPicker,
               ),
             ],
@@ -885,14 +891,14 @@ class _UserSearchSheetState extends State<_UserSearchSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: AppColors.of(context).border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Добавить участника',
-            style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Padding(
@@ -900,13 +906,13 @@ class _UserSearchSheetState extends State<_UserSearchSheet> {
             child: TextField(
               controller: _ctrl,
               autofocus: true,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppColors.of(context).textPrimary),
               decoration: InputDecoration(
                 hintText: 'Поиск по никнейму...',
-                hintStyle: const TextStyle(color: AppColors.textSecondary),
-                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
+                prefixIcon: Icon(Icons.search, color: AppColors.of(context).textSecondary),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: AppColors.of(context).background,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
               onChanged: _search,
@@ -923,12 +929,12 @@ class _UserSearchSheetState extends State<_UserSearchSheet> {
                       final u = _results[i];
                       final name = [u.firstName, u.lastName].where((s) => s != null && s.isNotEmpty).join(' ');
                       return ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: AppColors.surface,
-                          child: Icon(Icons.person_rounded, color: AppColors.textPrimary),
+                        leading: CircleAvatar(
+                          backgroundColor: AppColors.of(context).surface,
+                          child: Icon(Icons.person_rounded, color: AppColors.of(context).textPrimary),
                         ),
-                        title: Text(name.isNotEmpty ? name : u.email, style: const TextStyle(color: AppColors.textPrimary)),
-                        subtitle: u.username != null ? Text('@${u.username}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)) : null,
+                        title: Text(name.isNotEmpty ? name : u.email, style: TextStyle(color: AppColors.of(context).textPrimary)),
+                        subtitle: u.username != null ? Text('@${u.username}', style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)) : null,
                         onTap: () => Navigator.pop(context, u),
                       );
                     },
@@ -977,8 +983,8 @@ class _ControlButton extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.of(context).textSecondary,
               fontSize: 12,
             ),
           ),

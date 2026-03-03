@@ -28,7 +28,7 @@ class _KycScreenState extends State<KycScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(title: Text(l10n.kycTitle)),
       body: BlocConsumer<KycBloc, KycState>(
         listener: (context, state) {
@@ -37,13 +37,13 @@ class _KycScreenState extends State<KycScreen> {
             _launchSumsub(context, state.sdkToken);
           } else if (state is KycError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).error),
             );
           }
         },
         builder: (context, state) {
           if (state is KycLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return Center(child: CircularProgressIndicator(color: AppColors.of(context).primary));
           }
 
           if (state is KycSdkDone) {
@@ -72,7 +72,7 @@ class _KycScreenState extends State<KycScreen> {
     final statusConfig = _getStatusConfig(state.status, l10n);
 
     return RefreshIndicator(
-      color: AppColors.primary,
+      color: AppColors.of(context).primary,
       onRefresh: () async => context.read<KycBloc>().add(KycStatusRequested()),
       child: ListView(
         padding: const EdgeInsets.all(24),
@@ -100,7 +100,7 @@ class _KycScreenState extends State<KycScreen> {
             child: Text(
               statusConfig.description,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14, height: 1.5),
             ),
           ),
           if (state.verifiedAt != null) ...[
@@ -108,7 +108,7 @@ class _KycScreenState extends State<KycScreen> {
             Center(
               child: Text(
                 l10n.verifiedAt(_formatDate(state.verifiedAt!)),
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
               ),
             ),
           ],
@@ -117,12 +117,12 @@ class _KycScreenState extends State<KycScreen> {
             AppCard(
               child: Row(
                 children: [
-                  const Icon(Icons.info_outlined, color: AppColors.warning, size: 18),
+                  Icon(Icons.info_outlined, color: AppColors.of(context).warning, size: 18),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       state.rejectionReason!,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
                     ),
                   ),
                 ],
@@ -145,8 +145,8 @@ class _KycScreenState extends State<KycScreen> {
             Center(
               child: TextButton.icon(
                 onPressed: () => context.read<KycBloc>().add(KycApplicantDataRequested()),
-                icon: const Icon(Icons.refresh, size: 18, color: AppColors.textSecondary),
-                label: Text(l10n.refreshData, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                icon: Icon(Icons.refresh, size: 18, color: AppColors.of(context).textSecondary),
+                label: Text(l10n.refreshData, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13)),
               ),
             ),
             const SizedBox(height: 16),
@@ -156,9 +156,9 @@ class _KycScreenState extends State<KycScreen> {
             child: Column(
               children: [
                 _infoRow(Icons.security_outlined, l10n.securityAes),
-                const Divider(color: AppColors.border, height: 1),
+                Divider(color: AppColors.of(context).border, height: 1),
                 _infoRow(Icons.schedule_outlined, l10n.verificationTime),
-                const Divider(color: AppColors.border, height: 1),
+                Divider(color: AppColors.of(context).border, height: 1),
                 _infoRow(Icons.notifications_outlined, l10n.pushNotification),
               ],
             ),
@@ -194,7 +194,7 @@ class _KycScreenState extends State<KycScreen> {
           child: Text(
             statusConfig.description,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+            style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14, height: 1.5),
           ),
         ),
         if (state.verifiedAt != null) ...[
@@ -202,7 +202,7 @@ class _KycScreenState extends State<KycScreen> {
           Center(
             child: Text(
               l10n.verifiedAt(_formatDate(state.verifiedAt!)),
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
             ),
           ),
         ],
@@ -210,11 +210,11 @@ class _KycScreenState extends State<KycScreen> {
         Center(
           child: Column(
             children: [
-              const CircularProgressIndicator(color: AppColors.primary),
+              CircularProgressIndicator(color: AppColors.of(context).primary),
               const SizedBox(height: 12),
               Text(
                 l10n.sumsubDataLoading,
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
               ),
             ],
           ),
@@ -229,18 +229,18 @@ class _KycScreenState extends State<KycScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(color: AppColors.primary),
+              CircularProgressIndicator(color: AppColors.of(context).primary),
               const SizedBox(height: 24),
               Text(
                 l10n.documentsSubmitted,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
+                style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               Text(
                 l10n.documentsSubmittedDesc,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14, height: 1.5),
               ),
             ],
           ),
@@ -253,9 +253,9 @@ class _KycScreenState extends State<KycScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+              Icon(Icons.error_outline, color: AppColors.of(context).error, size: 48),
               const SizedBox(height: 16),
-              Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
+              Text(message, textAlign: TextAlign.center, style: TextStyle(color: AppColors.of(context).textSecondary)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => context.read<KycBloc>().add(KycStatusRequested()),
@@ -270,9 +270,9 @@ class _KycScreenState extends State<KycScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.secondary, size: 18),
+            Icon(icon, color: AppColors.of(context).secondary, size: 18),
             const SizedBox(width: 12),
-            Expanded(child: Text(text, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+            Expanded(child: Text(text, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13))),
           ],
         ),
       );
@@ -282,28 +282,28 @@ class _KycScreenState extends State<KycScreen> {
       case 'VERIFIED':
         return _StatusConfig(
           icon: Icons.verified_outlined,
-          color: AppColors.primary,
+          color: AppColors.of(context).primary,
           label: l10n.kycVerified,
           description: l10n.kycVerifiedDesc,
         );
       case 'PENDING':
         return _StatusConfig(
           icon: Icons.hourglass_empty_outlined,
-          color: AppColors.warning,
+          color: AppColors.of(context).warning,
           label: l10n.kycPending,
           description: l10n.kycPendingDesc,
         );
       case 'REJECTED':
         return _StatusConfig(
           icon: Icons.cancel_outlined,
-          color: AppColors.error,
+          color: AppColors.of(context).error,
           label: l10n.kycRejected,
           description: l10n.kycRejectedDesc,
         );
       default:
         return _StatusConfig(
           icon: Icons.person_outlined,
-          color: AppColors.textSecondary,
+          color: AppColors.of(context).textSecondary,
           label: l10n.kycUnverified,
           description: l10n.kycUnverifiedDesc,
         );
@@ -326,16 +326,16 @@ class _KycScreenState extends State<KycScreen> {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          backgroundColor: AppColors.card,
-          title: Text(l10n.verification, style: const TextStyle(color: AppColors.textPrimary)),
+          backgroundColor: AppColors.of(context).card,
+          title: Text(l10n.verification, style: TextStyle(color: AppColors.of(context).textPrimary)),
           content: Text(
             l10n.kycWebOnly,
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: AppColors.of(context).textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(l10n.ok, style: const TextStyle(color: AppColors.primary)),
+              child: Text(l10n.ok, style: TextStyle(color: AppColors.of(context).primary)),
             ),
           ],
         ),

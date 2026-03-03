@@ -31,10 +31,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Color _kycColor(KycStatus status) {
     switch (status) {
-      case KycStatus.verified: return AppColors.primary;
-      case KycStatus.pending: return AppColors.warning;
-      case KycStatus.rejected: return AppColors.error;
-      case KycStatus.unverified: return AppColors.textSecondary;
+      case KycStatus.verified: return AppColors.of(context).primary;
+      case KycStatus.pending: return AppColors.of(context).warning;
+      case KycStatus.rejected: return AppColors.of(context).error;
+      case KycStatus.unverified: return AppColors.of(context).textSecondary;
     }
   }
 
@@ -51,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.profile),
         actions: const [],
@@ -75,11 +75,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                  Icon(Icons.error_outline, color: AppColors.of(context).error, size: 48),
                   const SizedBox(height: 16),
                   Text(
                     state is ProfileError ? state.message : l10n.loadError,
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: AppColors.of(context).textSecondary),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -92,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           return RefreshIndicator(
-            color: AppColors.primary,
+            color: AppColors.of(context).primary,
             onRefresh: () async => context.read<ProfileBloc>().add(ProfileLoadRequested()),
             child: ListView(
               padding: const EdgeInsets.all(16),
@@ -109,17 +109,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               _fullName(user),
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
+                              style: TextStyle(
+                                color: AppColors.of(context).textPrimary,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(user.email, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                            Text(user.email, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13)),
                             if (user.username != null) ...[
                               const SizedBox(height: 2),
-                              Text('@${user.username}', style: const TextStyle(color: AppColors.primary, fontSize: 12)),
+                              Text('@${user.username}', style: TextStyle(color: AppColors.of(context).primary, fontSize: 12)),
                             ],
                             const SizedBox(height: 8),
                             StatusBadge(
@@ -138,14 +138,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.personalData, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                      Text(l10n.personalData, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 12),
                       _usernameRow(context, user),
-                      const Divider(color: AppColors.border, height: 1),
+                      Divider(color: AppColors.of(context).border, height: 1),
                       _infoRow(Icons.phone_outlined, l10n.phone, user.phone ?? l10n.notSpecified),
-                      const Divider(color: AppColors.border, height: 1),
+                      Divider(color: AppColors.of(context).border, height: 1),
                       _infoRow(Icons.flag_outlined, l10n.country, _countryDisplayName(user.country) ?? l10n.notSpecifiedFemale),
-                      const Divider(color: AppColors.border, height: 1),
+                      Divider(color: AppColors.of(context).border, height: 1),
                       _infoRow(Icons.cake_outlined, l10n.dateOfBirth, _formatDateOfBirth(user.dateOfBirth) ?? l10n.notSpecifiedFemale),
                     ],
                   ),
@@ -161,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _uploadAvatar(BuildContext context) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -171,13 +171,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
-              title: const Text('Сделать фото', style: TextStyle(color: AppColors.textPrimary)),
+              leading: Icon(Icons.camera_alt_outlined, color: AppColors.of(context).primary),
+              title: Text('Сделать фото', style: TextStyle(color: AppColors.of(context).textPrimary)),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
-              title: const Text('Выбрать из галереи', style: TextStyle(color: AppColors.textPrimary)),
+              leading: Icon(Icons.photo_library_outlined, color: AppColors.of(context).primary),
+              title: Text('Выбрать из галереи', style: TextStyle(color: AppColors.of(context).textPrimary)),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -203,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.of(context).error),
       );
     }
   }
@@ -215,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           CircleAvatar(
             radius: 32,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+            backgroundColor: AppColors.of(context).primary.withValues(alpha: 0.2),
             child: user.avatarUrl != null
                 ? ClipOval(
                     child: CachedNetworkImage(
@@ -225,13 +225,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fit: BoxFit.cover,
                       errorWidget: (_, __, ___) => Text(
                         _initials(user),
-                        style: const TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.of(context).primary, fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                   )
                 : Text(
                     _initials(user),
-                    style: const TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: AppColors.of(context).primary, fontSize: 20, fontWeight: FontWeight.bold),
                   ),
           ),
           Positioned(
@@ -240,8 +240,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               width: 20,
               height: 20,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              decoration: BoxDecoration(
+                color: AppColors.of(context).primary,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.camera_alt, size: 12, color: Colors.black),
@@ -280,18 +280,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            const Icon(Icons.alternate_email, color: AppColors.textSecondary, size: 18),
+            Icon(Icons.alternate_email, color: AppColors.of(context).textSecondary, size: 18),
             const SizedBox(width: 12),
-            const Text('Никнейм', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text('Никнейм', style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13)),
             const Spacer(),
             Text(
               user.username != null ? '@${user.username}' : 'Не задан',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+              style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 13),
             ),
             const SizedBox(width: 8),
             GestureDetector(
               onTap: () => _editUsername(context, user),
-              child: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 18),
+              child: Icon(Icons.edit_outlined, color: AppColors.of(context).primary, size: 18),
             ),
           ],
         ),
@@ -302,18 +302,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.card,
-        title: const Text('Изменить никнейм', style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: AppColors.of(context).card,
+        title: Text('Изменить никнейм', style: TextStyle(color: AppColors.of(context).textPrimary)),
         content: TextField(
           controller: ctrl,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: AppColors.of(context).textPrimary),
           decoration: InputDecoration(
             prefixText: '@',
-            prefixStyle: const TextStyle(color: AppColors.textSecondary),
+            prefixStyle: TextStyle(color: AppColors.of(context).textSecondary),
             hintText: 'username',
-            hintStyle: const TextStyle(color: AppColors.textSecondary),
+            hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
             filled: true,
-            fillColor: AppColors.background,
+            fillColor: AppColors.of(context).background,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
@@ -324,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: const Text('Сохранить', style: TextStyle(color: AppColors.primary)),
+            child: Text('Сохранить', style: TextStyle(color: AppColors.of(context).primary)),
           ),
         ],
       ),
@@ -343,7 +343,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.of(context).error),
       );
     }
   }
@@ -352,11 +352,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.textSecondary, size: 18),
+            Icon(icon, color: AppColors.of(context).textSecondary, size: 18),
             const SizedBox(width: 12),
-            Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text(label, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13)),
             const Spacer(),
-            Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+            Text(value, style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 13)),
           ],
         ),
       );

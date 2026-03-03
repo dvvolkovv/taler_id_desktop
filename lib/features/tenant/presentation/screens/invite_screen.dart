@@ -24,14 +24,14 @@ class _InviteScreenState extends State<InviteScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       body: BlocConsumer<TenantBloc, TenantState>(
         listener: (context, state) {
           if (state is TenantsLoaded && _accepted) {
             context.go(RouteConstants.organization);
           } else if (state is TenantError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).error),
             );
           }
         },
@@ -44,22 +44,22 @@ class _InviteScreenState extends State<InviteScreen> {
                 Container(
                   width: 80, height: 80,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.15),
+                    color: AppColors.of(context).primary.withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.mail_outline, color: AppColors.primary, size: 40),
+                  child: Icon(Icons.mail_outline, color: AppColors.of(context).primary, size: 40),
                 ),
                 const SizedBox(height: 24),
                 Text(
                   l10n.acceptInvitationTitle,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   l10n.acceptInvitationDesc,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+                  style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14, height: 1.5),
                 ),
                 const SizedBox(height: 40),
                 LoadingButton(
@@ -73,7 +73,7 @@ class _InviteScreenState extends State<InviteScreen> {
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () => context.go(RouteConstants.assistant),
-                  child: Text(l10n.reject, style: const TextStyle(color: AppColors.textSecondary)),
+                  child: Text(l10n.reject, style: TextStyle(color: AppColors.of(context).textSecondary)),
                 ),
               ],
             ),

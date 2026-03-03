@@ -11,44 +11,45 @@ class SumsubDataCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colors = AppColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Personal info
         if (data.info != null) ...[
-          _sectionTitle(l10n.verifiedPersonalInfo),
+          _sectionTitle(l10n.verifiedPersonalInfo, colors),
           const SizedBox(height: 8),
           AppCard(
             child: Column(
-              children: _buildPersonInfoRows(data.info!, l10n),
+              children: _buildPersonInfoRows(data.info!, l10n, colors),
             ),
           ),
           const SizedBox(height: 16),
         ],
         // Documents
         if (data.idDocs.isNotEmpty) ...[
-          _sectionTitle(l10n.documents),
+          _sectionTitle(l10n.documents, colors),
           const SizedBox(height: 8),
           ...data.idDocs.map((doc) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: AppCard(
                   child: Column(
-                    children: _buildDocRows(doc, l10n),
+                    children: _buildDocRows(doc, l10n, colors),
                   ),
                 ),
               )),
         ],
         // Addresses
         if (data.addresses.isNotEmpty) ...[
-          _sectionTitle(l10n.address),
+          _sectionTitle(l10n.address, colors),
           const SizedBox(height: 8),
           ...data.addresses.map((addr) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: AppCard(
                   child: Text(
                     _formatAddress(addr),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 14,
                       height: 1.5,
                     ),
@@ -60,18 +61,18 @@ class SumsubDataCard extends StatelessWidget {
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, AppColorsExtension colors) {
     return Text(
       title,
-      style: const TextStyle(
-        color: AppColors.textPrimary,
+      style: TextStyle(
+        color: colors.textPrimary,
         fontSize: 16,
         fontWeight: FontWeight.w600,
       ),
     );
   }
 
-  List<Widget> _buildPersonInfoRows(SumsubPersonInfo info, AppLocalizations l10n) {
+  List<Widget> _buildPersonInfoRows(SumsubPersonInfo info, AppLocalizations l10n, AppColorsExtension colors) {
     final rows = <_FieldData>[];
     if (info.lastName != null) rows.add(_FieldData(l10n.lastName, info.lastName!));
     if (info.firstName != null) rows.add(_FieldData(l10n.firstName, info.firstName!));
@@ -85,10 +86,10 @@ class SumsubDataCard extends StatelessWidget {
     }
     if (info.country != null) rows.add(_FieldData(l10n.country, info.country!));
 
-    return _buildInfoRowWidgets(rows);
+    return _buildInfoRowWidgets(rows, colors);
   }
 
-  List<Widget> _buildDocRows(SumsubIdDoc doc, AppLocalizations l10n) {
+  List<Widget> _buildDocRows(SumsubIdDoc doc, AppLocalizations l10n, AppColorsExtension colors) {
     final rows = <_FieldData>[];
     if (doc.idDocType != null) rows.add(_FieldData(l10n.documentType, _docTypeName(doc.idDocType!)));
     if (doc.number != null) rows.add(_FieldData(l10n.docNumber, doc.number!));
@@ -101,26 +102,26 @@ class SumsubDataCard extends StatelessWidget {
     if (doc.issuedBy != null) rows.add(_FieldData(l10n.docIssuedBy, doc.issuedBy!));
     if (doc.country != null) rows.add(_FieldData(l10n.country, doc.country!));
 
-    return _buildInfoRowWidgets(rows);
+    return _buildInfoRowWidgets(rows, colors);
   }
 
-  List<Widget> _buildInfoRowWidgets(List<_FieldData> rows) {
+  List<Widget> _buildInfoRowWidgets(List<_FieldData> rows, AppColorsExtension colors) {
     final widgets = <Widget>[];
     for (int i = 0; i < rows.length; i++) {
-      widgets.add(_verifiedRow(rows[i].label, rows[i].value));
+      widgets.add(_verifiedRow(rows[i].label, rows[i].value, colors));
       if (i < rows.length - 1) {
-        widgets.add(const Divider(color: AppColors.border, height: 1));
+        widgets.add(Divider(color: colors.border, height: 1));
       }
     }
     return widgets;
   }
 
-  Widget _verifiedRow(String label, String value) {
+  Widget _verifiedRow(String label, String value, AppColorsExtension colors) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          const Icon(Icons.verified, color: AppColors.primary, size: 16),
+          Icon(Icons.verified, color: colors.primary, size: 16),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -128,12 +129,12 @@ class SumsubDataCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(color: colors.textPrimary, fontSize: 14),
                 ),
               ],
             ),

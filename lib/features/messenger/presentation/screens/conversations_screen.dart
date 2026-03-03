@@ -79,33 +79,33 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         canPop: false,
         child: StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
-            backgroundColor: AppColors.card,
-            title: const Text(
+            backgroundColor: AppColors.of(context).card,
+            title: Text(
               'Задайте никнейм',
-              style: TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppColors.of(context).textPrimary),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Никнейм обязателен для использования мессенджера. Другие пользователи смогут найти вас по нему.',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: ctrl,
                   autofocus: true,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: AppColors.of(context).textPrimary),
                   decoration: InputDecoration(
                     hintText: 'username',
-                    hintStyle: const TextStyle(color: AppColors.textSecondary),
+                    hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
                     prefixText: '@',
-                    prefixStyle: const TextStyle(color: AppColors.primary),
+                    prefixStyle: TextStyle(color: AppColors.of(context).primary),
                     errorText: errorText,
                     border: const OutlineInputBorder(),
-                    focusedBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.of(context).primary),
                     ),
                   ),
                   inputFormatters: [],
@@ -116,16 +116,16 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                   },
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '3–30 символов: буквы, цифры, _',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                  style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 11),
                 ),
               ],
             ),
             actions: [
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.of(context).primary,
                     foregroundColor: Colors.black),
                 onPressed: () async {
                   final value = ctrl.text.trim();
@@ -174,7 +174,7 @@ class _ConversationsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,9 +184,9 @@ class _ConversationsView extends StatelessWidget {
             if (myUsername != null && myUsername!.isNotEmpty)
               Text(
                 '@$myUsername',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: AppColors.of(context).textSecondary,
                   fontWeight: FontWeight.normal,
                 ),
               ),
@@ -213,19 +213,19 @@ class _ConversationsView extends StatelessWidget {
                   Icon(
                     Icons.chat_bubble_outline_rounded,
                     size: 64,
-                    color: AppColors.textSecondary,
+                    color: AppColors.of(context).textSecondary,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Нет диалогов',
                     style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 16),
+                        color: AppColors.of(context).textSecondary, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Найдите пользователя чтобы начать переписку',
                     style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 13),
+                        color: AppColors.of(context).textSecondary, fontSize: 13),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -238,7 +238,7 @@ class _ConversationsView extends StatelessWidget {
             child: ListView.separated(
               itemCount: state.conversations.length,
               separatorBuilder: (_, __) =>
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: AppColors.of(context).border, height: 1),
               itemBuilder: (context, index) {
                 final conv = state.conversations[index];
                 return _ConversationTile(conversation: conv);
@@ -249,7 +249,7 @@ class _ConversationsView extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/dashboard/messenger/search'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.of(context).primary,
         child: const Icon(Icons.person_add_rounded, color: Colors.black),
       ),
     );
@@ -273,7 +273,7 @@ class _ConversationTile extends StatelessWidget {
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: CircleAvatar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.of(context).primary,
         child: conversation.otherUserAvatar != null
             ? ClipOval(
                 child: CachedNetworkImage(
@@ -295,16 +295,16 @@ class _ConversationTile extends StatelessWidget {
       ),
       title: Text(
         displayName,
-        style: const TextStyle(
-            color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+        style: TextStyle(
+            color: AppColors.of(context).textPrimary, fontWeight: FontWeight.w600),
       ),
       subtitle: lastMsg != null
           ? Text(
               lastMsg,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 13),
+              style: TextStyle(
+                  color: AppColors.of(context).textSecondary, fontSize: 13),
             )
           : null,
       trailing: (timeStr.isNotEmpty || conversation.unreadCount > 0)
@@ -316,14 +316,14 @@ class _ConversationTile extends StatelessWidget {
                 if (timeStr.isNotEmpty)
                   Text(
                     timeStr,
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
                   ),
                 if (conversation.unreadCount > 0) ...[
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.error,
+                      color: AppColors.of(context).error,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(

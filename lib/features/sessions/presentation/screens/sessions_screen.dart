@@ -26,29 +26,29 @@ class _SessionsScreenState extends State<SessionsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(title: Text(l10n.sessions)),
       body: BlocConsumer<SessionsBloc, SessionsState>(
         listener: (context, state) {
           if (state is SessionsError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).error),
             );
           }
         },
         builder: (context, state) {
           if (state is SessionsLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return Center(child: CircularProgressIndicator(color: AppColors.of(context).primary));
           }
 
           if (state is SessionsLoaded) {
             if (state.sessions.isEmpty) {
               return Center(
-                child: Text(l10n.noSessions, style: const TextStyle(color: AppColors.textSecondary)),
+                child: Text(l10n.noSessions, style: TextStyle(color: AppColors.of(context).textSecondary)),
               );
             }
             return RefreshIndicator(
-              color: AppColors.primary,
+              color: AppColors.of(context).primary,
               onRefresh: () async => context.read<SessionsBloc>().add(SessionsLoadRequested()),
               child: ListView.separated(
                 padding: const EdgeInsets.all(16),
@@ -72,28 +72,28 @@ class _SessionsScreenState extends State<SessionsScreen> {
       direction: DismissDirection.endToStart,
       background: Container(
         decoration: BoxDecoration(
-          color: AppColors.error.withOpacity(0.15),
+          color: AppColors.of(context).error.withOpacity(0.15),
           borderRadius: BorderRadius.circular(16),
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.logout, color: AppColors.error),
+        child: Icon(Icons.logout, color: AppColors.of(context).error),
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-            backgroundColor: AppColors.card,
-            title: Text(l10n.deleteSessionConfirm, style: const TextStyle(color: AppColors.textPrimary)),
-            content: Text(l10n.deviceLoggedOut, style: const TextStyle(color: AppColors.textSecondary)),
+            backgroundColor: AppColors.of(context).card,
+            title: Text(l10n.deleteSessionConfirm, style: TextStyle(color: AppColors.of(context).textPrimary)),
+            content: Text(l10n.deviceLoggedOut, style: TextStyle(color: AppColors.of(context).textSecondary)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
+                child: Text(l10n.cancel, style: TextStyle(color: AppColors.of(context).textSecondary)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: Text(l10n.endSessionAction, style: const TextStyle(color: AppColors.error)),
+                child: Text(l10n.endSessionAction, style: TextStyle(color: AppColors.of(context).error)),
               ),
             ],
           ),
@@ -107,13 +107,13 @@ class _SessionsScreenState extends State<SessionsScreen> {
               width: 44, height: 44,
               decoration: BoxDecoration(
                 color: session.isCurrent
-                    ? AppColors.primary.withOpacity(0.15)
-                    : AppColors.border.withOpacity(0.3),
+                    ? AppColors.of(context).primary.withOpacity(0.15)
+                    : AppColors.of(context).border.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 _deviceIcon(session.device),
-                color: session.isCurrent ? AppColors.primary : AppColors.textSecondary,
+                color: session.isCurrent ? AppColors.of(context).primary : AppColors.of(context).textSecondary,
                 size: 22,
               ),
             ),
@@ -126,17 +126,17 @@ class _SessionsScreenState extends State<SessionsScreen> {
                     children: [
                       Text(
                         session.device ?? l10n.unknownDevice,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
+                        style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
                       ),
                       if (session.isCurrent) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.15),
+                            color: AppColors.of(context).primary.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(l10n.currentSessionLabel, style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                          child: Text(l10n.currentSessionLabel, style: TextStyle(color: AppColors.of(context).primary, fontSize: 10, fontWeight: FontWeight.w600)),
                         ),
                       ],
                     ],
@@ -144,16 +144,16 @@ class _SessionsScreenState extends State<SessionsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '${session.ip ?? l10n.ipUnknown} · ${_formatDate(session.createdAt, l10n)}',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
                   ),
                   if (session.location != null)
-                    Text(session.location!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text(session.location!, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)),
                 ],
               ),
             ),
             if (!session.isCurrent)
               IconButton(
-                icon: const Icon(Icons.close, color: AppColors.error, size: 18),
+                icon: Icon(Icons.close, color: AppColors.of(context).error, size: 18),
                 onPressed: () => context.read<SessionsBloc>().add(SessionDeleteRequested(session.id)),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),

@@ -30,16 +30,16 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.organization),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.of(context).textPrimary),
           onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_add_outlined, color: AppColors.primary),
+            icon: Icon(Icons.person_add_outlined, color: AppColors.of(context).primary),
             onPressed: () => _showInviteSheet(context),
           ),
         ],
@@ -48,11 +48,11 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
         listener: (context, state) {
           if (state is TenantActionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.primary),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).primary),
             );
           } else if (state is TenantError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).error),
             );
           } else if (state is TenantKybSdkReady) {
             _launchKybSumsub(context, state.sdkToken, state.tenantId);
@@ -60,7 +60,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
         },
         builder: (context, state) {
           if (state is TenantLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return Center(child: CircularProgressIndicator(color: AppColors.of(context).primary));
           }
 
           if (state is TenantDetailLoaded) {
@@ -81,15 +81,15 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                         children: [
                           Container(
                             width: 56, height: 56,
-                            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
-                            child: const Icon(Icons.business_outlined, color: AppColors.primary, size: 28),
+                            decoration: BoxDecoration(color: AppColors.of(context).primary.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
+                            child: Icon(Icons.business_outlined, color: AppColors.of(context).primary, size: 28),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(t.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                                Text(t.name, style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
@@ -99,10 +99,10 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
-                                          color: AppColors.secondary.withOpacity(0.15),
+                                          color: AppColors.of(context).secondary.withOpacity(0.15),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
-                                        child: Text(_roleLabelForRole(t.myRole!, l10n), style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.w500)),
+                                        child: Text(_roleLabelForRole(t.myRole!, l10n), style: TextStyle(color: AppColors.of(context).secondary, fontSize: 11, fontWeight: FontWeight.w500)),
                                       ),
                                     ],
                                   ],
@@ -112,14 +112,14 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                           ),
                           if (canManage)
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary, size: 20),
+                              icon: Icon(Icons.edit_outlined, color: AppColors.of(context).textSecondary, size: 20),
                               onPressed: () => _showEditSheet(context, t),
                             ),
                         ],
                       ),
                       if (t.description != null && t.description!.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        Text(t.description!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        Text(t.description!, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13)),
                       ],
                     ],
                   ),
@@ -131,7 +131,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.kybBusinessVerificationTitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                      Text(l10n.kybBusinessVerificationTitle, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -143,7 +143,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                               children: [
                                 StatusBadge(label: _kybLabel(t.kybStatus, l10n), color: _kybColor(t.kybStatus)),
                                 const SizedBox(height: 4),
-                                Text(_kybDescription(t.kybStatus, l10n), style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                Text(_kybDescription(t.kybStatus, l10n), style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)),
                               ],
                             ),
                           ),
@@ -171,7 +171,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l10n.contacts, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                        Text(l10n.contacts, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 12),
                         if (t.website != null) _contactRow(Icons.language_outlined, t.website!),
                         if (t.email != null) _contactRow(Icons.email_outlined, t.email!),
@@ -191,11 +191,11 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(l10n.members(t.members.length),
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                           if (canManage)
                             GestureDetector(
                               onTap: () => _showInviteSheet(context),
-                              child: Text(l10n.invitePlus, style: const TextStyle(color: AppColors.primary, fontSize: 13)),
+                              child: Text(l10n.invitePlus, style: TextStyle(color: AppColors.of(context).primary, fontSize: 13)),
                             ),
                         ],
                       ),
@@ -218,9 +218,9 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.secondary, size: 16),
+            Icon(icon, color: AppColors.of(context).secondary, size: 16),
             const SizedBox(width: 12),
-            Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+            Text(value, style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 13)),
           ],
         ),
       );
@@ -228,10 +228,10 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
   Widget _memberRow(TenantMemberEntity member, TenantRole? myRole, bool canManage) {
     final l10n = AppLocalizations.of(context)!;
     final roleColors = {
-      TenantRole.owner: AppColors.primary,
-      TenantRole.admin: AppColors.secondary,
-      TenantRole.operator: AppColors.warning,
-      TenantRole.viewer: AppColors.textSecondary,
+      TenantRole.owner: AppColors.of(context).primary,
+      TenantRole.admin: AppColors.of(context).secondary,
+      TenantRole.operator: AppColors.of(context).warning,
+      TenantRole.viewer: AppColors.of(context).textSecondary,
     };
     final memberName = [member.firstName, member.lastName]
         .where((s) => s != null && s.isNotEmpty)
@@ -243,10 +243,10 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: AppColors.border,
+            backgroundColor: AppColors.of(context).border,
             child: Text(
               member.email[0].toUpperCase(),
-              style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14),
+              style: TextStyle(color: AppColors.of(context).textPrimary, fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
           const SizedBox(width: 12),
@@ -256,16 +256,16 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
               children: [
                 Text(
                   memberName.isEmpty ? member.email : memberName,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                  style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 13),
                 ),
-                Text(member.email, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                Text(member.email, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 11)),
               ],
             ),
           ),
           // Role badge or dropdown
           if (canManage && member.role != TenantRole.owner)
             PopupMenuButton<String>(
-              color: AppColors.card,
+              color: AppColors.of(context).card,
               onSelected: (value) {
                 if (value == 'remove') {
                   _confirmRemoveMember(context, member);
@@ -286,12 +286,12 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                           child: Row(
                             children: [
                               if (r == member.role)
-                                const Icon(Icons.check, size: 16, color: AppColors.primary)
+                                Icon(Icons.check, size: 16, color: AppColors.of(context).primary)
                               else
                                 const SizedBox(width: 16),
                               const SizedBox(width: 8),
                               Text(_roleLabelForRole(r, l10n), style: TextStyle(
-                                color: r == member.role ? AppColors.primary : AppColors.textPrimary,
+                                color: r == member.role ? AppColors.of(context).primary : AppColors.of(context).textPrimary,
                               )),
                             ],
                           ),
@@ -301,9 +301,9 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                   value: 'remove',
                   child: Row(
                     children: [
-                      const Icon(Icons.person_remove_outlined, size: 16, color: AppColors.error),
+                      Icon(Icons.person_remove_outlined, size: 16, color: AppColors.of(context).error),
                       const SizedBox(width: 8),
-                      Text(l10n.delete, style: const TextStyle(color: AppColors.error)),
+                      Text(l10n.delete, style: TextStyle(color: AppColors.of(context).error)),
                     ],
                   ),
                 ),
@@ -311,7 +311,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: (roleColors[member.role] ?? AppColors.textSecondary).withOpacity(0.15),
+                  color: (roleColors[member.role] ?? AppColors.of(context).textSecondary).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -319,10 +319,10 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                   children: [
                     Text(
                       _roleLabelForRole(member.role, l10n),
-                      style: TextStyle(color: roleColors[member.role] ?? AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: roleColors[member.role] ?? AppColors.of(context).textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 2),
-                    Icon(Icons.arrow_drop_down, size: 14, color: roleColors[member.role] ?? AppColors.textSecondary),
+                    Icon(Icons.arrow_drop_down, size: 14, color: roleColors[member.role] ?? AppColors.of(context).textSecondary),
                   ],
                 ),
               ),
@@ -331,12 +331,12 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: (roleColors[member.role] ?? AppColors.textSecondary).withOpacity(0.15),
+                color: (roleColors[member.role] ?? AppColors.of(context).textSecondary).withOpacity(0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 _roleLabelForRole(member.role, l10n),
-                style: TextStyle(color: roleColors[member.role] ?? AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
+                style: TextStyle(color: roleColors[member.role] ?? AppColors.of(context).textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
               ),
             ),
         ],
@@ -352,16 +352,16 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.card,
-        title: Text(l10n.removeMember, style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: AppColors.of(context).card,
+        title: Text(l10n.removeMember, style: TextStyle(color: AppColors.of(context).textPrimary)),
         content: Text(
           l10n.removeMemberConfirm(name.isEmpty ? member.email : name),
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppColors.of(context).textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text(l10n.cancel, style: TextStyle(color: AppColors.of(context).textSecondary)),
           ),
           TextButton(
             onPressed: () {
@@ -371,7 +371,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                 userId: member.userId ?? member.id,
               ));
             },
-            child: Text(l10n.delete, style: const TextStyle(color: AppColors.error)),
+            child: Text(l10n.delete, style: TextStyle(color: AppColors.of(context).error)),
           ),
         ],
       ),
@@ -387,7 +387,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
@@ -400,31 +400,31 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(l10n.editOrganizationTitle,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               TextField(
                 controller: nameCtrl,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.orgName),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.orgEmail),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: websiteCtrl,
                 keyboardType: TextInputType.url,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.orgWebsite),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: addressCtrl,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.orgLegalAddress),
                 maxLines: 2,
               ),
@@ -463,7 +463,7 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
@@ -476,25 +476,25 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(l10n.inviteMember,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               TextField(
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: const InputDecoration(labelText: 'Email'),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<TenantRole>(
                 value: selectedRole,
-                dropdownColor: AppColors.card,
-                style: const TextStyle(color: AppColors.textPrimary),
+                dropdownColor: AppColors.of(context).card,
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.role),
                 items: TenantRole.values
                     .where((r) => r != TenantRole.owner)
                     .map((r) => DropdownMenuItem(
                           value: r,
-                          child: Text(_roleLabelForRole(r, l10n), style: const TextStyle(color: AppColors.textPrimary)),
+                          child: Text(_roleLabelForRole(r, l10n), style: TextStyle(color: AppColors.of(context).textPrimary)),
                         ))
                     .toList(),
                 onChanged: (v) => setModalState(() => selectedRole = v ?? TenantRole.viewer),
@@ -529,16 +529,16 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          backgroundColor: AppColors.card,
-          title: Text(l10n.kybVerificationTitle, style: const TextStyle(color: AppColors.textPrimary)),
+          backgroundColor: AppColors.of(context).card,
+          title: Text(l10n.kybVerificationTitle, style: TextStyle(color: AppColors.of(context).textPrimary)),
           content: Text(
             l10n.kybWebOnlyBusiness,
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: AppColors.of(context).textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(l10n.ok, style: const TextStyle(color: AppColors.primary)),
+              child: Text(l10n.ok, style: TextStyle(color: AppColors.of(context).primary)),
             ),
           ],
         ),
@@ -578,10 +578,10 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
 
   Color _kybColor(KybStatus status) {
     switch (status) {
-      case KybStatus.verified: return AppColors.primary;
-      case KybStatus.pending: return AppColors.warning;
-      case KybStatus.rejected: return AppColors.error;
-      default: return AppColors.textSecondary;
+      case KybStatus.verified: return AppColors.of(context).primary;
+      case KybStatus.pending: return AppColors.of(context).warning;
+      case KybStatus.rejected: return AppColors.of(context).error;
+      default: return AppColors.of(context).textSecondary;
     }
   }
 

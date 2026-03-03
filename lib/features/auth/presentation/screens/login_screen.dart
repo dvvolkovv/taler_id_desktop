@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: AppColors.error,
+                backgroundColor: AppColors.of(context).error,
               ),
             );
           }
@@ -67,16 +67,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.of(context).primary,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.verified_user, color: Colors.black, size: 22),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
+                      Text(
                         'Taler ID',
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: AppColors.of(context).textPrimary,
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
@@ -86,16 +86,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 48),
                   Text(
                     l10n.login,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: AppColors.of(context).textPrimary,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Используйте email и пароль',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 32),
                   Form(
@@ -105,31 +105,31 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(color: AppColors.textPrimary),
+                          style: TextStyle(color: AppColors.of(context).textPrimary),
                           decoration: InputDecoration(
                             labelText: l10n.email,
                             filled: true,
-                            fillColor: AppColors.card,
-                            prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                            fillColor: AppColors.of(context).card,
+                            prefixIcon: Icon(Icons.email_outlined, color: AppColors.of(context).textSecondary),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: BorderSide(color: AppColors.of(context).border),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: BorderSide(color: AppColors.of(context).border),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                              borderSide: BorderSide(color: AppColors.of(context).primary, width: 2),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.error),
+                              borderSide: BorderSide(color: AppColors.of(context).error),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.error, width: 2),
+                              borderSide: BorderSide(color: AppColors.of(context).error, width: 2),
                             ),
                           ),
                           validator: (v) {
@@ -142,38 +142,38 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
-                          style: const TextStyle(color: AppColors.textPrimary),
+                          style: TextStyle(color: AppColors.of(context).textPrimary),
                           decoration: InputDecoration(
                             labelText: l10n.password,
                             filled: true,
-                            fillColor: AppColors.card,
-                            prefixIcon: const Icon(Icons.lock_outlined, color: AppColors.textSecondary),
+                            fillColor: AppColors.of(context).card,
+                            prefixIcon: Icon(Icons.lock_outlined, color: AppColors.of(context).textSecondary),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                color: AppColors.textSecondary,
+                                color: AppColors.of(context).textSecondary,
                               ),
                               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: BorderSide(color: AppColors.of(context).border),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: BorderSide(color: AppColors.of(context).border),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                              borderSide: BorderSide(color: AppColors.of(context).primary, width: 2),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.error),
+                              borderSide: BorderSide(color: AppColors.of(context).error),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.error, width: 2),
+                              borderSide: BorderSide(color: AppColors.of(context).error, width: 2),
                             ),
                           ),
                           validator: (v) {
@@ -202,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () => context.push(RouteConstants.register),
                           child: Text(
                             '${l10n.noAccount} ${l10n.createOne}',
-                            style: const TextStyle(color: AppColors.primary),
+                            style: TextStyle(color: AppColors.of(context).primary),
                           ),
                         ),
                       ],

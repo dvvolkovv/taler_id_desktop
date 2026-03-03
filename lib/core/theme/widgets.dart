@@ -19,8 +19,9 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sigma = blurSigma ?? AppColors.glassBlurSigma;
-    final bgOpacity = opacity ?? AppColors.glassOpacity;
+    final colors = AppColors.of(context);
+    final sigma = blurSigma ?? colors.glassBlurSigma;
+    final bgOpacity = opacity ?? colors.glassOpacity;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -29,10 +30,10 @@ class GlassCard extends StatelessWidget {
         child: Container(
           padding: padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.glassColor.withOpacity(bgOpacity),
+            color: colors.glassColor.withOpacity(bgOpacity),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.glassColor.withOpacity(AppColors.glassBorderOpacity),
+              color: colors.glassColor.withOpacity(colors.glassBorderOpacity),
             ),
           ),
           child: child,
@@ -78,13 +79,14 @@ class LoadingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final enabled = !loading && onPressed != null;
     return Container(
       decoration: BoxDecoration(
-        gradient: enabled ? AppColors.primaryGradient : null,
-        color: enabled ? null : AppColors.primary.withOpacity(0.3),
+        gradient: enabled ? colors.primaryGradient : null,
+        color: enabled ? null : colors.primary.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: colors.glassColor.withOpacity(0.08)),
       ),
       child: ElevatedButton(
         onPressed: loading ? null : onPressed,
@@ -117,7 +119,7 @@ class SkeletonBox extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
+          color: AppColors.of(context).glassColor.withOpacity(0.06),
           borderRadius: BorderRadius.circular(8),
         ),
       );

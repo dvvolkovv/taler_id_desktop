@@ -36,7 +36,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: const Text('Найти пользователя'),
       ),
@@ -50,33 +50,33 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
                 TextField(
                   controller: _ctrl,
                   autofocus: true,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: AppColors.of(context).textPrimary),
                   decoration: InputDecoration(
                     hintText: 'Никнейм, телефон или email',
-                    hintStyle: const TextStyle(
-                        color: AppColors.textSecondary),
-                    prefixIcon: const Icon(Icons.search,
-                        color: AppColors.textSecondary),
+                    hintStyle: TextStyle(
+                        color: AppColors.of(context).textSecondary),
+                    prefixIcon: Icon(Icons.search,
+                        color: AppColors.of(context).textSecondary),
                     filled: true,
-                    fillColor: AppColors.card,
+                    fillColor: AppColors.of(context).card,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          const BorderSide(color: AppColors.border),
+                          BorderSide(color: AppColors.of(context).border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          const BorderSide(color: AppColors.border),
+                          BorderSide(color: AppColors.of(context).border),
                     ),
                   ),
                   onChanged: _onChanged,
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Введите @никнейм или +43... для поиска по телефону',
                   style: TextStyle(
-                      color: AppColors.textSecondary, fontSize: 12),
+                      color: AppColors.of(context).textSecondary, fontSize: 12),
                 ),
               ],
             ),
@@ -95,7 +95,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Ошибка: ${state.error}'),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: AppColors.of(context).error,
                     ),
                   );
                 }
@@ -106,10 +106,10 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
                 }
                 if (state.searchResults.isEmpty &&
                     _ctrl.text.length >= 2) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'Пользователи не найдены',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: AppColors.of(context).textSecondary),
                     ),
                   );
                 }
@@ -147,7 +147,7 @@ class _UserTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.of(context).primary,
         backgroundImage: user.avatarUrl != null
             ? NetworkImage(user.avatarUrl!)
             : null,
@@ -161,8 +161,8 @@ class _UserTile extends StatelessWidget {
       ),
       title: Text(
         displayName,
-        style: const TextStyle(
-            color: AppColors.textPrimary,
+        style: TextStyle(
+            color: AppColors.of(context).textPrimary,
             fontWeight: FontWeight.w600),
       ),
       subtitle: Column(
@@ -171,13 +171,13 @@ class _UserTile extends StatelessWidget {
           if (user.username != null)
             Text(
               '@${user.username}',
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12),
+              style: TextStyle(
+                  color: AppColors.of(context).textSecondary, fontSize: 12),
             ),
           Text(
             user.email,
-            style: const TextStyle(
-                color: AppColors.textSecondary, fontSize: 12),
+            style: TextStyle(
+                color: AppColors.of(context).textSecondary, fontSize: 12),
           ),
         ],
       ),
@@ -185,13 +185,13 @@ class _UserTile extends StatelessWidget {
         padding:
             const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.15),
+          color: AppColors.of(context).primary.withOpacity(0.15),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Text(
+        child: Text(
           'KYC \u2713',
           style: TextStyle(
-              color: AppColors.primary,
+              color: AppColors.of(context).primary,
               fontSize: 11,
               fontWeight: FontWeight.bold),
         ),

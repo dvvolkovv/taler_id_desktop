@@ -27,6 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _biometricAvailable = false;
   bool _pinEnabled = false;
   String _currentLang = 'ru';
+  String _currentTheme = 'light';
   String _appVersion = '';
   final _storage = sl<SecureStorageService>();
 
@@ -41,6 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final biometricEnabled = await _storage.isBiometricEnabled;
     final pinEnabled = await _storage.isPinEnabled;
     final savedLang = await _storage.getLanguage() ?? 'ru';
+    final savedTheme = await _storage.getThemeMode() ?? 'light';
     bool available = false;
     try {
       final localAuth = LocalAuthentication();
@@ -59,6 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _biometricAvailable = available;
       _pinEnabled = pinEnabled;
       _currentLang = savedLang;
+      _currentTheme = savedTheme;
       _appVersion = '${info.version}+${info.buildNumber}';
     });
   }
@@ -76,7 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.biometricsError), backgroundColor: AppColors.error),
+            SnackBar(content: Text(l10n.biometricsError), backgroundColor: AppColors.of(context).error),
           );
         }
         return;
@@ -102,7 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(title: Text(l10n.settings)),
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
@@ -118,7 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             AppCard(
               child: _navTile(
                 icon: Icons.person_outline,
-                iconColor: AppColors.primary,
+                iconColor: AppColors.of(context).primary,
                 title: l10n.editProfile,
                 onTap: () => context.push(RouteConstants.profile),
               ),
@@ -132,14 +135,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   _navTile(
                     icon: Icons.verified_user_outlined,
-                    iconColor: AppColors.primary,
+                    iconColor: AppColors.of(context).primary,
                     title: 'Верификация личности (KYC)',
                     onTap: () => context.push(RouteConstants.kyc),
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: AppColors.of(context).border, height: 1),
                   _navTile(
                     icon: Icons.business_outlined,
-                    iconColor: AppColors.primary,
+                    iconColor: AppColors.of(context).primary,
                     title: 'Организации',
                     onTap: () => context.push(RouteConstants.organization),
                   ),
@@ -156,43 +159,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (_biometricAvailable)
                     _switchTile(
                       icon: Icons.fingerprint,
-                      iconColor: AppColors.primary,
+                      iconColor: AppColors.of(context).primary,
                       title: l10n.biometrics,
                       subtitle: l10n.biometricsDesc,
                       value: _biometricEnabled,
                       onChanged: _toggleBiometric,
                     ),
-                  if (_biometricAvailable) const Divider(color: AppColors.border, height: 1),
+                  if (_biometricAvailable) Divider(color: AppColors.of(context).border, height: 1),
                   _switchTile(
                     icon: Icons.pin_outlined,
-                    iconColor: AppColors.primary,
+                    iconColor: AppColors.of(context).primary,
                     title: l10n.pinCode,
                     subtitle: l10n.pinCodeDesc,
                     value: _pinEnabled,
                     onChanged: _togglePin,
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: AppColors.of(context).border, height: 1),
                   _navTile(
                     icon: Icons.lock_outlined,
-                    iconColor: AppColors.secondary,
+                    iconColor: AppColors.of(context).secondary,
                     title: l10n.changePassword,
                     onTap: () => _showChangePasswordSheet(context),
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: AppColors.of(context).border, height: 1),
                   _navTile(
                     icon: Icons.security_outlined,
-                    iconColor: AppColors.secondary,
+                    iconColor: AppColors.of(context).secondary,
                     title: l10n.twoFactorAuth,
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coming soon'), backgroundColor: AppColors.warning),
+                        SnackBar(content: Text('Coming soon'), backgroundColor: AppColors.of(context).warning),
                       );
                     },
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: AppColors.of(context).border, height: 1),
                   _navTile(
                     icon: Icons.devices_outlined,
-                    iconColor: AppColors.secondary,
+                    iconColor: AppColors.of(context).secondary,
                     title: l10n.sessions,
                     onTap: () => context.push(RouteConstants.sessions),
                   ),
@@ -208,16 +211,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   _switchTile(
                     icon: Icons.notifications_outlined,
-                    iconColor: AppColors.warning,
+                    iconColor: AppColors.of(context).warning,
                     title: l10n.pushKycStatus,
                     subtitle: l10n.pushKycStatusDesc,
                     value: true,
                     onChanged: (v) {},
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: AppColors.of(context).border, height: 1),
                   _switchTile(
                     icon: Icons.login_outlined,
-                    iconColor: AppColors.warning,
+                    iconColor: AppColors.of(context).warning,
                     title: l10n.pushLogins,
                     subtitle: l10n.pushLoginsDesc,
                     value: true,
@@ -234,19 +237,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 children: [
                   _navTile(
+                    icon: Icons.palette_outlined,
+                    iconColor: AppColors.of(context).textSecondary,
+                    title: l10n.appearance,
+                    trailing: _themeLabel(l10n),
+                    onTap: () => _showThemePicker(context),
+                  ),
+                  Divider(color: AppColors.of(context).border, height: 1),
+                  _navTile(
                     icon: Icons.language_outlined,
-                    iconColor: AppColors.textSecondary,
+                    iconColor: AppColors.of(context).textSecondary,
                     title: l10n.language,
                     trailing: _currentLang == 'ru' ? l10n.languageRussian : l10n.languageEnglish,
                     onTap: () => _showLanguagePicker(context),
                   ),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: AppColors.of(context).border, height: 1),
                   _navTile(
                     icon: Icons.delete_forever_outlined,
-                    iconColor: AppColors.error,
+                    iconColor: AppColors.of(context).error,
                     title: l10n.deleteAccount,
                     onTap: () => _showDeleteAccountDialog(context),
-                    textColor: AppColors.error,
+                    textColor: AppColors.of(context).error,
                   ),
                 ],
               ),
@@ -257,11 +268,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                icon: const Icon(Icons.logout, color: AppColors.error),
-                label: Text(l10n.logout, style: const TextStyle(color: AppColors.error, fontSize: 16)),
+                icon: Icon(Icons.logout, color: AppColors.of(context).error),
+                label: Text(l10n.logout, style: TextStyle(color: AppColors.of(context).error, fontSize: 16)),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
-                  side: const BorderSide(color: AppColors.error),
+                  side: BorderSide(color: AppColors.of(context).error),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => _confirmLogout(context),
@@ -273,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Center(
               child: Text(
                 l10n.version(_appVersion.isNotEmpty ? _appVersion : '...'),
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
               ),
             ),
             const SizedBox(height: 24),
@@ -286,7 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _sectionHeader(String title) => Padding(
         padding: const EdgeInsets.only(left: 4, bottom: 8),
         child: Text(title,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12,
+            style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12,
                 fontWeight: FontWeight.w500, letterSpacing: 0.5)),
       );
 
@@ -312,16 +323,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                  Text(title, style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 14)),
                   if (subtitle != null)
-                    Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text(subtitle, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)),
                 ],
               ),
             ),
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppColors.primary,
+              activeColor: AppColors.of(context).primary,
             ),
           ],
         ),
@@ -349,13 +360,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(title,
-                    style: TextStyle(color: textColor ?? AppColors.textPrimary, fontSize: 14)),
+                    style: TextStyle(color: textColor ?? AppColors.of(context).textPrimary, fontSize: 14)),
               ),
               if (trailing != null)
-                Text(trailing, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                Text(trailing, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13)),
               const SizedBox(width: 4),
               if (trailing != null || textColor == null)
-                const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 18),
+                Icon(Icons.chevron_right, color: AppColors.of(context).textSecondary, size: 18),
             ],
           ),
         ),
@@ -366,21 +377,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppColors.card,
-        title: Text(l10n.logoutConfirm, style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: AppColors.of(context).card,
+        title: Text(l10n.logoutConfirm, style: TextStyle(color: AppColors.of(context).textPrimary)),
         content: Text(l10n.logoutDesc,
-            style: const TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: AppColors.of(context).textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text(l10n.cancel, style: TextStyle(color: AppColors.of(context).textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
               context.read<AuthBloc>().add(LogoutRequested());
             },
-            child: Text(l10n.logout, style: const TextStyle(color: AppColors.error)),
+            child: Text(l10n.logout, style: TextStyle(color: AppColors.of(context).error)),
           ),
         ],
       ),
@@ -395,7 +406,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
@@ -407,18 +418,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l10n.changePassword,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
             const SizedBox(height: 20),
             TextField(controller: oldCtrl, obscureText: true,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.currentPassword)),
             const SizedBox(height: 12),
             TextField(controller: newCtrl, obscureText: true,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.newPassword)),
             const SizedBox(height: 12),
             TextField(controller: confirmCtrl, obscureText: true,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.of(context).textPrimary),
                 decoration: InputDecoration(labelText: l10n.confirmNewPassword)),
             const SizedBox(height: 24),
             SizedBox(
@@ -428,13 +439,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (newCtrl.text.isEmpty || confirmCtrl.text.isEmpty || oldCtrl.text.isEmpty) return;
                       if (newCtrl.text != confirmCtrl.text) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.pinMismatch), backgroundColor: AppColors.error),
+                          SnackBar(content: Text(l10n.pinMismatch), backgroundColor: AppColors.of(context).error),
                         );
                         return;
                       }
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coming soon'), backgroundColor: AppColors.warning),
+                        SnackBar(content: Text('Coming soon'), backgroundColor: AppColors.of(context).warning),
                       );
                     },
                 child: Text(l10n.save),
@@ -450,7 +461,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(24),
@@ -458,18 +469,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(l10n.languageSelect,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             ListTile(
               leading: const Text('\u{1f1f7}\u{1f1fa}', style: TextStyle(fontSize: 24)),
-              title: Text(l10n.languageRussian, style: const TextStyle(color: AppColors.textPrimary)),
-              trailing: _currentLang == 'ru' ? const Icon(Icons.check, color: AppColors.primary) : null,
+              title: Text(l10n.languageRussian, style: TextStyle(color: AppColors.of(context).textPrimary)),
+              trailing: _currentLang == 'ru' ? Icon(Icons.check, color: AppColors.of(context).primary) : null,
               onTap: () => _selectLanguage('ru'),
             ),
             ListTile(
               leading: const Text('\u{1f1ec}\u{1f1e7}', style: TextStyle(fontSize: 24)),
-              title: Text(l10n.languageEnglish, style: const TextStyle(color: AppColors.textPrimary)),
-              trailing: _currentLang == 'en' ? const Icon(Icons.check, color: AppColors.primary) : null,
+              title: Text(l10n.languageEnglish, style: TextStyle(color: AppColors.of(context).textPrimary)),
+              trailing: _currentLang == 'en' ? Icon(Icons.check, color: AppColors.of(context).primary) : null,
               onTap: () => _selectLanguage('en'),
             ),
           ],
@@ -485,21 +496,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _currentLang = lang);
   }
 
+  String _themeLabel(AppLocalizations l10n) => switch (_currentTheme) {
+    'dark' => l10n.themeDark,
+    'system' => l10n.themeSystem,
+    _ => l10n.themeLight,
+  };
+
+  void _showThemePicker(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colors = AppColors.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.appearanceSelect,
+                style: TextStyle(color: colors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Icon(Icons.light_mode_outlined, color: colors.textSecondary),
+              title: Text(l10n.themeLight, style: TextStyle(color: colors.textPrimary)),
+              trailing: _currentTheme == 'light' ? Icon(Icons.check, color: colors.primary) : null,
+              onTap: () => _selectTheme('light'),
+            ),
+            ListTile(
+              leading: Icon(Icons.dark_mode_outlined, color: colors.textSecondary),
+              title: Text(l10n.themeDark, style: TextStyle(color: colors.textPrimary)),
+              trailing: _currentTheme == 'dark' ? Icon(Icons.check, color: colors.primary) : null,
+              onTap: () => _selectTheme('dark'),
+            ),
+            ListTile(
+              leading: Icon(Icons.phone_android_outlined, color: colors.textSecondary),
+              title: Text(l10n.themeSystem, style: TextStyle(color: colors.textPrimary)),
+              trailing: _currentTheme == 'system' ? Icon(Icons.check, color: colors.primary) : null,
+              onTap: () => _selectTheme('system'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectTheme(String theme) async {
+    Navigator.pop(context);
+    await _storage.saveThemeMode(theme);
+    final mode = switch (theme) {
+      'dark' => ThemeMode.dark,
+      'system' => ThemeMode.system,
+      _ => ThemeMode.light,
+    };
+    TalerIdApp.setThemeMode(context, mode);
+    setState(() => _currentTheme = theme);
+  }
+
   void _showDeleteAccountDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppColors.card,
-        title: Text(l10n.deleteAccountConfirm, style: const TextStyle(color: AppColors.error)),
+        backgroundColor: AppColors.of(context).card,
+        title: Text(l10n.deleteAccountConfirm, style: TextStyle(color: AppColors.of(context).error)),
         content: Text(
           l10n.deleteAccountDesc,
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppColors.of(context).textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text(l10n.cancel, style: TextStyle(color: AppColors.of(context).textSecondary)),
           ),
           TextButton(
             onPressed: () async {
@@ -513,12 +581,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               } catch (_) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Error'), backgroundColor: AppColors.error),
+                    SnackBar(content: Text('Error'), backgroundColor: AppColors.of(context).error),
                   );
                 }
               }
             },
-            child: Text(l10n.delete, style: const TextStyle(color: AppColors.error)),
+            child: Text(l10n.delete, style: TextStyle(color: AppColors.of(context).error)),
           ),
         ],
       ),

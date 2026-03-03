@@ -139,4 +139,19 @@ class SecureStorageService {
       await _storage.write(key: ApiConstants.languageKey, value: lang);
     }
   }
+
+  Future<String?> getThemeMode() async {
+    if (kIsWeb) {
+      return _webBox?.get(ApiConstants.themeKey) as String?;
+    }
+    return _storage.read(key: ApiConstants.themeKey);
+  }
+
+  Future<void> saveThemeMode(String mode) async {
+    if (kIsWeb) {
+      await _webBox?.put(ApiConstants.themeKey, mode);
+    } else {
+      await _storage.write(key: ApiConstants.themeKey, value: mode);
+    }
+  }
 }

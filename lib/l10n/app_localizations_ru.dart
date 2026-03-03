@@ -766,4 +766,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tabMessenger => 'Сообщения';
+
+  @override
+  String get appearance => 'Оформление';
+
+  @override
+  String get appearanceSelect => 'Выбор темы';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get themeSystem => 'Системная';
 }

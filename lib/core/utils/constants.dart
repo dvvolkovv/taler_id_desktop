@@ -7,6 +7,7 @@ class ApiConstants {
   static const pinHashKey = 'pin_hash';
   static const pinEnabledKey = 'pin_enabled';
   static const languageKey = 'app_language';
+  static const themeKey = 'app_theme';
 }
 
 class RouteConstants {

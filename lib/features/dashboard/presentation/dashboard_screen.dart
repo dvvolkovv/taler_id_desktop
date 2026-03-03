@@ -340,18 +340,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       barrierDismissible: false,
       useRootNavigator: true,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.card,
+        backgroundColor: AppColors.of(context).card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.call_rounded, size: 56, color: AppColors.primary),
+            Icon(Icons.call_rounded, size: 56, color: AppColors.of(context).primary),
             const SizedBox(height: 16),
-            const Text('Входящий звонок',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Входящий звонок',
+                style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text('от $fromName',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14)),
           ],
         ),
         actionsAlignment: MainAxisAlignment.spaceEvenly,
@@ -383,7 +383,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             },
             icon: const Icon(Icons.call_end, color: Colors.white),
             label: const Text('Отклонить'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.of(context).error),
           ),
         ],
       ),
@@ -408,7 +408,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.of(context).background,
         body: Column(
           children: [
             // Active call banner — visible on all tabs
@@ -431,7 +431,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   },
                   child: Container(
                     width: double.infinity,
-                    color: AppColors.primary,
+                    color: AppColors.of(context).primary,
                     child: SafeArea(
                       bottom: false,
                       child: Padding(
@@ -464,7 +464,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             ? null
             : FloatingActionButton(
                 onPressed: () => context.push(RouteConstants.chat),
-                backgroundColor: AppColors.primary,
+                backgroundColor: AppColors.of(context).primary,
                 child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
               ),
         bottomNavigationBar: ClipRRect(
@@ -472,10 +472,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface.withOpacity(0.60),
-                border: const Border(
+                color: AppColors.of(context).surface.withOpacity(0.60),
+                border: Border(
                   top: BorderSide(
-                    color: Color(0x26FFFFFF), // white 15%
+                    color: AppColors.of(context).glassColor.withOpacity(0.15),
                     width: 0.5,
                   ),
                 ),
@@ -484,8 +484,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 currentIndex: currentIndex,
                 onTap: (i) => context.go(_tabs[i]),
                 backgroundColor: Colors.transparent,
-                selectedItemColor: AppColors.accent,
-                unselectedItemColor: AppColors.textSecondary,
+                selectedItemColor: AppColors.of(context).accent,
+                unselectedItemColor: AppColors.of(context).textSecondary,
                 type: BottomNavigationBarType.fixed,
                 elevation: 0,
                 selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
@@ -519,7 +519,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                         }
                         return Badge(
                           label: Text('$total'),
-                          backgroundColor: AppColors.error,
+                          backgroundColor: AppColors.of(context).error,
                           child: const Icon(Icons.chat_bubble_outline_rounded),
                         );
                       },

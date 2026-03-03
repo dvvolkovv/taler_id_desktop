@@ -41,11 +41,11 @@ class _TwoFAScreenState extends State<TwoFAScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.of(context).textPrimary),
           onPressed: () => context.pop(),
         ),
       ),
@@ -55,7 +55,7 @@ class _TwoFAScreenState extends State<TwoFAScreen> {
             context.go(RouteConstants.assistant);
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).error),
             );
             _codeController.clear();
           }
@@ -66,16 +66,16 @@ class _TwoFAScreenState extends State<TwoFAScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.security, color: AppColors.primary, size: 48),
+                Icon(Icons.security, color: AppColors.of(context).primary, size: 48),
                 const SizedBox(height: 24),
                 Text(
                   l10n.twoFATitle,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   l10n.twoFASubtitle,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14),
                 ),
                 const SizedBox(height: 40),
                 TextField(
@@ -83,16 +83,16 @@ class _TwoFAScreenState extends State<TwoFAScreen> {
                   keyboardType: TextInputType.number,
                   maxLength: 6,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.of(context).textPrimary,
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 8,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     counterText: '',
                     hintText: '000000',
-                    hintStyle: TextStyle(color: AppColors.border, letterSpacing: 8, fontSize: 28),
+                    hintStyle: TextStyle(color: AppColors.of(context).border, letterSpacing: 8, fontSize: 28),
                   ),
                   onChanged: (v) {
                     if (v.length == 6) _submit(context);

@@ -69,11 +69,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       lastDate: now,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.primary,
+          colorScheme: ColorScheme.dark(
+            primary: AppColors.of(context).primary,
             onPrimary: Colors.white,
-            surface: AppColors.card,
-            onSurface: AppColors.textPrimary,
+            surface: AppColors.of(context).card,
+            onSurface: AppColors.of(context).textPrimary,
           ),
         ),
         child: child!,
@@ -95,7 +95,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -120,8 +120,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
                   child: Text(
                     l10n.country,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: AppColors.of(context).textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
@@ -131,13 +131,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   child: TextField(
                     controller: searchCtrl,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: AppColors.of(context).textPrimary),
                     decoration: InputDecoration(
                       hintText: l10n.search,
-                      hintStyle: const TextStyle(color: AppColors.textSecondary),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                      hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
+                      prefixIcon: Icon(Icons.search, color: AppColors.of(context).textSecondary),
                       filled: true,
-                      fillColor: AppColors.background,
+                      fillColor: AppColors.of(context).background,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -157,15 +157,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         title: Text(
                           country.name(locale),
                           style: TextStyle(
-                            color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                            color: isSelected ? AppColors.of(context).primary : AppColors.of(context).textPrimary,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                           ),
                         ),
                         trailing: isSelected
-                            ? const Icon(Icons.check, color: AppColors.primary, size: 20)
+                            ? Icon(Icons.check, color: AppColors.of(context).primary, size: 20)
                             : Text(
                                 country.code,
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
                               ),
                         onTap: () {
                           setState(() {
@@ -190,11 +190,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.editProfile),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.of(context).textPrimary),
           onPressed: () => context.pop(),
         ),
       ),
@@ -202,12 +202,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         listener: (context, state) {
           if (state is ProfileLoaded && _initialized) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.profileUpdated), backgroundColor: AppColors.primary),
+              SnackBar(content: Text(l10n.profileUpdated), backgroundColor: AppColors.of(context).primary),
             );
             context.pop();
           } else if (state is ProfileError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.of(context).error),
             );
           }
         },
@@ -229,13 +229,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 children: [
                   TextFormField(
                     controller: _firstNameCtrl,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: AppColors.of(context).textPrimary),
                     decoration: InputDecoration(labelText: l10n.firstName),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _lastNameCtrl,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: AppColors.of(context).textPrimary),
                     decoration: InputDecoration(labelText: l10n.lastName),
                   ),
                   const SizedBox(height: 16),
@@ -244,12 +244,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: AbsorbPointer(
                       child: TextFormField(
                         controller: _dateCtrl,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        style: TextStyle(color: AppColors.of(context).textPrimary),
                         decoration: InputDecoration(
                           labelText: l10n.dateOfBirth,
-                          prefixIcon: const Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary),
+                          prefixIcon: Icon(Icons.calendar_today_outlined, color: AppColors.of(context).textSecondary),
                           hintText: 'DD.MM.YYYY',
-                          hintStyle: const TextStyle(color: AppColors.textSecondary),
+                          hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
                         ),
                       ),
                     ),
@@ -258,10 +258,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   TextFormField(
                     controller: _phoneCtrl,
                     keyboardType: TextInputType.phone,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: AppColors.of(context).textPrimary),
                     decoration: InputDecoration(
                       labelText: l10n.phone,
-                      prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textSecondary),
+                      prefixIcon: Icon(Icons.phone_outlined, color: AppColors.of(context).textSecondary),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -270,11 +270,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: AbsorbPointer(
                       child: TextFormField(
                         controller: _countryCtrl,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        style: TextStyle(color: AppColors.of(context).textPrimary),
                         decoration: InputDecoration(
                           labelText: l10n.country,
-                          prefixIcon: const Icon(Icons.flag_outlined, color: AppColors.textSecondary),
-                          suffixIcon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+                          prefixIcon: Icon(Icons.flag_outlined, color: AppColors.of(context).textSecondary),
+                          suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.of(context).textSecondary),
                         ),
                       ),
                     ),

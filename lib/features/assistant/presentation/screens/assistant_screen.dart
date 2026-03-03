@@ -300,7 +300,7 @@ class _AssistantScreenState extends State<AssistantScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(title: Text(l10n.tabAssistant)),
       body: switch (_state) {
         _CallState.idle => _buildIdle(l10n),
@@ -325,26 +325,26 @@ class _AssistantScreenState extends State<AssistantScreen>
                 height: 160,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.card,
-                  border: Border.all(color: AppColors.primary, width: 2),
+                  color: AppColors.of(context).card,
+                  border: Border.all(color: AppColors.of(context).primary, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.25),
+                      color: AppColors.of(context).primary.withValues(alpha: 0.25),
                       blurRadius: 32,
                       spreadRadius: 6,
                     ),
                   ],
                 ),
-                child: const Icon(Icons.mic_rounded,
-                    size: 64, color: AppColors.primary),
+                child: Icon(Icons.mic_rounded,
+                    size: 64, color: AppColors.of(context).primary),
               ),
             ),
           ),
           const SizedBox(height: 32),
           Text(
             l10n.assistantTapToTalk,
-            style: const TextStyle(
-                color: AppColors.textSecondary,
+            style: TextStyle(
+                color: AppColors.of(context).textSecondary,
                 fontSize: 16,
                 fontWeight: FontWeight.w500),
           ),
@@ -352,7 +352,7 @@ class _AssistantScreenState extends State<AssistantScreen>
           Text(
             l10n.assistantRealtimeDesc,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
           ),
         ],
       ),
@@ -364,10 +364,10 @@ class _AssistantScreenState extends State<AssistantScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(color: AppColors.primary),
+          CircularProgressIndicator(color: AppColors.of(context).primary),
           const SizedBox(height: 24),
           Text(l10n.assistantConnectingToAssistant,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 16)),
         ],
       ),
     );
@@ -391,30 +391,30 @@ class _AssistantScreenState extends State<AssistantScreen>
             height: 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary.withValues(alpha: 0.15),
+              color: AppColors.of(context).primary.withValues(alpha: 0.15),
               border: Border.all(
-                color: speaking ? AppColors.primary : AppColors.border,
+                color: speaking ? AppColors.of(context).primary : AppColors.of(context).border,
                 width: speaking ? 2 : 1,
               ),
               boxShadow: speaking
                   ? [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
+                        color: AppColors.of(context).primary.withValues(alpha: 0.3),
                         blurRadius: 24,
                         spreadRadius: 4,
                       )
                     ]
                   : null,
             ),
-            child: const Icon(Icons.smart_toy_rounded,
-                size: 52, color: AppColors.primary),
+            child: Icon(Icons.smart_toy_rounded,
+                size: 52, color: AppColors.of(context).primary),
           ),
         ),
         const SizedBox(height: 20),
         Text(
           speaking ? l10n.assistantAiSpeaking : l10n.assistantAiListening,
           style: TextStyle(
-            color: speaking ? AppColors.primary : AppColors.textSecondary,
+            color: speaking ? AppColors.of(context).primary : AppColors.of(context).textSecondary,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -431,16 +431,16 @@ class _AssistantScreenState extends State<AssistantScreen>
                     : Icons.volume_off_rounded,
                 label: _speakerOn ? l10n.assistantSpeakerOn : l10n.assistantSpeaker,
                 color: _speakerOn
-                    ? AppColors.primary.withValues(alpha: 0.2)
-                    : AppColors.card,
+                    ? AppColors.of(context).primary.withValues(alpha: 0.2)
+                    : AppColors.of(context).card,
                 iconColor:
-                    _speakerOn ? AppColors.primary : AppColors.textSecondary,
+                    _speakerOn ? AppColors.of(context).primary : AppColors.of(context).textSecondary,
                 onTap: _toggleSpeaker,
               ),
               _CallButton(
                 icon: Icons.call_end_rounded,
                 label: l10n.assistantEnd,
-                color: AppColors.error,
+                color: AppColors.of(context).error,
                 iconColor: Colors.white,
                 onTap: _endCall,
                 size: 72,
@@ -449,9 +449,9 @@ class _AssistantScreenState extends State<AssistantScreen>
                 icon: _muted ? Icons.mic_off_rounded : Icons.mic_rounded,
                 label: _muted ? l10n.assistantUnmute : l10n.assistantMicrophone,
                 color: _muted
-                    ? AppColors.error.withValues(alpha: 0.2)
-                    : AppColors.card,
-                iconColor: _muted ? AppColors.error : AppColors.textSecondary,
+                    ? AppColors.of(context).error.withValues(alpha: 0.2)
+                    : AppColors.of(context).card,
+                iconColor: _muted ? AppColors.of(context).error : AppColors.of(context).textSecondary,
                 onTap: _toggleMute,
               ),
             ],
@@ -468,18 +468,18 @@ class _AssistantScreenState extends State<AssistantScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 56, color: AppColors.error),
+            Icon(Icons.error_outline, size: 56, color: AppColors.of(context).error),
             const SizedBox(height: 16),
             Text(l10n.assistantConnectionError,
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: AppColors.of(context).textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
               _errorMessage ?? '',
               style:
-                  const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -488,7 +488,7 @@ class _AssistantScreenState extends State<AssistantScreen>
               icon: const Icon(Icons.refresh_rounded),
               label: Text(l10n.retry),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.of(context).primary,
                   foregroundColor: Colors.black),
             ),
           ],
@@ -529,8 +529,8 @@ class _CallButton extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(label,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 11)),
+              style: TextStyle(
+                  color: AppColors.of(context).textSecondary, fontSize: 11)),
         ],
       ),
     );

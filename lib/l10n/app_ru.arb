@@ -267,5 +267,11 @@
   "assistantMicrophone": "Микрофон",
   "assistantConnectionError": "Ошибка подключения",
 
-  "tabMessenger": "Сообщения"
+  "tabMessenger": "Сообщения",
+
+  "appearance": "Оформление",
+  "appearanceSelect": "Выбор темы",
+  "themeLight": "Светлая",
+  "themeDark": "Тёмная",
+  "themeSystem": "Системная"
 }
