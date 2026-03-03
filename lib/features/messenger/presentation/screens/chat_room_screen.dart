@@ -403,7 +403,7 @@ class _MessageBubble extends StatelessWidget {
         constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.of(context).primary : AppColors.of(context).card,
+          color: AppColors.of(context).card,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -451,7 +451,7 @@ class _MessageBubble extends StatelessWidget {
                       child: Text(
                         message.fileName ?? message.content,
                         style: TextStyle(
-                          color: isMe ? Colors.white : AppColors.of(context).primary,
+                          color: AppColors.of(context).primary,
                           fontSize: 13,
                           decoration: TextDecoration.underline,
                         ),
@@ -465,7 +465,7 @@ class _MessageBubble extends StatelessWidget {
               Text(
                 message.content,
                 style: TextStyle(
-                  color: isMe ? Colors.white : AppColors.of(context).textPrimary,
+                  color: AppColors.of(context).textPrimary,
                   fontSize: 14,
                 ),
               ),
@@ -476,9 +476,7 @@ class _MessageBubble extends StatelessWidget {
                 Text(
                   DateFormat('HH:mm').format(message.sentAt.toLocal()),
                   style: TextStyle(
-                    color: isMe
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : AppColors.of(context).textSecondary,
+                    color: AppColors.of(context).textSecondary,
                     fontSize: 11,
                   ),
                 ),
@@ -493,7 +491,7 @@ class _MessageBubble extends StatelessWidget {
                     size: 14,
                     color: message.isRead
                         ? AppColors.of(context).primary
-                        : Colors.white.withValues(alpha: 0.5),
+                        : AppColors.of(context).textSecondary,
                   ),
                 ],
               ],
@@ -709,14 +707,14 @@ class _AudioMessagePlayerState extends State<_AudioMessagePlayer> {
         children: [
           Icon(
             _playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
-            color: widget.isMe ? Colors.white : AppColors.of(context).primary,
+            color: AppColors.of(context).primary,
             size: 32,
           ),
           const SizedBox(width: 8),
           Text(
             'Голосовое сообщение',
             style: TextStyle(
-              color: widget.isMe ? Colors.white : AppColors.of(context).textPrimary,
+              color: AppColors.of(context).textPrimary,
               fontSize: 13,
             ),
           ),
