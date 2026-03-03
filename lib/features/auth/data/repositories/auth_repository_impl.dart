@@ -128,6 +128,22 @@ class AuthRepositoryImpl implements IAuthRepository {
       await sl<CacheService>().clearAll();
     } catch (_) {}
   }
+
+  @override
+  Future<void> requestPasswordReset(String email) async {
+    await remote.requestPasswordReset(email);
+  }
+
+  @override
+  Future<String> verifyPasswordResetCode({required String email, required String code}) async {
+    final data = await remote.verifyPasswordResetCode(email: email, code: code);
+    return data['resetToken'] as String;
+  }
+
+  @override
+  Future<void> resetPassword({required String resetToken, required String newPassword}) async {
+    await remote.resetPassword(resetToken: resetToken, newPassword: newPassword);
+  }
 }
 
 class TwoFARequiredException implements Exception {

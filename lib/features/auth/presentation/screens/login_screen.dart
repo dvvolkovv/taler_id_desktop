@@ -197,7 +197,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             }
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => context.push(RouteConstants.forgotPassword),
+                            child: Text(
+                              l10n.forgotPassword,
+                              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         TextButton(
                           onPressed: () => context.push(RouteConstants.register),
                           child: Text(

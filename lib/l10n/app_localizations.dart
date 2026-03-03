@@ -1633,6 +1633,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skip'**
   String get onboardingSkip;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email to receive a reset code'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @resetCodeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Code sent to {email}'**
+  String resetCodeSent(String email);
+
+  /// No description provided for @enterResetCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code'**
+  String get enterResetCode;
+
+  /// No description provided for @resetPasswordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get resetPasswordButton;
+
+  /// No description provided for @passwordResetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset successfully'**
+  String get passwordResetSuccess;
+
+  /// No description provided for @sendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Code'**
+  String get sendCode;
+
+  /// No description provided for @resendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Code'**
+  String get resendCode;
 }
 
 class _AppLocalizationsDelegate

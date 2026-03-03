@@ -812,4 +812,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingSkip => 'Skip';
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get forgotPasswordTitle => 'Reset Password';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Enter your email to receive a reset code';
+
+  @override
+  String resetCodeSent(String email) {
+    return 'Code sent to $email';
+  }
+
+  @override
+  String get enterResetCode => 'Enter the code';
+
+  @override
+  String get resetPasswordButton => 'Reset Password';
+
+  @override
+  String get passwordResetSuccess => 'Password reset successfully';
+
+  @override
+  String get sendCode => 'Send Code';
+
+  @override
+  String get resendCode => 'Resend Code';
 }

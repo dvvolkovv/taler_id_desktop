@@ -814,4 +814,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get onboardingSkip => 'Пропустить';
+
+  @override
+  String get forgotPassword => 'Забыли пароль?';
+
+  @override
+  String get forgotPasswordTitle => 'Восстановление пароля';
+
+  @override
+  String get forgotPasswordSubtitle => 'Введите email для получения кода';
+
+  @override
+  String resetCodeSent(String email) {
+    return 'Код отправлен на $email';
+  }
+
+  @override
+  String get enterResetCode => 'Введите код';
+
+  @override
+  String get resetPasswordButton => 'Сбросить пароль';
+
+  @override
+  String get passwordResetSuccess => 'Пароль успешно изменён';
+
+  @override
+  String get sendCode => 'Отправить код';
+
+  @override
+  String get resendCode => 'Отправить повторно';
 }

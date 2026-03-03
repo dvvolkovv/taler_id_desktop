@@ -9,6 +9,7 @@ import '../../features/auth/presentation/screens/two_fa_screen.dart';
 import '../../features/auth/presentation/screens/pin_setup_screen.dart';
 import '../../features/auth/presentation/screens/pin_entry_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/assistant/presentation/screens/assistant_screen.dart';
 
@@ -45,6 +46,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteConstants.login,
       builder: (_, __) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: RouteConstants.forgotPassword,
+      builder: (_, __) => const ForgotPasswordScreen(),
     ),
     GoRoute(
       path: RouteConstants.register,
@@ -177,13 +182,30 @@ Future<String?> _globalRedirect(BuildContext context, GoRouterState state) async
     RouteConstants.pinEntry,
     RouteConstants.pinSetup,
     RouteConstants.onboarding,
+    RouteConstants.forgotPassword,
   ];
   if (publicRoutes.any((r) => state.matchedLocation.startsWith(r))) return null;
 
-  // Check token for protected routes
-  final storage = sl<SecureStorageService>();
-  final hasToken = await storage.hasRefreshToken;
-  if (!hasToken) return RouteConstants.login;
+  // Incoming voice calls are time-critical: bypass token check so the voice screen
+  // opens immediately after CallKit accept. The join API itself requires a valid
+  // token — AuthInterceptor refreshes it if expired. Blocking navigation here
+  // causes silent failure when flutter_secure_storage is momentarily unavailable
+  // right after the device unlocks (between CallKit accept and app resume).
+  if (state.uri.path == RouteConstants.voice &&
+      state.uri.queryParameters['incoming'] == '1') {
+    return null;
+  }
+
+  // Check token for protected routes — wrapped to avoid silent navigation failure
+  // if Keychain is briefly inaccessible during device unlock transition.
+  try {
+    final storage = sl<SecureStorageService>();
+    final hasToken = await storage.hasRefreshToken;
+    if (!hasToken) return RouteConstants.login;
+  } catch (_) {
+    // Storage temporarily unavailable — allow navigation; API auth handles the rest.
+    return null;
+  }
 
   return null;
 }

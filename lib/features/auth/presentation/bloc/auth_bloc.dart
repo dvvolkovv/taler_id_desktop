@@ -13,6 +13,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<RegisterSubmitted>(_onRegister);
     on<TwoFASubmitted>(_onTwoFA);
     on<LogoutRequested>(_onLogout);
+    on<ForgotPasswordRequested>(_onForgotPassword);
+    on<ForgotPasswordCodeVerified>(_onForgotPasswordCodeVerified);
+    on<ForgotPasswordNewPassword>(_onForgotPasswordNewPassword);
   }
 
   Future<void> _onLogin(LoginSubmitted event, Emitter<AuthState> emit) async {
@@ -69,5 +72,47 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogout(LogoutRequested event, Emitter<AuthState> emit) async {
     await authRepository.logout();
     emit(AuthLoggedOut());
+  }
+
+  Future<void> _onForgotPassword(ForgotPasswordRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      await authRepository.requestPasswordReset(event.email);
+      emit(PasswordResetCodeSent(email: event.email));
+    } on ApiException catch (e) {
+      emit(AuthFailure(e.message));
+    } catch (e) {
+      emit(AuthFailure('Произошла ошибка. Попробуйте ещё раз.'));
+    }
+  }
+
+  Future<void> _onForgotPasswordCodeVerified(ForgotPasswordCodeVerified event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      final resetToken = await authRepository.verifyPasswordResetCode(
+        email: event.email,
+        code: event.code,
+      );
+      emit(PasswordResetCodeVerified(email: event.email, resetToken: resetToken));
+    } on ApiException catch (e) {
+      emit(AuthFailure(e.message));
+    } catch (e) {
+      emit(AuthFailure('Неверный код. Попробуйте ещё раз.'));
+    }
+  }
+
+  Future<void> _onForgotPasswordNewPassword(ForgotPasswordNewPassword event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      await authRepository.resetPassword(
+        resetToken: event.resetToken,
+        newPassword: event.newPassword,
+      );
+      emit(PasswordResetSuccess());
+    } on ApiException catch (e) {
+      emit(AuthFailure(e.message));
+    } catch (e) {
+      emit(AuthFailure('Произошла ошибка. Попробуйте ещё раз.'));
+    }
   }
 }

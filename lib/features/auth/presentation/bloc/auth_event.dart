@@ -34,3 +34,26 @@ class TwoFASubmitted extends AuthEvent {
 }
 
 class LogoutRequested extends AuthEvent {}
+
+class ForgotPasswordRequested extends AuthEvent {
+  final String email;
+  ForgotPasswordRequested({required this.email});
+  @override
+  List<Object?> get props => [email];
+}
+
+class ForgotPasswordCodeVerified extends AuthEvent {
+  final String email;
+  final String code;
+  ForgotPasswordCodeVerified({required this.email, required this.code});
+  @override
+  List<Object?> get props => [email, code];
+}
+
+class ForgotPasswordNewPassword extends AuthEvent {
+  final String resetToken;
+  final String newPassword;
+  ForgotPasswordNewPassword({required this.resetToken, required this.newPassword});
+  @override
+  List<Object?> get props => [resetToken, newPassword];
+}

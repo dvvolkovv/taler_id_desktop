@@ -6,4 +6,7 @@ abstract class IAuthRepository {
   Future<AuthTokens> verify2FA({required String email, required String code, required String tempToken});
   Future<AuthTokens> refreshToken(String refreshToken);
   Future<void> logout();
+  Future<void> requestPasswordReset(String email);
+  Future<String> verifyPasswordResetCode({required String email, required String code});
+  Future<void> resetPassword({required String resetToken, required String newPassword});
 }

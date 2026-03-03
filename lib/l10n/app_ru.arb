@@ -284,5 +284,16 @@
   "onboardingNext": "Далее",
   "onboardingEnableNotifications": "Включить уведомления",
   "onboardingStart": "Начать",
-  "onboardingSkip": "Пропустить"
+  "onboardingSkip": "Пропустить",
+
+  "forgotPassword": "Забыли пароль?",
+  "forgotPasswordTitle": "Восстановление пароля",
+  "forgotPasswordSubtitle": "Введите email для получения кода",
+  "resetCodeSent": "Код отправлен на {email}",
+  "@resetCodeSent": { "placeholders": { "email": { "type": "String" } } },
+  "enterResetCode": "Введите код",
+  "resetPasswordButton": "Сбросить пароль",
+  "passwordResetSuccess": "Пароль успешно изменён",
+  "sendCode": "Отправить код",
+  "resendCode": "Отправить повторно"
 }

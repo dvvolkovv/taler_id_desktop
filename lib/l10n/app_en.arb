@@ -284,5 +284,16 @@
   "onboardingNext": "Next",
   "onboardingEnableNotifications": "Enable Notifications",
   "onboardingStart": "Get Started",
-  "onboardingSkip": "Skip"
+  "onboardingSkip": "Skip",
+
+  "forgotPassword": "Forgot password?",
+  "forgotPasswordTitle": "Reset Password",
+  "forgotPasswordSubtitle": "Enter your email to receive a reset code",
+  "resetCodeSent": "Code sent to {email}",
+  "@resetCodeSent": { "placeholders": { "email": { "type": "String" } } },
+  "enterResetCode": "Enter the code",
+  "resetPasswordButton": "Reset Password",
+  "passwordResetSuccess": "Password reset successfully",
+  "sendCode": "Send Code",
+  "resendCode": "Resend Code"
 }

@@ -49,4 +49,29 @@ class AuthRemoteDataSource {
     if (fcmToken != null) 'fcmToken': fcmToken,
     if (voipToken != null) 'voipToken': voipToken,
   });
+
+  Future<void> requestPasswordReset(String email) async {
+    await client.post('/auth/forgot-password', data: {'email': email});
+  }
+
+  Future<Map<String, dynamic>> verifyPasswordResetCode({
+    required String email,
+    required String code,
+  }) async {
+    return client.post<Map<String, dynamic>>(
+      '/auth/forgot-password/verify',
+      data: {'email': email, 'code': code},
+      fromJson: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<void> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    await client.post('/auth/forgot-password/reset', data: {
+      'resetToken': resetToken,
+      'newPassword': newPassword,
+    });
+  }
 }
