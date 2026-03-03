@@ -113,6 +113,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         await FlutterCallkitIncoming.endAllCalls();
         // Brief pause so iOS releases the VoIP audio session before LiveKit activates it.
         await Future.delayed(const Duration(milliseconds: 300));
+        // Explicitly re-activate audio session so LiveKit/WebRTC can acquire it.
+        await _audioChannel.invokeMethod('requestAudioFocus');
       } catch (_) {}
     }
     // Play ringback tone for outgoing calls to user (not incoming, not AI assistant)
@@ -176,14 +178,15 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         _participants.addAll(_room!.remoteParticipants.values);
       });
 
+      // Request audio focus BEFORE enabling microphone — ensures the audio session
+      // is active (critical after endAllCalls() deactivated it for incoming calls).
+      try {
+        await _audioChannel.invokeMethod('requestAudioFocus');
+      } catch (_) {}
+
       // Enable microphone; may fail on iOS simulator — don't treat as fatal
       try {
         await _room!.localParticipant?.setMicrophoneEnabled(true);
-      } catch (_) {}
-
-      // Request audio focus on Android
-      try {
-        await _audioChannel.invokeMethod('requestAudioFocus');
       } catch (_) {}
 
       // Stop ringback — room is connected (callee may already be present)

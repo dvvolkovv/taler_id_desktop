@@ -154,9 +154,24 @@ extension AppDelegate: PKPushRegistryDelegate {
       var args = payload.dictionaryPayload as [AnyHashable: Any]
       let rawId = args["id"] as? String ?? ""
       NSLog("[VoIP] payload id=%@ rawId=%@", String(describing: args["id"]), rawId)
+      // Derive UUID using the same logic as Flutter's _toCallkitId(roomName)
+      // so VoIP-push and socket-created CallKit calls share the same UUID (no duplicates).
       if UUID(uuidString: rawId) == nil {
-        args["id"] = UUID().uuidString
-        NSLog("[VoIP] generated fallback UUID=%@", args["id"] as! String)
+        var derived = false
+        if let rn = args["roomName"] as? String {
+          let stripped = rn.hasPrefix("call-") ? String(rn.dropFirst(5)) : rn
+          let uuidPattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          if let regex = try? NSRegularExpression(pattern: uuidPattern, options: .caseInsensitive),
+             regex.firstMatch(in: stripped, range: NSRange(stripped.startIndex..., in: stripped)) != nil {
+            args["id"] = stripped
+            NSLog("[VoIP] derived UUID from roomName: %@", stripped)
+            derived = true
+          }
+        }
+        if !derived {
+          args["id"] = UUID().uuidString
+          NSLog("[VoIP] generated fallback UUID=%@", args["id"] as! String)
+        }
       }
       // Wrap roomName/conversationId in 'extra' so activeCalls() can identify the call by room.
       // The plugin reads extra from args["extra"], not from top-level keys.

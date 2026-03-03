@@ -79,10 +79,24 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         }
       } else if (event.event == Event.actionCallDecline ||
                  event.event == Event.actionCallTimeout) {
-        // User declined from native CallKit UI — notify caller via socket
+        // User declined from native CallKit UI — notify caller via socket.
+        // Guard: skip if we're navigating to or already on the voice screen.
+        // endAllCalls() in _connect() can trigger actionCallDecline for a still-ringing
+        // duplicate CallKit call (VoIP-push UUID ≠ Flutter UUID), which must NOT
+        // be treated as a real decline while we are accepting the call.
         if (roomName != null && convId != null) {
           try {
-            sl<MessengerRemoteDataSource>().sendCallEnded(convId, roomName);
+            bool skipNotify = _pendingCallRoute != null; // navigating to voice screen
+            if (!skipNotify) {
+              try {
+                final loc = GoRouter.of(context)
+                    .routerDelegate.currentConfiguration.uri.path;
+                if (loc.startsWith('/dashboard/voice')) skipNotify = true;
+              } catch (_) {}
+            }
+            if (!skipNotify) {
+              sl<MessengerRemoteDataSource>().sendCallEnded(convId, roomName);
+            }
           } catch (_) {}
         }
         // Close in-app dialog if it's showing for this room
