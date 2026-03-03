@@ -236,13 +236,7 @@ class NotificationService {
         debugPrint('Failed to refresh VoIP token: $e');
       }
     }
-    // Ask Android to exclude app from battery optimization → instant push delivery
-    if (!kIsWeb && Platform.isAndroid) {
-      try {
-        await const MethodChannel('taler_id/audio')
-            .invokeMethod('requestBatteryOptimizationExemption');
-      } catch (_) {}
-    }
+    // Battery optimization exemption removed — no longer prompt user
   }
 
   /// Set up foreground notification tap handlers
