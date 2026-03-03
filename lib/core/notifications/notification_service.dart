@@ -17,7 +17,7 @@ import '../../firebase_options.dart';
 final _localNotifications = FlutterLocalNotificationsPlugin();
 
 Future<void> _initLocalNotifications() async {
-  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const android = AndroidInitializationSettings('@drawable/ic_notification');
   const ios = DarwinInitializationSettings(
     requestAlertPermission: false,
     requestBadgePermission: false,
@@ -40,6 +40,7 @@ Future<void> _showLocalNotification({
     importance: Importance.high,
     priority: Priority.high,
     playSound: true,
+    icon: '@drawable/ic_notification',
   );
   const iosDetails = DarwinNotificationDetails(sound: 'default');
   await _localNotifications.show(
