@@ -34,8 +34,6 @@ void _setupCallkitListener() {
         '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
     // Store for dashboard to pick up (handles killed-app race condition)
     NotificationService.setPendingCallRoute(route);
-    // Connect to LiveKit immediately (don't wait for screen unlock / navigation)
-    CallStateService.connectInBackground(roomName, convId);
     // Also attempt immediate navigation (works when app is already running)
     try {
       appRouter.go(route);

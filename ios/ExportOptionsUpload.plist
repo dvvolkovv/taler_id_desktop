@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store-connect</string>
+    <key>teamID</key>
+    <string>MG58MDUNZ2</string>
+    <key>destination</key>
+    <string>upload</string>
+    <key>uploadBitcode</key>
+    <false/>
+    <key>uploadSymbols</key>
+    <true/>
+    <key>signingStyle</key>
+    <string>automatic</string>
+    <key>apiKey</key>
+    <string>J3P22V4URD</string>
+    <key>apiIssuer</key>
+    <string>44b87272-3052-40ea-a48a-6c6f88a2df11</string>
+</dict>
+</plist>
