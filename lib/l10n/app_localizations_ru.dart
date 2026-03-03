@@ -781,4 +781,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get themeSystem => 'Системная';
+
+  @override
+  String get onboardingTitle1 => 'Единая идентификация';
+
+  @override
+  String get onboardingDesc1 =>
+      'Taler ID — ваш цифровой паспорт в экосистеме Taler. Один аккаунт для всех сервисов.';
+
+  @override
+  String get onboardingTitle2 => 'Безопасность данных';
+
+  @override
+  String get onboardingDesc2 =>
+      'KYC-верификация, AES-256 шифрование и двухфакторная аутентификация защищают вашу личность.';
+
+  @override
+  String get onboardingTitle3 => 'Будьте в курсе';
+
+  @override
+  String get onboardingDesc3 =>
+      'Получайте уведомления о статусе верификации, входах с новых устройств и входящих звонках.';
+
+  @override
+  String get onboardingNext => 'Далее';
+
+  @override
+  String get onboardingEnableNotifications => 'Включить уведомления';
+
+  @override
+  String get onboardingStart => 'Начать';
+
+  @override
+  String get onboardingSkip => 'Пропустить';
 }

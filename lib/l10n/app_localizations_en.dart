@@ -779,4 +779,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeSystem => 'System';
+
+  @override
+  String get onboardingTitle1 => 'Unified Identity';
+
+  @override
+  String get onboardingDesc1 =>
+      'Taler ID is your digital passport in the Taler ecosystem. One account for all services.';
+
+  @override
+  String get onboardingTitle2 => 'Data Security';
+
+  @override
+  String get onboardingDesc2 =>
+      'KYC verification, AES-256 encryption, and two-factor authentication protect your identity.';
+
+  @override
+  String get onboardingTitle3 => 'Stay Informed';
+
+  @override
+  String get onboardingDesc3 =>
+      'Get notified about verification status, logins from new devices, and incoming calls.';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingEnableNotifications => 'Enable Notifications';
+
+  @override
+  String get onboardingStart => 'Get Started';
+
+  @override
+  String get onboardingSkip => 'Skip';
 }
