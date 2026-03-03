@@ -206,14 +206,18 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     }
   }
 
-  /// Sets audio output to earpiece. Called twice — after connect and after 1s —
-  /// to override any delayed speakerphone activation by the LiveKit Android stack.
+  /// Sets audio output to earpiece. Called multiple times with increasing delays
+  /// to override LiveKit/WebRTC's async speakerphone activation on Android.
+  /// Uses both LiveKit Hardware API and native channel for reliable control.
   Future<void> _forceEarpiece() async {
-    for (final delay in [200, 1000]) {
+    for (final delay in [100, 300, 700, 1500, 3000]) {
       await Future.delayed(Duration(milliseconds: delay));
       if (!mounted) return;
       // Only force earpiece if user hasn't manually switched to another output
       if (_audioOutputType == 'earpiece') {
+        try {
+          await lk.Hardware.instance.setSpeakerphoneOn(false);
+        } catch (_) {}
         try {
           await _audioChannel.invokeMethod('setAudioOutput', 'earpiece');
         } catch (_) {}
@@ -442,9 +446,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   Future<void> _setAudioOutput(String type) async {
     try {
-      await _audioChannel.invokeMethod('setAudioOutput', type);
-      setState(() => _audioOutputType = type);
+      // Use LiveKit Hardware API — WebRTC respects this over native AudioManager
+      final speakerOn = type == 'speaker';
+      await lk.Hardware.instance.setSpeakerphoneOn(speakerOn);
     } catch (_) {}
+    try {
+      await _audioChannel.invokeMethod('setAudioOutput', type);
+    } catch (_) {}
+    setState(() => _audioOutputType = type);
   }
 
   Future<void> _hangUp() async {
