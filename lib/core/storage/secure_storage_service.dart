@@ -154,4 +154,20 @@ class SecureStorageService {
       await _storage.write(key: ApiConstants.themeKey, value: mode);
     }
   }
+
+  Future<bool> get isOnboardingSeen async {
+    if (kIsWeb) {
+      return _webBox?.get(ApiConstants.onboardingSeenKey) == 'true';
+    }
+    final val = await _storage.read(key: ApiConstants.onboardingSeenKey);
+    return val == 'true';
+  }
+
+  Future<void> setOnboardingSeen() async {
+    if (kIsWeb) {
+      await _webBox?.put(ApiConstants.onboardingSeenKey, 'true');
+    } else {
+      await _storage.write(key: ApiConstants.onboardingSeenKey, value: 'true');
+    }
+  }
 }

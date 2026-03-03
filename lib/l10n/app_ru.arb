@@ -273,5 +273,16 @@
   "appearanceSelect": "Выбор темы",
   "themeLight": "Светлая",
   "themeDark": "Тёмная",
-  "themeSystem": "Системная"
+  "themeSystem": "Системная",
+
+  "onboardingTitle1": "Единая идентификация",
+  "onboardingDesc1": "Taler ID — ваш цифровой паспорт в экосистеме Taler. Один аккаунт для всех сервисов.",
+  "onboardingTitle2": "Безопасность данных",
+  "onboardingDesc2": "KYC-верификация, AES-256 шифрование и двухфакторная аутентификация защищают вашу личность.",
+  "onboardingTitle3": "Будьте в курсе",
+  "onboardingDesc3": "Получайте уведомления о статусе верификации, входах с новых устройств и входящих звонках.",
+  "onboardingNext": "Далее",
+  "onboardingEnableNotifications": "Включить уведомления",
+  "onboardingStart": "Начать",
+  "onboardingSkip": "Пропустить"
 }

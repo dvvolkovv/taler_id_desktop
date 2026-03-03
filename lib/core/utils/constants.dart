@@ -8,6 +8,7 @@ class ApiConstants {
   static const pinEnabledKey = 'pin_enabled';
   static const languageKey = 'app_language';
   static const themeKey = 'app_theme';
+  static const onboardingSeenKey = 'onboarding_seen';
 }
 
 class RouteConstants {
@@ -34,4 +35,5 @@ class RouteConstants {
   static const messengerSearch = '/dashboard/messenger/search';
   static const voice = '/dashboard/voice';
   static const callHistory = '/dashboard/call-history';
+  static const onboarding = '/onboarding';
 }

@@ -39,7 +39,10 @@ class _SplashScreenState extends State<SplashScreen>
     final hasToken = await storage.hasRefreshToken;
 
     if (!hasToken) {
-      if (mounted) context.go(RouteConstants.login);
+      final onboardingSeen = await storage.isOnboardingSeen;
+      if (mounted) {
+        context.go(onboardingSeen ? RouteConstants.login : RouteConstants.onboarding);
+      }
       return;
     }
 

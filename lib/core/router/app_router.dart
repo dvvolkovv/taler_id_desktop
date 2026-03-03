@@ -8,6 +8,7 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/two_fa_screen.dart';
 import '../../features/auth/presentation/screens/pin_setup_screen.dart';
 import '../../features/auth/presentation/screens/pin_entry_screen.dart';
+import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/assistant/presentation/screens/assistant_screen.dart';
 
@@ -36,6 +37,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteConstants.splash,
       builder: (_, __) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: RouteConstants.onboarding,
+      builder: (_, __) => const OnboardingScreen(),
     ),
     GoRoute(
       path: RouteConstants.login,
@@ -171,6 +176,7 @@ Future<String?> _globalRedirect(BuildContext context, GoRouterState state) async
     RouteConstants.splash,
     RouteConstants.pinEntry,
     RouteConstants.pinSetup,
+    RouteConstants.onboarding,
   ];
   if (publicRoutes.any((r) => state.matchedLocation.startsWith(r))) return null;
 

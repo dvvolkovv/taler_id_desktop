@@ -11,6 +11,7 @@ import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../api/dio_client.dart';
 import '../di/service_locator.dart';
+import '../storage/secure_storage_service.dart';
 import '../../firebase_options.dart';
 
 final _localNotifications = FlutterLocalNotificationsPlugin();
@@ -168,13 +169,29 @@ class NotificationService {
     _initPermissionsAndTokens();
   }
 
-  static Future<void> _initPermissionsAndTokens() async {
+  /// Request notification permission explicitly (called from onboarding or init).
+  static Future<void> requestPermission() async {
     try {
       await _fcm.requestPermission(
         alert: true,
         badge: true,
         sound: true,
       );
+    } catch (e) {
+      debugPrint('FCM permission request failed: $e');
+    }
+  }
+
+  static Future<void> _initPermissionsAndTokens() async {
+    try {
+      // Request permission only if onboarding was already seen
+      // (new users will get the prompt from the onboarding screen).
+      // Existing users who update the app already have permission granted.
+      final storage = sl<SecureStorageService>();
+      final onboardingSeen = await storage.isOnboardingSeen;
+      if (onboardingSeen) {
+        await requestPermission();
+      }
       final token = await _fcm.getToken();
       if (token != null) {
         _currentToken = token;
