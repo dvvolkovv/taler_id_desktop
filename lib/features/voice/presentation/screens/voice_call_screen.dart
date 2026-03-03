@@ -105,15 +105,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _connect() async {
-    // For incoming calls, release the CallKit audio session so LiveKit can take over.
-    // The in-app dialog accept path calls endAllCalls() before navigating; the locked-screen
-    // (native CallKit UI → didChangeAppLifecycleState) path does not — handle it here.
+    // For incoming calls, CallKit has already activated the audio session when the
+    // user tapped Accept. Do NOT call endAllCalls() here — on a locked screen iOS
+    // re-locks the phone when the call is ended immediately after accept, which
+    // interrupts room.connect(). Just ensure the session is active for LiveKit.
     if (widget.isIncoming) {
       try {
-        await FlutterCallkitIncoming.endAllCalls();
-        // Brief pause so iOS releases the VoIP audio session before LiveKit activates it.
-        await Future.delayed(const Duration(milliseconds: 300));
-        // Explicitly re-activate audio session so LiveKit/WebRTC can acquire it.
         await _audioChannel.invokeMethod('requestAudioFocus');
       } catch (_) {}
     }
