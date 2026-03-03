@@ -1,7 +1,7 @@
 name: taler_id_mobile
 description: Taler ID — мобильное приложение для iOS и Android
 publish_to: 'none'
-version: 1.0.4+30
+version: 1.0.5+32
 
 environment:
   sdk: '>=3.6.0 <4.0.0'
@@ -86,6 +86,9 @@ dependencies:
 
   # Local notifications (show FCM messages while app is in foreground)
   flutter_local_notifications: ^18.0.1
+
+  # Typography
+  google_fonts: ^6.2.1
 
   # Utils
   intl: any

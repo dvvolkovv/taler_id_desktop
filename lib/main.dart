@@ -34,10 +34,18 @@ void _setupCallkitListener() {
         '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
     // Store for dashboard to pick up (handles killed-app race condition)
     NotificationService.setPendingCallRoute(route);
-    // Also attempt immediate navigation (works when app is already running)
-    try {
-      appRouter.go(route);
-    } catch (_) {}
+    // Only navigate immediately if the app is already in the foreground.
+    // If the screen is locked / app is backgrounded, DO NOT navigate here —
+    // VoiceCallScreen would mount in background and _connect() would run before
+    // CallKit activates the audio session (which only happens after Face ID unlock).
+    // DashboardScreen.didChangeAppLifecycleState(resumed) handles navigation
+    // via _pendingCallRoute once the phone is unlocked.
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle == AppLifecycleState.resumed) {
+      try {
+        appRouter.go(route);
+      } catch (_) {}
+    }
   });
 }
 

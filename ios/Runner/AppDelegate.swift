@@ -153,32 +153,33 @@ extension AppDelegate: PKPushRegistryDelegate {
       // The plugin does uuid! (force-unwrap) at line 324, so it crashes if uuid is nil or invalid.
       var args = payload.dictionaryPayload as [AnyHashable: Any]
       let rawId = args["id"] as? String ?? ""
-      NSLog("[VoIP] payload id=%@ rawId=%@", String(describing: args["id"]), rawId)
-      // Derive UUID using the same logic as Flutter's _toCallkitId(roomName)
-      // so VoIP-push and socket-created CallKit calls share the same UUID (no duplicates).
-      if UUID(uuidString: rawId) == nil {
-        var derived = false
-        if let rn = args["roomName"] as? String {
-          let stripped = rn.hasPrefix("call-") ? String(rn.dropFirst(5)) : rn
-          let uuidPattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-          if let regex = try? NSRegularExpression(pattern: uuidPattern, options: .caseInsensitive),
-             regex.firstMatch(in: stripped, range: NSRange(stripped.startIndex..., in: stripped)) != nil {
-            args["id"] = stripped
-            NSLog("[VoIP] derived UUID from roomName: %@", stripped)
-            derived = true
-          }
-        }
-        if !derived {
+      NSLog("[VoIP] payload id=%@", rawId)
+      // Always derive UUID from roomName to match Flutter's _toCallkitId(roomName).
+      // Server payload: { id: uuidv4(), extra: { roomName: "call-<uuid>", conversationId: "..." } }
+      // Matching UUIDs lets CallKit deduplicate the VoIP-push call and the socket-triggered call,
+      // preventing two simultaneous CallKit UIs and audio-session conflicts.
+      let payloadExtra = args["extra"] as? [AnyHashable: Any]
+      if let rn = payloadExtra?["roomName"] as? String {
+        // Mirror Flutter's _toCallkitId: strip "call-" prefix, check UUID format.
+        let stripped = rn.hasPrefix("call-") ? String(rn.dropFirst(5)) : rn
+        let uuidPattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        if let regex = try? NSRegularExpression(pattern: uuidPattern, options: .caseInsensitive),
+           regex.firstMatch(in: stripped, range: NSRange(stripped.startIndex..., in: stripped)) != nil {
+          args["id"] = stripped
+          NSLog("[VoIP] using roomName-derived UUID: %@", stripped)
+        } else if UUID(uuidString: rawId) == nil {
+          // roomName not UUID-shaped and server UUID invalid — generate fallback.
           args["id"] = UUID().uuidString
           NSLog("[VoIP] generated fallback UUID=%@", args["id"] as! String)
         }
+        // else: roomName not UUID-shaped but server UUID is valid — keep server UUID.
+      } else if UUID(uuidString: rawId) == nil {
+        // No roomName in extra and server UUID invalid — generate fallback.
+        args["id"] = UUID().uuidString
+        NSLog("[VoIP] generated fallback UUID (no roomName)=%@", args["id"] as! String)
       }
-      // Wrap roomName/conversationId in 'extra' so activeCalls() can identify the call by room.
-      // The plugin reads extra from args["extra"], not from top-level keys.
-      var extra: [AnyHashable: Any] = [:]
-      if let rn = args["roomName"] { extra["roomName"] = rn }
-      if let ci = args["conversationId"] { extra["conversationId"] = ci }
-      if !extra.isEmpty { args["extra"] = extra }
+      // args["extra"] already contains roomName/conversationId from the server payload —
+      // no need to re-wrap; the plugin reads extra directly from args["extra"].
       let data = flutter_callkit_incoming.Data(args: args as NSDictionary)
       instance.showCallkitIncoming(data, fromPushKit: true) {
         completion()

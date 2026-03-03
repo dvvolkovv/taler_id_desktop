@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
@@ -39,6 +40,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   StreamSubscription? _callkitSub;
   String? _showingCallDialogRoom;
   String? _pendingCallRoute; // queued when accept fires while phone is locked
+  bool _waitingForCallAccept = false; // blocks in-app dialog after CallKit accept
+  Timer? _callAcceptTimer;
 
   @override
   void initState() {
@@ -52,6 +55,14 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       final convId = extra?['conversationId'] as String?;
 
       if (event.event == Event.actionCallAccept) {
+        // Block in-app call dialog until we've navigated to the voice screen.
+        // Socket may reconnect after Face ID and re-deliver call_invite — without
+        // this guard the in-app dialog would appear on top of the voice screen.
+        _waitingForCallAccept = true;
+        _callAcceptTimer?.cancel();
+        _callAcceptTimer = Timer(const Duration(seconds: 15), () {
+          _waitingForCallAccept = false;
+        });
         // Extract roomName from extra OR top-level body (plugin may serialize differently)
         final callRoomName = (extra?['roomName'] as String?) ??
             (event.body['roomName'] as String?);
@@ -253,6 +264,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     _callEndedSub?.cancel();
     _callAnsweredSub?.cancel();
     _callkitSub?.cancel();
+    _callAcceptTimer?.cancel();
     super.dispose();
   }
 
@@ -284,6 +296,14 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
     // If already in a call, silently dismiss incoming call invite
     if (CallStateService.instance.isInCall) {
+      if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
+      return;
+    }
+
+    // If the user already accepted via CallKit (locked screen / background), don't
+    // show the in-app dialog — socket may deliver a delayed call_invite after
+    // Face ID unlock / socket reconnect, which would overlay the voice screen.
+    if (_waitingForCallAccept) {
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
       return;
     }
@@ -419,12 +439,12 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.call_rounded, color: Colors.black, size: 18),
+                            Icon(Icons.call_rounded, color: Colors.white, size: 18),
                             SizedBox(width: 10),
                             Text(
                               'Активный звонок — нажмите, чтобы вернуться',
                               style: TextStyle(
-                                color: Colors.black,
+                                color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -445,61 +465,71 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             : FloatingActionButton(
                 onPressed: () => context.push(RouteConstants.chat),
                 backgroundColor: AppColors.primary,
-                child: const Icon(Icons.smart_toy_outlined, color: Colors.black),
+                child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
               ),
-        bottomNavigationBar: Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
-          ),
-          child: BottomNavigationBar(
-            currentIndex: currentIndex,
-            onTap: (i) => context.go(_tabs[i]),
-            backgroundColor: Colors.transparent,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.textSecondary,
-            type: BottomNavigationBarType.fixed,
-            elevation: 0,
-            selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: const TextStyle(fontSize: 11),
-            items: [
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.headset_mic_outlined),
-                activeIcon: const Icon(Icons.headset_mic),
-                label: l10n.tabAssistant,
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.call_outlined),
-                activeIcon: Icon(Icons.call),
-                label: 'Звонки',
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.settings_outlined),
-                activeIcon: const Icon(Icons.settings),
-                label: l10n.tabSettings,
-              ),
-              BottomNavigationBarItem(
-                icon: BlocBuilder<MessengerBloc, MessengerState>(
-                  buildWhen: (p, c) =>
-                      p.conversations.fold<int>(0, (s, e) => s + e.unreadCount) !=
-                      c.conversations.fold<int>(0, (s, e) => s + e.unreadCount),
-                  builder: (ctx, state) {
-                    final total =
-                        state.conversations.fold<int>(0, (s, c) => s + c.unreadCount);
-                    if (total == 0) {
-                      return const Icon(Icons.chat_bubble_outline_rounded);
-                    }
-                    return Badge(
-                      label: Text('$total'),
-                      backgroundColor: AppColors.error,
-                      child: const Icon(Icons.chat_bubble_outline_rounded),
-                    );
-                  },
+        bottomNavigationBar: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface.withOpacity(0.60),
+                border: const Border(
+                  top: BorderSide(
+                    color: Color(0x26FFFFFF), // white 15%
+                    width: 0.5,
+                  ),
                 ),
-                activeIcon: const Icon(Icons.chat_bubble_rounded),
-                label: l10n.tabMessenger,
               ),
-            ],
+              child: BottomNavigationBar(
+                currentIndex: currentIndex,
+                onTap: (i) => context.go(_tabs[i]),
+                backgroundColor: Colors.transparent,
+                selectedItemColor: AppColors.accent,
+                unselectedItemColor: AppColors.textSecondary,
+                type: BottomNavigationBarType.fixed,
+                elevation: 0,
+                selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                unselectedLabelStyle: const TextStyle(fontSize: 11),
+                items: [
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.headset_mic_outlined),
+                    activeIcon: const Icon(Icons.headset_mic),
+                    label: l10n.tabAssistant,
+                  ),
+                  const BottomNavigationBarItem(
+                    icon: Icon(Icons.call_outlined),
+                    activeIcon: Icon(Icons.call),
+                    label: 'Звонки',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.settings_outlined),
+                    activeIcon: const Icon(Icons.settings),
+                    label: l10n.tabSettings,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: BlocBuilder<MessengerBloc, MessengerState>(
+                      buildWhen: (p, c) =>
+                          p.conversations.fold<int>(0, (s, e) => s + e.unreadCount) !=
+                          c.conversations.fold<int>(0, (s, e) => s + e.unreadCount),
+                      builder: (ctx, state) {
+                        final total =
+                            state.conversations.fold<int>(0, (s, c) => s + c.unreadCount);
+                        if (total == 0) {
+                          return const Icon(Icons.chat_bubble_outline_rounded);
+                        }
+                        return Badge(
+                          label: Text('$total'),
+                          backgroundColor: AppColors.error,
+                          child: const Icon(Icons.chat_bubble_outline_rounded),
+                        );
+                      },
+                    ),
+                    activeIcon: const Icon(Icons.chat_bubble_rounded),
+                    label: l10n.tabMessenger,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
