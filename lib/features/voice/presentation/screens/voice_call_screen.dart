@@ -105,6 +105,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _connect() async {
+    // For incoming calls, release the CallKit audio session so LiveKit can take over.
+    // The in-app dialog accept path calls endAllCalls() before navigating; the locked-screen
+    // (native CallKit UI → didChangeAppLifecycleState) path does not — handle it here.
+    if (widget.isIncoming) {
+      try {
+        await FlutterCallkitIncoming.endAllCalls();
+        // Brief pause so iOS releases the VoIP audio session before LiveKit activates it.
+        await Future.delayed(const Duration(milliseconds: 300));
+      } catch (_) {}
+    }
     // Play ringback tone for outgoing calls to user (not incoming, not AI assistant)
     if (!widget.isIncoming && widget.roomName != null) {
       try {
