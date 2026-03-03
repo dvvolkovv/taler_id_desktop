@@ -52,16 +52,28 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       final convId = extra?['conversationId'] as String?;
 
       if (event.event == Event.actionCallAccept) {
-        if (roomName != null && roomName.isNotEmpty && mounted) {
-          final route = '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
+        // Extract roomName from extra OR top-level body (plugin may serialize differently)
+        final callRoomName = (extra?['roomName'] as String?) ??
+            (event.body['roomName'] as String?);
+        final callConvId = (extra?['conversationId'] as String?) ??
+            (event.body['conversationId'] as String?);
+        if (callRoomName != null && callRoomName.isNotEmpty && mounted) {
+          final route =
+              '/dashboard/voice?room=$callRoomName&convId=${callConvId ?? ''}&incoming=1';
           final lifecycle = WidgetsBinding.instance.lifecycleState;
           if (lifecycle == AppLifecycleState.resumed) {
-            // App is in foreground — navigate immediately
-            context.go(route);
+            // App is already in foreground — navigate on the next rendered frame.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) context.go(route);
+            });
           } else {
-            // App is backgrounded / screen is locked — connect to LiveKit
-            // immediately so the caller hears us, defer UI navigation until unlock
-            CallStateService.connectInBackground(roomName, convId);
+            // App is backgrounded / locked screen.
+            // Store route and let didChangeAppLifecycleState navigate when the
+            // app comes to the foreground (after Face ID / unlock).
+            // We do NOT call addPostFrameCallback here because Flutter may render
+            // a frame during the inactive transition before the app is truly
+            // resumed, which would clear _pendingCallRoute prematurely and leave
+            // didChangeAppLifecycleState with nothing to navigate to.
             _pendingCallRoute = route;
           }
         }
@@ -144,6 +156,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     _callAnsweredSub = sl<MessengerRemoteDataSource>()
         .callAnsweredStream
         .listen((roomName) async {
+      // Ignore own broadcast — sendCallAnswered echoes back to the sender via
+      // the server room broadcast. If we are already in this call, skip.
+      if (CallStateService.instance.roomName == roomName) return;
       // Another device of the same user answered — dismiss this device's CallKit UI
       await _endCallKitCallForRoom(roomName, fallbackEndAll: true);
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
