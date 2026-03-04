@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
@@ -117,6 +118,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         }
         return;
       }
+      // Fallback: check CallKit active calls (EventChannel may have missed the event)
+      if (await _checkActiveCallKitCalls()) return;
       // Handle FCM notification tap when app was terminated
       final initialMsg = await NotificationService.getInitialMessage();
       if (initialMsg != null) {
@@ -260,8 +263,51 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             try { context.push(staticRoute); } catch (_) {}
           }
         });
+        return;
       }
+      // Final fallback: check if CallKit has an active accepted call that
+      // the EventChannel missed (iOS may not deliver EventChannel events
+      // to suspended Flutter engine on locked screen).
+      _checkActiveCallKitCalls();
     }
+  }
+
+  /// Check for active CallKit calls that weren't captured via EventChannel.
+  /// When the iPhone is locked and the user accepts via CallKit, iOS may not
+  /// deliver the actionCallAccept event to Flutter's EventChannel because the
+  /// engine was suspended. This method polls CallKit's native state directly
+  /// to detect such orphaned accepts and navigate to the voice screen.
+  Future<bool> _checkActiveCallKitCalls() async {
+    if (_waitingForCallAccept) return false;
+    if (CallStateService.instance.isInCall) return false;
+    try {
+      final loc = GoRouter.of(context)
+          .routerDelegate.currentConfiguration.uri.path;
+      if (loc.startsWith('/dashboard/voice')) return false;
+    } catch (_) {}
+
+    try {
+      final calls = await FlutterCallkitIncoming.activeCalls();
+      if (calls is! List || calls.isEmpty) return false;
+      for (final raw in calls) {
+        final call = Map<String, dynamic>.from(raw as Map);
+        final extra = call['extra'] as Map?;
+        final roomName = extra?['roomName'] as String?;
+        final convId = extra?['conversationId'] as String?;
+        if (roomName == null || roomName.isEmpty) continue;
+        debugPrint('[CallKit] _checkActiveCallKitCalls: found orphaned call, room=$roomName');
+        _waitingForCallAccept = true;
+        final voiceRoute =
+            '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
+        if (mounted) {
+          context.push(voiceRoute);
+        }
+        return true;
+      }
+    } catch (e) {
+      debugPrint('[CallKit] _checkActiveCallKitCalls error: $e');
+    }
+    return false;
   }
 
   @override

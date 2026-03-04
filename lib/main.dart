@@ -32,6 +32,7 @@ import 'features/sessions/presentation/bloc/sessions_bloc.dart';
 void _setupCallkitListener() {
   if (kIsWeb) return;
   FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
+    debugPrint('[CallKit] event: ${event?.event}');
     // Forward to all other subscribers (DashboardScreen etc.)
     NotificationService.addCallEvent(event);
 
@@ -42,6 +43,7 @@ void _setupCallkitListener() {
     if (roomName == null || roomName.isEmpty) return;
     final route =
         '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
+    debugPrint('[CallKit] accept: roomName=$roomName, setting pending route');
     // Store for DashboardScreen's cold-start initState path.
     NotificationService.setPendingCallRoute(route);
     // Poll until the app is fully resumed, then navigate via the global router.
@@ -56,7 +58,10 @@ void _setupCallkitListener() {
 /// [NotificationService.consumePendingCallRoute] call acts as a one-shot latch
 /// so only the first navigator wins.
 void _navigateWhenResumed(String route, int attempt) {
-  if (attempt > 100) return; // give up after ~30 s (user may need to unlock)
+  if (attempt > 100) {
+    debugPrint('[CallKit] _navigateWhenResumed: gave up after 100 attempts');
+    return;
+  }
   final lifecycle = WidgetsBinding.instance.lifecycleState;
   if (lifecycle == AppLifecycleState.resumed) {
     // Small delay so the router/navigator finishes initialising after resume.
@@ -64,9 +69,14 @@ void _navigateWhenResumed(String route, int attempt) {
       // Only push if DashboardScreen hasn't already consumed the route.
       final pending = NotificationService.consumePendingCallRoute();
       if (pending != null) {
+        debugPrint('[CallKit] _navigateWhenResumed: pushing $pending');
         try {
           appRouter.push(pending);
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[CallKit] _navigateWhenResumed: push failed: $e');
+        }
+      } else {
+        debugPrint('[CallKit] _navigateWhenResumed: route already consumed');
       }
     });
   } else {
@@ -76,12 +86,44 @@ void _navigateWhenResumed(String route, int attempt) {
   }
 }
 
+/// Fallback for killed-app scenario: check if CallKit has an active call
+/// that was accepted before the EventChannel listener was registered.
+/// The native CallKit delegate processes the accept on the native side,
+/// but the Flutter EventChannel may miss it during cold start.
+Future<void> _checkInitialCallKitCall() async {
+  try {
+    final calls = await FlutterCallkitIncoming.activeCalls();
+    if (calls is! List || calls.isEmpty) return;
+    for (final raw in calls) {
+      final call = Map<String, dynamic>.from(raw as Map);
+      final extra = call['extra'] as Map?;
+      final roomName = extra?['roomName'] as String?;
+      final convId = extra?['conversationId'] as String?;
+      if (roomName == null || roomName.isEmpty) continue;
+      // Only set if EventChannel hasn't already set it
+      if (NotificationService.hasPendingCallRoute) return;
+      final route =
+          '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
+      debugPrint('[CallKit] _checkInitialCallKitCall: found active call, route=$route');
+      NotificationService.setPendingCallRoute(route);
+      _navigateWhenResumed(route, 0);
+      return;
+    }
+  } catch (e) {
+    debugPrint('[CallKit] _checkInitialCallKitCall error: $e');
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Set up CallKit listener early — before runApp — to catch accept events
   // that arrive while the app is cold-starting.
   _setupCallkitListener();
+
+  // Fallback: check if CallKit already has an active accepted call
+  // (event may have fired before the listener was registered on cold start).
+  _checkInitialCallKitCall();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

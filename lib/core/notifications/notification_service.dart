@@ -154,6 +154,8 @@ class NotificationService {
     return route;
   }
 
+  static bool get hasPendingCallRoute => _pendingCallRoute != null;
+
   /// Single broadcast stream for CallKit events.
   /// Subscribe to this instead of [FlutterCallkitIncoming.onEvent] to avoid
   /// replacing the underlying EventChannel handler on each subscription.
