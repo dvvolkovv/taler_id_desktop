@@ -22,9 +22,19 @@ import 'features/sessions/presentation/bloc/sessions_bloc.dart';
 
 /// Set up CallKit event listener as early as possible (before runApp) so that
 /// accept events are not missed when the app is launched from a killed state.
+///
+/// This is the ONLY place that subscribes to [FlutterCallkitIncoming.onEvent].
+/// [FlutterCallkitIncoming.onEvent] calls [EventChannel.receiveBroadcastStream()]
+/// each time it is accessed, which replaces the previous native handler —
+/// so a second subscription from DashboardScreen would silently kill this one.
+/// All other code uses [NotificationService.callEvents] (a broadcast StreamController
+/// fed from here) to safely receive CallKit events.
 void _setupCallkitListener() {
   if (kIsWeb) return;
   FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
+    // Forward to all other subscribers (DashboardScreen etc.)
+    NotificationService.addCallEvent(event);
+
     if (event?.event != Event.actionCallAccept) return;
     final extra = event!.body['extra'] as Map?;
     final roomName = extra?['roomName'] as String?;
@@ -32,21 +42,38 @@ void _setupCallkitListener() {
     if (roomName == null || roomName.isEmpty) return;
     final route =
         '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
-    // Store for dashboard to pick up (handles killed-app race condition)
+    // Store for DashboardScreen's cold-start initState path.
     NotificationService.setPendingCallRoute(route);
-    // Only navigate immediately if the app is already in the foreground.
-    // If the screen is locked / app is backgrounded, DO NOT navigate here —
-    // VoiceCallScreen would mount in background and _connect() would run before
-    // CallKit activates the audio session (which only happens after Face ID unlock).
-    // DashboardScreen.didChangeAppLifecycleState(resumed) handles navigation
-    // via _pendingCallRoute once the phone is unlocked.
-    final lifecycle = WidgetsBinding.instance.lifecycleState;
-    if (lifecycle == AppLifecycleState.resumed) {
-      try {
-        appRouter.push(route);
-      } catch (_) {}
-    }
+    // Poll until the app is fully resumed, then navigate via the global router.
+    // This is the primary navigation mechanism for incoming calls.
+    _navigateWhenResumed(route, 0);
   });
+}
+
+/// Polls WidgetsBinding lifecycle every 300 ms (up to 3 s) until the app is
+/// fully resumed, then pushes the voice route via the global [appRouter].
+/// DashboardScreen may also navigate via [didChangeAppLifecycleState]; the
+/// [NotificationService.consumePendingCallRoute] call acts as a one-shot latch
+/// so only the first navigator wins.
+void _navigateWhenResumed(String route, int attempt) {
+  if (attempt > 100) return; // give up after ~30 s (user may need to unlock)
+  final lifecycle = WidgetsBinding.instance.lifecycleState;
+  if (lifecycle == AppLifecycleState.resumed) {
+    // Small delay so the router/navigator finishes initialising after resume.
+    Future.delayed(const Duration(milliseconds: 200), () {
+      // Only push if DashboardScreen hasn't already consumed the route.
+      final pending = NotificationService.consumePendingCallRoute();
+      if (pending != null) {
+        try {
+          appRouter.push(pending);
+        } catch (_) {}
+      }
+    });
+  } else {
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _navigateWhenResumed(route, attempt + 1);
+    });
+  }
 }
 
 Future<void> main() async {

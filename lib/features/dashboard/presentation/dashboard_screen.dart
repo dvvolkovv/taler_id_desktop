@@ -11,6 +11,8 @@ import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/services/call_state_service.dart';
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+// Note: do NOT use FlutterCallkitIncoming.onEvent directly here — see _setupCallkitListener
+// in main.dart. Use NotificationService.callEvents (the shared broadcast proxy) instead.
 import '../../../core/notifications/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../messenger/data/datasources/messenger_remote_datasource.dart';
@@ -47,49 +49,24 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Listen for CallKit events (accept / decline) at all times.
-    _callkitSub = FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
+    // Subscribe to the shared CallKit event proxy (broadcast stream).
+    // Do NOT use FlutterCallkitIncoming.onEvent directly here — that creates a NEW
+    // EventChannel listener each time, replacing (killing) the one in main.dart.
+    // Navigation on accept is handled by _navigateWhenResumed in main.dart.
+    _callkitSub = NotificationService.callEvents.listen((CallEvent? event) {
       if (event == null) return;
       final extra = event.body['extra'] as Map?;
       final roomName = extra?['roomName'] as String?;
       final convId = extra?['conversationId'] as String?;
 
       if (event.event == Event.actionCallAccept) {
-        // Block in-app call dialog until we've navigated to the voice screen.
-        // Socket may reconnect after Face ID and re-deliver call_invite — without
-        // this guard the in-app dialog would appear on top of the voice screen.
+        // Navigation is handled by _navigateWhenResumed in main.dart.
+        // Here we only set the waiting flag to suppress in-app dialog.
         _waitingForCallAccept = true;
         _callAcceptTimer?.cancel();
         _callAcceptTimer = Timer(const Duration(seconds: 15), () {
           _waitingForCallAccept = false;
         });
-        // Extract roomName from extra OR top-level body (plugin may serialize differently)
-        final callRoomName = (extra?['roomName'] as String?) ??
-            (event.body['roomName'] as String?);
-        final callConvId = (extra?['conversationId'] as String?) ??
-            (event.body['conversationId'] as String?);
-        if (callRoomName != null && callRoomName.isNotEmpty && mounted) {
-          final route =
-              '/dashboard/voice?room=$callRoomName&convId=${callConvId ?? ''}&incoming=1';
-          final lifecycle = WidgetsBinding.instance.lifecycleState;
-          if (lifecycle == AppLifecycleState.resumed) {
-            // App is already in foreground — navigate on the next rendered frame.
-            // Use push (same as in-app dialog) so DashboardScreen stays alive and
-            // avoids GoRouter full-stack rebuild that can trigger _globalRedirect issues.
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) context.push(route);
-            });
-          } else {
-            // App is backgrounded / locked screen.
-            // Store route and let didChangeAppLifecycleState navigate when the
-            // app comes to the foreground (after Face ID / unlock).
-            // We do NOT call addPostFrameCallback here because Flutter may render
-            // a frame during the inactive transition before the app is truly
-            // resumed, which would clear _pendingCallRoute prematurely and leave
-            // didChangeAppLifecycleState with nothing to navigate to.
-            _pendingCallRoute = route;
-          }
-        }
       } else if (event.event == Event.actionCallDecline ||
                  event.event == Event.actionCallTimeout) {
         // User declined from native CallKit UI — notify caller via socket.
@@ -134,7 +111,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       if (pendingRoute != null && mounted) {
         final lifecycle = WidgetsBinding.instance.lifecycleState;
         if (lifecycle == AppLifecycleState.resumed) {
-          context.go(pendingRoute);
+          context.push(pendingRoute);
         } else {
           _pendingCallRoute = pendingRoute; // defer to didChangeAppLifecycleState
         }
@@ -257,16 +234,31 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
-      // Also consume NotificationService route as fallback — covers cold-start
-      // where main.dart stored the route in NotificationService but DashboardScreen
-      // was not yet mounted when actionCallAccept fired.
-      final route = _pendingCallRoute ?? NotificationService.consumePendingCallRoute();
+      // _pendingCallRoute is set only from the cold-start initState postFrameCallback
+      // (when lifecycle was not yet resumed at that point). Navigation for the
+      // backgrounded-app accept path is handled by _navigateWhenResumed in main.dart.
+      final route = _pendingCallRoute;
       if (route != null) {
         _pendingCallRoute = null;
-        // Use postFrameCallback so the router is ready after resume.
-        // Use push so DashboardScreen stays alive (same mechanism as in-app dialog accept).
+        // Also consume the static latch so _navigateWhenResumed (main.dart) doesn't
+        // double-navigate — it checks the latch after the 200ms delay.
+        NotificationService.consumePendingCallRoute();
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) context.push(route);
+          if (mounted) {
+            try { context.push(route); } catch (_) {}
+          }
+        });
+        return;
+      }
+      // Fallback: if _navigateWhenResumed in main.dart timed out while the phone
+      // was locked, the static pending route still exists. Pick it up now that
+      // the app is resumed (user unlocked the device after accepting CallKit).
+      final staticRoute = NotificationService.consumePendingCallRoute();
+      if (staticRoute != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            try { context.push(staticRoute); } catch (_) {}
+          }
         });
       }
     }

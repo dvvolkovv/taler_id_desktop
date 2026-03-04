@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -5,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_callkit_incoming/entities/android_params.dart';
+import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
@@ -151,6 +153,17 @@ class NotificationService {
     _pendingCallRoute = null;
     return route;
   }
+
+  /// Single broadcast stream for CallKit events.
+  /// Subscribe to this instead of [FlutterCallkitIncoming.onEvent] to avoid
+  /// replacing the underlying EventChannel handler on each subscription.
+  /// The raw EventChannel is subscribed ONCE in main.dart's _setupCallkitListener().
+  static final StreamController<CallEvent?> _callEventController =
+      StreamController<CallEvent?>.broadcast();
+  static Stream<CallEvent?> get callEvents => _callEventController.stream;
+
+  /// Forward a CallKit event to all subscribers. Called by main.dart only.
+  static void addCallEvent(CallEvent? event) => _callEventController.add(event);
 
   static Future<void> init() async {
     // Register background handler — must be registered synchronously before any isolate runs.
