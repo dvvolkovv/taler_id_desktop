@@ -1,6 +1,7 @@
 import '../entities/conversation_entity.dart';
 import '../entities/message_entity.dart';
 import '../entities/user_search_entity.dart';
+import '../entities/group_member_entity.dart';
 
 abstract class IMessengerRepository {
   Future<void> connect(String accessToken);
@@ -17,5 +18,21 @@ abstract class IMessengerRepository {
   Stream<Map<String, dynamic>> get messageUpdatedStream;
   Stream<Map<String, dynamic>> get messagesReadStream;
   void markRead(String conversationId);
+  // Group methods
+  Future<ConversationEntity> createGroupConversation(String name, List<String> participantIds);
+  Future<List<GroupMemberEntity>> getGroupMembers(String conversationId);
+  Future<void> addGroupMembers(String conversationId, List<String> userIds);
+  Future<void> removeGroupMember(String conversationId, String userId);
+  Future<void> changeGroupMemberRole(String conversationId, String userId, String role);
+  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl});
+  Future<void> leaveGroup(String conversationId);
+  Future<void> deleteGroup(String conversationId);
+  // Group streams
+  Stream<Map<String, dynamic>> get groupUpdatedStream;
+  Stream<Map<String, dynamic>> get groupMemberAddedStream;
+  Stream<Map<String, dynamic>> get groupMemberRemovedStream;
+  Stream<Map<String, dynamic>> get groupRoleChangedStream;
+  Stream<Map<String, dynamic>> get groupCreatedStream;
+  Stream<Map<String, dynamic>> get groupDeletedStream;
   void dispose();
 }

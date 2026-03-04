@@ -105,3 +105,76 @@ class MarkConversationRead extends MessengerEvent {
   @override
   List<Object?> get props => [conversationId];
 }
+
+// ─── Group events ───
+
+class CreateGroup extends MessengerEvent {
+  final String name;
+  final List<String> participantIds;
+  const CreateGroup({required this.name, required this.participantIds});
+  @override
+  List<Object?> get props => [name, participantIds];
+}
+
+class LoadGroupMembers extends MessengerEvent {
+  final String conversationId;
+  const LoadGroupMembers(this.conversationId);
+  @override
+  List<Object?> get props => [conversationId];
+}
+
+class AddGroupMembers extends MessengerEvent {
+  final String conversationId;
+  final List<String> userIds;
+  const AddGroupMembers({required this.conversationId, required this.userIds});
+  @override
+  List<Object?> get props => [conversationId, userIds];
+}
+
+class RemoveGroupMember extends MessengerEvent {
+  final String conversationId;
+  final String userId;
+  const RemoveGroupMember({required this.conversationId, required this.userId});
+  @override
+  List<Object?> get props => [conversationId, userId];
+}
+
+class ChangeGroupRole extends MessengerEvent {
+  final String conversationId;
+  final String userId;
+  final String role;
+  const ChangeGroupRole({required this.conversationId, required this.userId, required this.role});
+  @override
+  List<Object?> get props => [conversationId, userId, role];
+}
+
+class UpdateGroupInfo extends MessengerEvent {
+  final String conversationId;
+  final String? name;
+  final String? avatarUrl;
+  const UpdateGroupInfo({required this.conversationId, this.name, this.avatarUrl});
+  @override
+  List<Object?> get props => [conversationId, name, avatarUrl];
+}
+
+class LeaveGroup extends MessengerEvent {
+  final String conversationId;
+  const LeaveGroup(this.conversationId);
+  @override
+  List<Object?> get props => [conversationId];
+}
+
+class DeleteGroup extends MessengerEvent {
+  final String conversationId;
+  const DeleteGroup(this.conversationId);
+  @override
+  List<Object?> get props => [conversationId];
+}
+
+class GroupEventReceived extends MessengerEvent {
+  final String eventType;
+  final Map<String, dynamic> data;
+  const GroupEventReceived(this.eventType, this.data);
+  @override
+  List<Object?> get props => [eventType, data];
+}

@@ -1705,6 +1705,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resend Code'**
   String get resendCode;
+
+  /// No description provided for @newGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'New Group'**
+  String get newGroup;
+
+  /// No description provided for @newChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New Chat'**
+  String get newChat;
+
+  /// No description provided for @groupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Name'**
+  String get groupName;
+
+  /// No description provided for @createGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Group'**
+  String get createGroup;
+
+  /// No description provided for @groupInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Info'**
+  String get groupInfo;
+
+  /// No description provided for @groupMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members ({count})'**
+  String groupMembers(int count);
+
+  /// No description provided for @addMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Members'**
+  String get addMembers;
+
+  /// No description provided for @leaveGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Group'**
+  String get leaveGroup;
+
+  /// No description provided for @leaveGroupConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this group?'**
+  String get leaveGroupConfirm;
+
+  /// No description provided for @deleteGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Group'**
+  String get deleteGroup;
+
+  /// No description provided for @deleteGroupConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this group? This cannot be undone.'**
+  String get deleteGroupConfirm;
+
+  /// No description provided for @groupRoleOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get groupRoleOwner;
+
+  /// No description provided for @groupRoleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get groupRoleAdmin;
+
+  /// No description provided for @groupRoleMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get groupRoleMember;
+
+  /// No description provided for @selectParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Select participants'**
+  String get selectParticipants;
+
+  /// No description provided for @selectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String selectedCount(int count);
+
+  /// No description provided for @changeRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Role'**
+  String get changeRole;
+
+  /// No description provided for @groupCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Group created'**
+  String get groupCreated;
+
+  /// No description provided for @memberJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined'**
+  String memberJoined(String name);
+
+  /// No description provided for @memberLeftGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} left'**
+  String memberLeftGroup(String name);
+
+  /// No description provided for @memberWasRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was removed'**
+  String memberWasRemoved(String name);
+
+  /// No description provided for @roleChangedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is now {role}'**
+  String roleChangedTo(String name, String role);
+
+  /// No description provided for @participantsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} participants'**
+  String participantsCount(int count);
+
+  /// No description provided for @enterGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter group name'**
+  String get enterGroupName;
 }
 
 class _AppLocalizationsDelegate

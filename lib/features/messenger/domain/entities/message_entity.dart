@@ -18,6 +18,7 @@ class MessageEntity with _$MessageEntity {
     String? fileType,
     @Default(false) bool isDelivered,
     @Default(false) bool isRead,
+    @Default(false) bool isSystem,
   }) = _MessageEntity;
 
   factory MessageEntity.fromJson(Map<String, dynamic> json) =>

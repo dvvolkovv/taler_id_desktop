@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../../domain/entities/message_entity.dart';
 import '../../domain/entities/user_search_entity.dart';
+import '../../domain/entities/group_member_entity.dart';
 
 class MessengerState extends Equatable {
   final List<ConversationEntity> conversations;
@@ -14,6 +15,7 @@ class MessengerState extends Equatable {
   final String? newConversationId;
   final String? currentUserId;
   final Map<String, dynamic>? pendingCallInvite;
+  final Map<String, List<GroupMemberEntity>> groupMembers;
 
   const MessengerState({
     this.conversations = const [],
@@ -26,6 +28,7 @@ class MessengerState extends Equatable {
     this.newConversationId,
     this.currentUserId,
     this.pendingCallInvite,
+    this.groupMembers = const {},
   });
 
   MessengerState copyWith({
@@ -39,6 +42,7 @@ class MessengerState extends Equatable {
     String? newConversationId,
     String? currentUserId,
     Map<String, dynamic>? pendingCallInvite,
+    Map<String, List<GroupMemberEntity>>? groupMembers,
     bool clearError = false,
     bool clearNewConversation = false,
     bool clearCallInvite = false,
@@ -57,6 +61,7 @@ class MessengerState extends Equatable {
       currentUserId: currentUserId ?? this.currentUserId,
       pendingCallInvite:
           clearCallInvite ? null : (pendingCallInvite ?? this.pendingCallInvite),
+      groupMembers: groupMembers ?? this.groupMembers,
     );
   }
 
@@ -72,5 +77,6 @@ class MessengerState extends Equatable {
         newConversationId,
         currentUserId,
         pendingCallInvite,
+        groupMembers,
       ];
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/message_entity.dart';
+import '../../domain/entities/group_member_entity.dart';
 import '../../domain/repositories/i_messenger_repository.dart';
 import 'messenger_event.dart';
 import 'messenger_state.dart';
@@ -11,6 +12,12 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   StreamSubscription? _callSub;
   StreamSubscription? _msgUpdatedSub;
   StreamSubscription? _msgsReadSub;
+  StreamSubscription? _groupUpdatedSub;
+  StreamSubscription? _groupMemberAddedSub;
+  StreamSubscription? _groupMemberRemovedSub;
+  StreamSubscription? _groupRoleChangedSub;
+  StreamSubscription? _groupCreatedSub;
+  StreamSubscription? _groupDeletedSub;
 
   MessengerBloc({required IMessengerRepository repo})
       : _repo = repo,
@@ -32,6 +39,16 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<MessageUpdated>(_onMessageUpdated);
     on<MessagesRead>(_onMessagesRead);
     on<MarkConversationRead>(_onMarkConversationRead);
+    // Group handlers
+    on<CreateGroup>(_onCreateGroup);
+    on<LoadGroupMembers>(_onLoadGroupMembers);
+    on<AddGroupMembers>(_onAddGroupMembers);
+    on<RemoveGroupMember>(_onRemoveGroupMember);
+    on<ChangeGroupRole>(_onChangeGroupRole);
+    on<UpdateGroupInfo>(_onUpdateGroupInfo);
+    on<LeaveGroup>(_onLeaveGroup);
+    on<DeleteGroup>(_onDeleteGroup);
+    on<GroupEventReceived>(_onGroupEventReceived);
   }
 
   Future<void> _onConnect(
@@ -59,6 +76,31 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         add(MessagesRead(convId, ids));
       }
     });
+    // Group socket listeners
+    _groupUpdatedSub?.cancel();
+    _groupUpdatedSub = _repo.groupUpdatedStream.listen((data) {
+      add(GroupEventReceived('group_updated', data));
+    });
+    _groupMemberAddedSub?.cancel();
+    _groupMemberAddedSub = _repo.groupMemberAddedStream.listen((data) {
+      add(GroupEventReceived('group_member_added', data));
+    });
+    _groupMemberRemovedSub?.cancel();
+    _groupMemberRemovedSub = _repo.groupMemberRemovedStream.listen((data) {
+      add(GroupEventReceived('group_member_removed', data));
+    });
+    _groupRoleChangedSub?.cancel();
+    _groupRoleChangedSub = _repo.groupRoleChangedStream.listen((data) {
+      add(GroupEventReceived('group_role_changed', data));
+    });
+    _groupCreatedSub?.cancel();
+    _groupCreatedSub = _repo.groupCreatedStream.listen((data) {
+      add(GroupEventReceived('group_created', data));
+    });
+    _groupDeletedSub?.cancel();
+    _groupDeletedSub = _repo.groupDeletedStream.listen((data) {
+      add(GroupEventReceived('group_deleted', data));
+    });
     emit(state.copyWith(
       isConnected: true,
       currentUserId: event.userId ?? state.currentUserId,
@@ -71,7 +113,6 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     emit(state.copyWith(isLoading: true));
     try {
       final convs = await _repo.getConversations();
-      // Sort: most recent message on top
       convs.sort((a, b) {
         final aTime = a.lastMessageAt;
         final bTime = b.lastMessageAt;
@@ -93,7 +134,6 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     try {
       final result = await _repo.getMessages(event.conversationId);
       final rawMessages = result['messages'] as List? ?? [];
-      // Build a lookup of known read/delivered status to preserve checkmarks
       final knownStatus = <String, ({bool isRead, bool isDelivered})>{
         for (final m in state.messages[event.conversationId] ?? [])
           m.id: (isRead: m.isRead, isDelivered: m.isDelivered),
@@ -123,7 +163,6 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   }
 
   void _onSendMessage(SendMessage event, Emitter<MessengerState> emit) {
-    // Optimistic: show message in UI immediately
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final tempMsg = MessageEntity(
       id: tempId,
@@ -143,7 +182,6 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         Map<String, List<MessageEntity>>.from(state.messages);
     newMessages[event.conversationId] = existing;
     emit(state.copyWith(messages: newMessages));
-    // Send via socket
     _repo.sendMessage(
       event.conversationId,
       event.content,
@@ -159,9 +197,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     final msg = event.message;
     final existing =
         List<MessageEntity>.from(state.messages[msg.conversationId] ?? []);
-    // Deduplicate: skip if already have this message ID (can arrive twice via room + personal rooms)
     if (existing.any((m) => m.id == msg.id)) return;
-    // Remove optimistic temp message with same content from same sender
     existing.removeWhere((m) =>
         m.id.startsWith('temp_') &&
         m.senderId == msg.senderId &&
@@ -171,7 +207,6 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         Map<String, List<MessageEntity>>.from(state.messages);
     newMessages[msg.conversationId] = existing;
     emit(state.copyWith(messages: newMessages));
-    // Refresh conversations to update last message preview
     add(LoadConversations());
   }
 
@@ -265,12 +300,85 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
 
   void _onMarkConversationRead(MarkConversationRead event, Emitter<MessengerState> emit) {
     _repo.markRead(event.conversationId);
-    // Immediately clear unread badge in local state (don't wait for next API refresh)
     final updatedConvs = state.conversations.map((c) {
       if (c.id == event.conversationId) return c.copyWith(unreadCount: 0);
       return c;
     }).toList();
     emit(state.copyWith(conversations: updatedConvs));
+  }
+
+  // ─── Group handlers ───
+
+  Future<void> _onCreateGroup(CreateGroup event, Emitter<MessengerState> emit) async {
+    emit(state.copyWith(isLoading: true));
+    try {
+      final conv = await _repo.createGroupConversation(event.name, event.participantIds);
+      emit(state.copyWith(isLoading: false, newConversationId: conv.id));
+      add(LoadConversations());
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, error: e.toString()));
+    }
+  }
+
+  Future<void> _onLoadGroupMembers(LoadGroupMembers event, Emitter<MessengerState> emit) async {
+    try {
+      final members = await _repo.getGroupMembers(event.conversationId);
+      final newGroupMembers = Map<String, List<GroupMemberEntity>>.from(state.groupMembers);
+      newGroupMembers[event.conversationId] = members;
+      emit(state.copyWith(groupMembers: newGroupMembers));
+    } catch (_) {}
+  }
+
+  Future<void> _onAddGroupMembers(AddGroupMembers event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.addGroupMembers(event.conversationId, event.userIds);
+      add(LoadGroupMembers(event.conversationId));
+      add(LoadConversations());
+    } catch (_) {}
+  }
+
+  Future<void> _onRemoveGroupMember(RemoveGroupMember event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.removeGroupMember(event.conversationId, event.userId);
+      add(LoadGroupMembers(event.conversationId));
+      add(LoadConversations());
+    } catch (_) {}
+  }
+
+  Future<void> _onChangeGroupRole(ChangeGroupRole event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.changeGroupMemberRole(event.conversationId, event.userId, event.role);
+      add(LoadGroupMembers(event.conversationId));
+    } catch (_) {}
+  }
+
+  Future<void> _onUpdateGroupInfo(UpdateGroupInfo event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.updateGroupInfo(event.conversationId, name: event.name, avatarUrl: event.avatarUrl);
+      add(LoadConversations());
+    } catch (_) {}
+  }
+
+  Future<void> _onLeaveGroup(LeaveGroup event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.leaveGroup(event.conversationId);
+      add(LoadConversations());
+    } catch (_) {}
+  }
+
+  Future<void> _onDeleteGroup(DeleteGroup event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.deleteGroup(event.conversationId);
+      add(LoadConversations());
+    } catch (_) {}
+  }
+
+  void _onGroupEventReceived(GroupEventReceived event, Emitter<MessengerState> emit) {
+    add(LoadConversations());
+    final convId = event.data['conversationId'] as String?;
+    if (convId != null && state.groupMembers.containsKey(convId)) {
+      add(LoadGroupMembers(convId));
+    }
   }
 
   @override
@@ -279,6 +387,12 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _callSub?.cancel();
     _msgUpdatedSub?.cancel();
     _msgsReadSub?.cancel();
+    _groupUpdatedSub?.cancel();
+    _groupMemberAddedSub?.cancel();
+    _groupMemberRemovedSub?.cancel();
+    _groupRoleChangedSub?.cancel();
+    _groupCreatedSub?.cancel();
+    _groupDeletedSub?.cancel();
     _repo.dispose();
     return super.close();
   }

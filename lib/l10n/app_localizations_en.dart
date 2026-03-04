@@ -852,4 +852,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resendCode => 'Resend Code';
+
+  @override
+  String get newGroup => 'New Group';
+
+  @override
+  String get newChat => 'New Chat';
+
+  @override
+  String get groupName => 'Group Name';
+
+  @override
+  String get createGroup => 'Create Group';
+
+  @override
+  String get groupInfo => 'Group Info';
+
+  @override
+  String groupMembers(int count) {
+    return 'Members ($count)';
+  }
+
+  @override
+  String get addMembers => 'Add Members';
+
+  @override
+  String get leaveGroup => 'Leave Group';
+
+  @override
+  String get leaveGroupConfirm => 'Leave this group?';
+
+  @override
+  String get deleteGroup => 'Delete Group';
+
+  @override
+  String get deleteGroupConfirm => 'Delete this group? This cannot be undone.';
+
+  @override
+  String get groupRoleOwner => 'Owner';
+
+  @override
+  String get groupRoleAdmin => 'Admin';
+
+  @override
+  String get groupRoleMember => 'Member';
+
+  @override
+  String get selectParticipants => 'Select participants';
+
+  @override
+  String selectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get changeRole => 'Change Role';
+
+  @override
+  String get groupCreated => 'Group created';
+
+  @override
+  String memberJoined(String name) {
+    return '$name joined';
+  }
+
+  @override
+  String memberLeftGroup(String name) {
+    return '$name left';
+  }
+
+  @override
+  String memberWasRemoved(String name) {
+    return '$name was removed';
+  }
+
+  @override
+  String roleChangedTo(String name, String role) {
+    return '$name is now $role';
+  }
+
+  @override
+  String participantsCount(int count) {
+    return '$count participants';
+  }
+
+  @override
+  String get enterGroupName => 'Enter group name';
 }

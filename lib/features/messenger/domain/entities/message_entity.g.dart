@@ -20,6 +20,7 @@ _$MessageEntityImpl _$$MessageEntityImplFromJson(Map<String, dynamic> json) =>
       fileType: json['fileType'] as String?,
       isDelivered: json['isDelivered'] as bool? ?? false,
       isRead: json['isRead'] as bool? ?? false,
+      isSystem: json['isSystem'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$MessageEntityImplToJson(_$MessageEntityImpl instance) =>
@@ -36,4 +37,5 @@ Map<String, dynamic> _$$MessageEntityImplToJson(_$MessageEntityImpl instance) =>
       'fileType': instance.fileType,
       'isDelivered': instance.isDelivered,
       'isRead': instance.isRead,
+      'isSystem': instance.isSystem,
     };

@@ -22,9 +22,16 @@ ConversationEntity _$ConversationEntityFromJson(Map<String, dynamic> json) {
 mixin _$ConversationEntity {
   String get id => throw _privateConstructorUsedError;
   List<String> get participantIds => throw _privateConstructorUsedError;
+  String get type => throw _privateConstructorUsedError;
+  String? get name => throw _privateConstructorUsedError;
+  String? get avatarUrl => throw _privateConstructorUsedError;
+  int get participantCount => throw _privateConstructorUsedError;
+  String? get myRole => throw _privateConstructorUsedError;
   String? get lastMessageContent => throw _privateConstructorUsedError;
   DateTime? get lastMessageAt => throw _privateConstructorUsedError;
   String? get lastMessageSenderId => throw _privateConstructorUsedError;
+  String? get lastMessageSenderName => throw _privateConstructorUsedError;
+  bool get lastMessageIsSystem => throw _privateConstructorUsedError;
   String? get otherUserName => throw _privateConstructorUsedError;
   String? get otherUserId => throw _privateConstructorUsedError;
   String? get otherUserAvatar => throw _privateConstructorUsedError;
@@ -45,9 +52,16 @@ abstract class $ConversationEntityCopyWith<$Res> {
   $Res call(
       {String id,
       List<String> participantIds,
+      String type,
+      String? name,
+      String? avatarUrl,
+      int participantCount,
+      String? myRole,
       String? lastMessageContent,
       DateTime? lastMessageAt,
       String? lastMessageSenderId,
+      String? lastMessageSenderName,
+      bool lastMessageIsSystem,
       String? otherUserName,
       String? otherUserId,
       String? otherUserAvatar,
@@ -69,9 +83,16 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
   $Res call({
     Object? id = null,
     Object? participantIds = null,
+    Object? type = null,
+    Object? name = freezed,
+    Object? avatarUrl = freezed,
+    Object? participantCount = null,
+    Object? myRole = freezed,
     Object? lastMessageContent = freezed,
     Object? lastMessageAt = freezed,
     Object? lastMessageSenderId = freezed,
+    Object? lastMessageSenderName = freezed,
+    Object? lastMessageIsSystem = null,
     Object? otherUserName = freezed,
     Object? otherUserId = freezed,
     Object? otherUserAvatar = freezed,
@@ -86,6 +107,26 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
           ? _value.participantIds
           : participantIds // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      type: null == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: freezed == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      avatarUrl: freezed == avatarUrl
+          ? _value.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      participantCount: null == participantCount
+          ? _value.participantCount
+          : participantCount // ignore: cast_nullable_to_non_nullable
+              as int,
+      myRole: freezed == myRole
+          ? _value.myRole
+          : myRole // ignore: cast_nullable_to_non_nullable
+              as String?,
       lastMessageContent: freezed == lastMessageContent
           ? _value.lastMessageContent
           : lastMessageContent // ignore: cast_nullable_to_non_nullable
@@ -98,6 +139,14 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
           ? _value.lastMessageSenderId
           : lastMessageSenderId // ignore: cast_nullable_to_non_nullable
               as String?,
+      lastMessageSenderName: freezed == lastMessageSenderName
+          ? _value.lastMessageSenderName
+          : lastMessageSenderName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      lastMessageIsSystem: null == lastMessageIsSystem
+          ? _value.lastMessageIsSystem
+          : lastMessageIsSystem // ignore: cast_nullable_to_non_nullable
+              as bool,
       otherUserName: freezed == otherUserName
           ? _value.otherUserName
           : otherUserName // ignore: cast_nullable_to_non_nullable
@@ -129,9 +178,16 @@ abstract class _$$ConversationEntityImplCopyWith<$Res>
   $Res call(
       {String id,
       List<String> participantIds,
+      String type,
+      String? name,
+      String? avatarUrl,
+      int participantCount,
+      String? myRole,
       String? lastMessageContent,
       DateTime? lastMessageAt,
       String? lastMessageSenderId,
+      String? lastMessageSenderName,
+      bool lastMessageIsSystem,
       String? otherUserName,
       String? otherUserId,
       String? otherUserAvatar,
@@ -151,9 +207,16 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? participantIds = null,
+    Object? type = null,
+    Object? name = freezed,
+    Object? avatarUrl = freezed,
+    Object? participantCount = null,
+    Object? myRole = freezed,
     Object? lastMessageContent = freezed,
     Object? lastMessageAt = freezed,
     Object? lastMessageSenderId = freezed,
+    Object? lastMessageSenderName = freezed,
+    Object? lastMessageIsSystem = null,
     Object? otherUserName = freezed,
     Object? otherUserId = freezed,
     Object? otherUserAvatar = freezed,
@@ -168,6 +231,26 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
           ? _value._participantIds
           : participantIds // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      type: null == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: freezed == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      avatarUrl: freezed == avatarUrl
+          ? _value.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      participantCount: null == participantCount
+          ? _value.participantCount
+          : participantCount // ignore: cast_nullable_to_non_nullable
+              as int,
+      myRole: freezed == myRole
+          ? _value.myRole
+          : myRole // ignore: cast_nullable_to_non_nullable
+              as String?,
       lastMessageContent: freezed == lastMessageContent
           ? _value.lastMessageContent
           : lastMessageContent // ignore: cast_nullable_to_non_nullable
@@ -180,6 +263,14 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
           ? _value.lastMessageSenderId
           : lastMessageSenderId // ignore: cast_nullable_to_non_nullable
               as String?,
+      lastMessageSenderName: freezed == lastMessageSenderName
+          ? _value.lastMessageSenderName
+          : lastMessageSenderName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      lastMessageIsSystem: null == lastMessageIsSystem
+          ? _value.lastMessageIsSystem
+          : lastMessageIsSystem // ignore: cast_nullable_to_non_nullable
+              as bool,
       otherUserName: freezed == otherUserName
           ? _value.otherUserName
           : otherUserName // ignore: cast_nullable_to_non_nullable
@@ -206,9 +297,16 @@ class _$ConversationEntityImpl implements _ConversationEntity {
   const _$ConversationEntityImpl(
       {required this.id,
       required final List<String> participantIds,
+      this.type = 'DIRECT',
+      this.name,
+      this.avatarUrl,
+      this.participantCount = 0,
+      this.myRole,
       this.lastMessageContent,
       this.lastMessageAt,
       this.lastMessageSenderId,
+      this.lastMessageSenderName,
+      this.lastMessageIsSystem = false,
       this.otherUserName,
       this.otherUserId,
       this.otherUserAvatar,
@@ -229,11 +327,28 @@ class _$ConversationEntityImpl implements _ConversationEntity {
   }
 
   @override
+  @JsonKey()
+  final String type;
+  @override
+  final String? name;
+  @override
+  final String? avatarUrl;
+  @override
+  @JsonKey()
+  final int participantCount;
+  @override
+  final String? myRole;
+  @override
   final String? lastMessageContent;
   @override
   final DateTime? lastMessageAt;
   @override
   final String? lastMessageSenderId;
+  @override
+  final String? lastMessageSenderName;
+  @override
+  @JsonKey()
+  final bool lastMessageIsSystem;
   @override
   final String? otherUserName;
   @override
@@ -246,7 +361,7 @@ class _$ConversationEntityImpl implements _ConversationEntity {
 
   @override
   String toString() {
-    return 'ConversationEntity(id: $id, participantIds: $participantIds, lastMessageContent: $lastMessageContent, lastMessageAt: $lastMessageAt, lastMessageSenderId: $lastMessageSenderId, otherUserName: $otherUserName, otherUserId: $otherUserId, otherUserAvatar: $otherUserAvatar, unreadCount: $unreadCount)';
+    return 'ConversationEntity(id: $id, participantIds: $participantIds, type: $type, name: $name, avatarUrl: $avatarUrl, participantCount: $participantCount, myRole: $myRole, lastMessageContent: $lastMessageContent, lastMessageAt: $lastMessageAt, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageIsSystem: $lastMessageIsSystem, otherUserName: $otherUserName, otherUserId: $otherUserId, otherUserAvatar: $otherUserAvatar, unreadCount: $unreadCount)';
   }
 
   @override
@@ -257,12 +372,23 @@ class _$ConversationEntityImpl implements _ConversationEntity {
             (identical(other.id, id) || other.id == id) &&
             const DeepCollectionEquality()
                 .equals(other._participantIds, _participantIds) &&
+            (identical(other.type, type) || other.type == type) &&
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
+            (identical(other.participantCount, participantCount) ||
+                other.participantCount == participantCount) &&
+            (identical(other.myRole, myRole) || other.myRole == myRole) &&
             (identical(other.lastMessageContent, lastMessageContent) ||
                 other.lastMessageContent == lastMessageContent) &&
             (identical(other.lastMessageAt, lastMessageAt) ||
                 other.lastMessageAt == lastMessageAt) &&
             (identical(other.lastMessageSenderId, lastMessageSenderId) ||
                 other.lastMessageSenderId == lastMessageSenderId) &&
+            (identical(other.lastMessageSenderName, lastMessageSenderName) ||
+                other.lastMessageSenderName == lastMessageSenderName) &&
+            (identical(other.lastMessageIsSystem, lastMessageIsSystem) ||
+                other.lastMessageIsSystem == lastMessageIsSystem) &&
             (identical(other.otherUserName, otherUserName) ||
                 other.otherUserName == otherUserName) &&
             (identical(other.otherUserId, otherUserId) ||
@@ -279,9 +405,16 @@ class _$ConversationEntityImpl implements _ConversationEntity {
       runtimeType,
       id,
       const DeepCollectionEquality().hash(_participantIds),
+      type,
+      name,
+      avatarUrl,
+      participantCount,
+      myRole,
       lastMessageContent,
       lastMessageAt,
       lastMessageSenderId,
+      lastMessageSenderName,
+      lastMessageIsSystem,
       otherUserName,
       otherUserId,
       otherUserAvatar,
@@ -306,9 +439,16 @@ abstract class _ConversationEntity implements ConversationEntity {
   const factory _ConversationEntity(
       {required final String id,
       required final List<String> participantIds,
+      final String type,
+      final String? name,
+      final String? avatarUrl,
+      final int participantCount,
+      final String? myRole,
       final String? lastMessageContent,
       final DateTime? lastMessageAt,
       final String? lastMessageSenderId,
+      final String? lastMessageSenderName,
+      final bool lastMessageIsSystem,
       final String? otherUserName,
       final String? otherUserId,
       final String? otherUserAvatar,
@@ -322,11 +462,25 @@ abstract class _ConversationEntity implements ConversationEntity {
   @override
   List<String> get participantIds;
   @override
+  String get type;
+  @override
+  String? get name;
+  @override
+  String? get avatarUrl;
+  @override
+  int get participantCount;
+  @override
+  String? get myRole;
+  @override
   String? get lastMessageContent;
   @override
   DateTime? get lastMessageAt;
   @override
   String? get lastMessageSenderId;
+  @override
+  String? get lastMessageSenderName;
+  @override
+  bool get lastMessageIsSystem;
   @override
   String? get otherUserName;
   @override

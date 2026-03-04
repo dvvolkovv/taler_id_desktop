@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,15 +6,14 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
-import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/storage/cache_service.dart';
 import '../../../../core/api/dio_client.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../bloc/messenger_bloc.dart';
 import '../bloc/messenger_event.dart';
 import '../bloc/messenger_state.dart';
 import '../../domain/entities/conversation_entity.dart';
 
-// BlocProvider is provided by ShellRoute in app_router.dart
 class ConversationsScreen extends StatefulWidget {
   const ConversationsScreen({super.key});
 
@@ -33,13 +33,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
   Future<void> _loadConversationsIfNeeded() async {
     final bloc = context.read<MessengerBloc>();
-    // DashboardScreen already connects WebSocket; just reload conversations if needed
     if (bloc.state.conversations.isEmpty && !bloc.state.isLoading) {
       if (bloc.state.isConnected) {
         bloc.add(LoadConversations());
       }
-      // If not connected yet, DashboardScreen will trigger ConnectMessenger
-      // which calls LoadConversations after connecting
     }
   }
 
@@ -47,7 +44,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     if (!mounted) return;
     final cache = sl<CacheService>();
     Map<String, dynamic>? profile;
-    // Always fetch fresh profile from API to get current username
     try {
       final client = sl<DioClient>();
       profile = await client.get(
@@ -56,7 +52,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
       );
       if (profile != null) await cache.saveProfile(profile);
     } catch (_) {
-      // API failed — fall back to cache
       profile = cache.getProfile();
     }
     if (!mounted) return;
@@ -108,7 +103,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       borderSide: BorderSide(color: AppColors.of(context).primary),
                     ),
                   ),
-                  inputFormatters: [],
                   onChanged: (_) {
                     if (errorText != null) {
                       setDialogState(() => errorText = null);
@@ -142,7 +136,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       data: {'username': value},
                       fromJson: (d) => d,
                     );
-                    // Update cache to prevent dialog on next visit
                     final cache = sl<CacheService>();
                     final currentProfile = cache.getProfile() ?? {};
                     await cache.saveProfile({...currentProfile, 'username': value});
@@ -171,8 +164,59 @@ class _ConversationsView extends StatelessWidget {
   final String? myUsername;
   const _ConversationsView({this.myUsername});
 
+  void _showNewChatSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.of(context).card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.of(context).textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: AppColors.of(context).primary.withValues(alpha: 0.15),
+                child: Icon(Icons.person_add_rounded, color: AppColors.of(context).primary),
+              ),
+              title: Text(l10n.newChat, style: TextStyle(color: AppColors.of(context).textPrimary)),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/dashboard/messenger/search');
+              },
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: AppColors.of(context).primary.withValues(alpha: 0.15),
+                child: Icon(Icons.group_add_rounded, color: AppColors.of(context).primary),
+              ),
+              title: Text(l10n.newGroup, style: TextStyle(color: AppColors.of(context).textPrimary)),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/dashboard/messenger/create-group');
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
@@ -180,7 +224,7 @@ class _ConversationsView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Сообщения'),
+            Text(l10n.tabMessenger),
             if (myUsername != null && myUsername!.isNotEmpty)
               Text(
                 '@$myUsername',
@@ -196,7 +240,6 @@ class _ConversationsView extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.person_search_rounded),
             onPressed: () => context.push('/dashboard/messenger/search'),
-            tooltip: 'Найти пользователя',
           ),
         ],
       ),
@@ -210,24 +253,15 @@ class _ConversationsView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 64,
-                    color: AppColors.of(context).textSecondary,
-                  ),
+                  Icon(Icons.chat_bubble_outline_rounded, size: 64,
+                      color: AppColors.of(context).textSecondary),
                   const SizedBox(height: 16),
-                  Text(
-                    'Нет диалогов',
-                    style: TextStyle(
-                        color: AppColors.of(context).textSecondary, fontSize: 16),
-                  ),
+                  Text('Нет диалогов',
+                      style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 16)),
                   const SizedBox(height: 8),
-                  Text(
-                    'Найдите пользователя чтобы начать переписку',
-                    style: TextStyle(
-                        color: AppColors.of(context).textSecondary, fontSize: 13),
-                    textAlign: TextAlign.center,
-                  ),
+                  Text('Найдите пользователя чтобы начать переписку',
+                      style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
+                      textAlign: TextAlign.center),
                 ],
               ),
             );
@@ -248,9 +282,9 @@ class _ConversationsView extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/dashboard/messenger/search'),
+        onPressed: () => _showNewChatSheet(context),
         backgroundColor: AppColors.of(context).primary,
-        child: const Icon(Icons.person_add_rounded, color: Colors.black),
+        child: const Icon(Icons.edit_rounded, color: Colors.black),
       ),
     );
   }
@@ -262,51 +296,72 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = conversation.otherUserName ?? 'Пользователь';
+    final isGroup = conversation.type == 'GROUP';
+    final displayName = isGroup
+        ? (conversation.name ?? 'Группа')
+        : (conversation.otherUserName ?? 'Пользователь');
     final lastMsg = conversation.lastMessageContent;
     final lastAt = conversation.lastMessageAt;
     final timeStr = lastAt != null
         ? DateFormat('HH:mm').format(lastAt.toLocal())
         : '';
 
+    // Build subtitle for last message
+    String? subtitleText;
+    if (lastMsg != null) {
+      if (conversation.lastMessageIsSystem) {
+        subtitleText = _formatSystemMessage(context, lastMsg);
+      } else if (isGroup && conversation.lastMessageSenderName != null) {
+        subtitleText = '${conversation.lastMessageSenderName}: $lastMsg';
+      } else {
+        subtitleText = lastMsg;
+      }
+    }
+
+    final avatar = isGroup ? conversation.avatarUrl : conversation.otherUserAvatar;
+
     return ListTile(
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: CircleAvatar(
-        backgroundColor: AppColors.of(context).primary,
-        child: conversation.otherUserAvatar != null
+        backgroundColor: isGroup
+            ? AppColors.of(context).primary.withValues(alpha: 0.7)
+            : AppColors.of(context).primary,
+        child: avatar != null
             ? ClipOval(
                 child: CachedNetworkImage(
-                  imageUrl: conversation.otherUserAvatar!,
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => Text(
-                    displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                  ),
+                  imageUrl: avatar,
+                  width: 40, height: 40, fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => _avatarLetter(context, displayName, isGroup),
                 ),
               )
-            : Text(
-                displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold),
-              ),
+            : _avatarLetter(context, displayName, isGroup),
       ),
-      title: Text(
-        displayName,
-        style: TextStyle(
-            color: AppColors.of(context).textPrimary, fontWeight: FontWeight.w600),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              displayName,
+              style: TextStyle(
+                  color: AppColors.of(context).textPrimary, fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
-      subtitle: lastMsg != null
+      subtitle: subtitleText != null
           ? Text(
-              lastMsg,
+              subtitleText,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                   color: AppColors.of(context).textSecondary, fontSize: 13),
             )
-          : null,
+          : isGroup
+              ? Text(
+                  AppLocalizations.of(context)!.participantsCount(conversation.participantCount),
+                  style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
+                )
+              : null,
       trailing: (timeStr.isNotEmpty || conversation.unreadCount > 0)
           ? Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -314,10 +369,8 @@ class _ConversationTile extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (timeStr.isNotEmpty)
-                  Text(
-                    timeStr,
-                    style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
-                  ),
+                  Text(timeStr,
+                      style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)),
                 if (conversation.unreadCount > 0) ...[
                   const SizedBox(height: 4),
                   Container(
@@ -336,8 +389,38 @@ class _ConversationTile extends StatelessWidget {
               ],
             )
           : null,
-      onTap: () =>
-          context.push('/dashboard/messenger/${conversation.id}'),
+      onTap: () => context.push('/dashboard/messenger/${conversation.id}'),
     );
+  }
+
+  Widget _avatarLetter(BuildContext context, String name, bool isGroup) {
+    if (isGroup) {
+      return const Icon(Icons.group_rounded, color: Colors.black, size: 22);
+    }
+    return Text(
+      name.isNotEmpty ? name[0].toUpperCase() : '?',
+      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+    );
+  }
+
+  String _formatSystemMessage(BuildContext context, String content) {
+    try {
+      final data = jsonDecode(content) as Map<String, dynamic>;
+      final action = data['action'] as String?;
+      final actor = data['actor'] as String? ?? '';
+      final target = data['target'] as String? ?? '';
+      final role = data['role'] as String? ?? '';
+      final l10n = AppLocalizations.of(context)!;
+      switch (action) {
+        case 'group_created': return l10n.groupCreated;
+        case 'member_added': return l10n.memberJoined(target);
+        case 'member_left': return l10n.memberLeftGroup(actor);
+        case 'member_removed': return l10n.memberWasRemoved(target);
+        case 'role_changed': return l10n.roleChangedTo(target, role);
+        default: return content;
+      }
+    } catch (_) {
+      return content;
+    }
   }
 }

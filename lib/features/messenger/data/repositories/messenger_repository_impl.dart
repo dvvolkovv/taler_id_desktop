@@ -1,6 +1,7 @@
 import '../../domain/entities/conversation_entity.dart';
 import '../../domain/entities/message_entity.dart';
 import '../../domain/entities/user_search_entity.dart';
+import '../../domain/entities/group_member_entity.dart';
 import '../../domain/repositories/i_messenger_repository.dart';
 import '../datasources/messenger_remote_datasource.dart';
 
@@ -55,6 +56,51 @@ class MessengerRepositoryImpl implements IMessengerRepository {
 
   @override
   void markRead(String conversationId) => _remote.markRead(conversationId);
+
+  // Group methods
+  @override
+  Future<ConversationEntity> createGroupConversation(String name, List<String> participantIds) =>
+      _remote.createGroupConversation(name, participantIds);
+
+  @override
+  Future<List<GroupMemberEntity>> getGroupMembers(String conversationId) =>
+      _remote.getGroupMembers(conversationId);
+
+  @override
+  Future<void> addGroupMembers(String conversationId, List<String> userIds) =>
+      _remote.addGroupMembers(conversationId, userIds);
+
+  @override
+  Future<void> removeGroupMember(String conversationId, String userId) =>
+      _remote.removeGroupMember(conversationId, userId);
+
+  @override
+  Future<void> changeGroupMemberRole(String conversationId, String userId, String role) =>
+      _remote.changeGroupMemberRole(conversationId, userId, role);
+
+  @override
+  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl}) =>
+      _remote.updateGroupInfo(conversationId, name: name, avatarUrl: avatarUrl);
+
+  @override
+  Future<void> leaveGroup(String conversationId) => _remote.leaveGroup(conversationId);
+
+  @override
+  Future<void> deleteGroup(String conversationId) => _remote.deleteGroup(conversationId);
+
+  // Group streams
+  @override
+  Stream<Map<String, dynamic>> get groupUpdatedStream => _remote.groupUpdatedStream;
+  @override
+  Stream<Map<String, dynamic>> get groupMemberAddedStream => _remote.groupMemberAddedStream;
+  @override
+  Stream<Map<String, dynamic>> get groupMemberRemovedStream => _remote.groupMemberRemovedStream;
+  @override
+  Stream<Map<String, dynamic>> get groupRoleChangedStream => _remote.groupRoleChangedStream;
+  @override
+  Stream<Map<String, dynamic>> get groupCreatedStream => _remote.groupCreatedStream;
+  @override
+  Stream<Map<String, dynamic>> get groupDeletedStream => _remote.groupDeletedStream;
 
   @override
   void dispose() => _remote.dispose();

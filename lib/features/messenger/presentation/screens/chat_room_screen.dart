@@ -17,6 +17,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/api/dio_client.dart';
 import '../../../../core/services/call_state_service.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../bloc/messenger_bloc.dart';
 import '../bloc/messenger_event.dart';
 import '../bloc/messenger_state.dart';
@@ -272,40 +273,59 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             final conv = state.conversations
                 .where((c) => c.id == widget.conversationId)
                 .firstOrNull;
-            final name = conv?.otherUserName;
-            final avatarUrl = conv?.otherUserAvatar;
+            final isGroup = conv?.type == 'GROUP';
+            final name = isGroup ? (conv?.name ?? 'Группа') : conv?.otherUserName;
+            final avatarUrl = isGroup ? conv?.avatarUrl : conv?.otherUserAvatar;
             final otherUserId = conv?.otherUserId;
-            return Row(
-              children: [
-                GestureDetector(
-                  onTap: otherUserId != null
+            return GestureDetector(
+              onTap: isGroup
+                  ? () => context.push('/dashboard/messenger/${widget.conversationId}/settings')
+                  : otherUserId != null
                       ? () => context.push('/dashboard/user/$otherUserId')
                       : null,
-                  child: CircleAvatar(
+              child: Row(
+                children: [
+                  CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppColors.of(context).primary.withValues(alpha: 0.2),
+                    backgroundColor: AppColors.of(context).primary.withValues(alpha: isGroup ? 0.4 : 0.2),
                     child: avatarUrl != null && avatarUrl.isNotEmpty
                         ? ClipOval(
                             child: CachedNetworkImage(
                               imageUrl: avatarUrl,
-                              width: 36,
-                              height: 36,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Text(
+                              width: 36, height: 36, fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => isGroup
+                                  ? Icon(Icons.group_rounded, color: AppColors.of(context).primary, size: 18)
+                                  : Text(
+                                      name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                      style: TextStyle(color: AppColors.of(context).primary, fontSize: 14, fontWeight: FontWeight.bold),
+                                    ),
+                            ),
+                          )
+                        : isGroup
+                            ? Icon(Icons.group_rounded, color: AppColors.of(context).primary, size: 18)
+                            : Text(
                                 name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
                                 style: TextStyle(color: AppColors.of(context).primary, fontSize: 14, fontWeight: FontWeight.bold),
                               ),
-                            ),
-                          )
-                        : Text(
-                            name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
-                            style: TextStyle(color: AppColors.of(context).primary, fontSize: 14, fontWeight: FontWeight.bold),
-                          ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Text(name != null && name.isNotEmpty ? name : 'Диалог'),
-              ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(name != null && name.isNotEmpty ? name : 'Диалог',
+                            overflow: TextOverflow.ellipsis),
+                        if (isGroup && conv != null)
+                          Text(
+                            AppLocalizations.of(context)!.participantsCount(conv.participantCount),
+                            style: TextStyle(fontSize: 12, color: AppColors.of(context).textSecondary, fontWeight: FontWeight.normal),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         ),
@@ -342,6 +362,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           final conv = state.conversations
               .where((c) => c.id == widget.conversationId)
               .firstOrNull;
+          final isGroup = conv?.type == 'GROUP';
           final otherUserName = conv?.otherUserName;
           return Column(
             children: [
@@ -366,6 +387,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           return _MessageBubble(
                             message: msg,
                             isMe: isMe,
+                            isGroup: isGroup,
                             senderName: isMe
                                 ? null
                                 : (msg.senderName ?? otherUserName),
@@ -400,14 +422,21 @@ class _MessageBubble extends StatelessWidget {
   final MessageEntity message;
   final bool isMe;
   final String? senderName;
+  final bool isGroup;
   const _MessageBubble({
     required this.message,
     required this.isMe,
     this.senderName,
+    this.isGroup = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    // System messages: centered, muted style
+    if (message.isSystem) {
+      return _buildSystemMessage(context);
+    }
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -423,7 +452,7 @@ class _MessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isMe && senderName != null && senderName!.isNotEmpty)
+            if (!isMe && senderName != null && senderName!.isNotEmpty && (isGroup || senderName != null))
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
@@ -511,6 +540,48 @@ class _MessageBubble extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSystemMessage(BuildContext context) {
+    String text;
+    try {
+      final data = jsonDecode(message.content) as Map<String, dynamic>;
+      final action = data['action'] as String?;
+      final actor = data['actor'] as String? ?? '';
+      final target = data['target'] as String? ?? '';
+      final role = data['role'] as String? ?? '';
+      final l10n = AppLocalizations.of(context)!;
+      switch (action) {
+        case 'group_created': text = l10n.groupCreated; break;
+        case 'member_added': text = l10n.memberJoined(target); break;
+        case 'member_left': text = l10n.memberLeftGroup(actor); break;
+        case 'member_removed': text = l10n.memberWasRemoved(target); break;
+        case 'role_changed': text = l10n.roleChangedTo(target, role); break;
+        default: text = message.content;
+      }
+    } catch (_) {
+      text = message.content;
+    }
+
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.of(context).card.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: AppColors.of(context).textSecondary,
+            fontSize: 12,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );

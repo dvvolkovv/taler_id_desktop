@@ -853,4 +853,91 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get resendCode => 'Отправить повторно';
+
+  @override
+  String get newGroup => 'Новая группа';
+
+  @override
+  String get newChat => 'Новый чат';
+
+  @override
+  String get groupName => 'Название группы';
+
+  @override
+  String get createGroup => 'Создать группу';
+
+  @override
+  String get groupInfo => 'О группе';
+
+  @override
+  String groupMembers(int count) {
+    return 'Участники ($count)';
+  }
+
+  @override
+  String get addMembers => 'Добавить участников';
+
+  @override
+  String get leaveGroup => 'Покинуть группу';
+
+  @override
+  String get leaveGroupConfirm => 'Покинуть эту группу?';
+
+  @override
+  String get deleteGroup => 'Удалить группу';
+
+  @override
+  String get deleteGroupConfirm =>
+      'Удалить эту группу? Это действие необратимо.';
+
+  @override
+  String get groupRoleOwner => 'Владелец';
+
+  @override
+  String get groupRoleAdmin => 'Админ';
+
+  @override
+  String get groupRoleMember => 'Участник';
+
+  @override
+  String get selectParticipants => 'Выберите участников';
+
+  @override
+  String selectedCount(int count) {
+    return 'Выбрано: $count';
+  }
+
+  @override
+  String get changeRole => 'Изменить роль';
+
+  @override
+  String get groupCreated => 'Группа создана';
+
+  @override
+  String memberJoined(String name) {
+    return '$name присоединился';
+  }
+
+  @override
+  String memberLeftGroup(String name) {
+    return '$name покинул группу';
+  }
+
+  @override
+  String memberWasRemoved(String name) {
+    return '$name удалён';
+  }
+
+  @override
+  String roleChangedTo(String name, String role) {
+    return '$name теперь $role';
+  }
+
+  @override
+  String participantsCount(int count) {
+    return '$count участников';
+  }
+
+  @override
+  String get enterGroupName => 'Введите название группы';
 }

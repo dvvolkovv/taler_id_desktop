@@ -24,6 +24,9 @@ import '../../features/messenger/presentation/screens/conversations_screen.dart'
 import '../../features/messenger/presentation/screens/chat_room_screen.dart';
 import '../../features/messenger/presentation/screens/user_search_screen.dart';
 import '../../features/messenger/presentation/screens/user_profile_screen.dart';
+import '../../features/messenger/presentation/screens/create_group_screen.dart';
+import '../../features/messenger/presentation/screens/group_settings_screen.dart';
+import '../../features/messenger/presentation/screens/add_group_members_screen.dart';
 import '../../features/voice/presentation/screens/voice_call_screen.dart';
 import '../../features/call_history/presentation/screens/call_history_screen.dart';
 import '../storage/secure_storage_service.dart';
@@ -164,10 +167,28 @@ final appRouter = GoRouter(
               builder: (_, __) => const UserSearchScreen(),
             ),
             GoRoute(
+              path: 'create-group',
+              builder: (_, __) => const CreateGroupScreen(),
+            ),
+            GoRoute(
               path: ':id',
               builder: (_, state) => ChatRoomScreen(
                 conversationId: state.pathParameters['id']!,
               ),
+              routes: [
+                GoRoute(
+                  path: 'settings',
+                  builder: (_, state) => GroupSettingsScreen(
+                    conversationId: state.pathParameters['id']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'add-members',
+                  builder: (_, state) => AddGroupMembersScreen(
+                    conversationId: state.pathParameters['id']!,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

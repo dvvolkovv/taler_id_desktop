@@ -4,6 +4,7 @@ import '../../../../core/api/dio_client.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../../domain/entities/message_entity.dart';
 import '../../domain/entities/user_search_entity.dart';
+import '../../domain/entities/group_member_entity.dart';
 
 class MessengerRemoteDataSource {
   final DioClient _http;
@@ -16,6 +17,13 @@ class MessengerRemoteDataSource {
   final _disconnectCtrl = StreamController<String>.broadcast();
   final _messageUpdatedCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _messagesReadCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  // Group events
+  final _groupUpdatedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _groupMemberAddedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _groupMemberRemovedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _groupRoleChangedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _groupCreatedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _groupDeletedCtrl = StreamController<Map<String, dynamic>>.broadcast();
 
   MessengerRemoteDataSource(this._http);
 
@@ -61,6 +69,25 @@ class MessengerRemoteDataSource {
         _callAnsweredCtrl.add(data['roomName'] as String? ?? '');
       } catch (_) {}
     });
+    // Group socket events
+    _socket!.on('group_updated', (d) {
+      try { _groupUpdatedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
+    _socket!.on('group_member_added', (d) {
+      try { _groupMemberAddedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
+    _socket!.on('group_member_removed', (d) {
+      try { _groupMemberRemovedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
+    _socket!.on('group_role_changed', (d) {
+      try { _groupRoleChangedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
+    _socket!.on('group_created', (d) {
+      try { _groupCreatedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
+    _socket!.on('group_deleted', (d) {
+      try { _groupDeletedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
     // Re-join all conversation rooms after reconnect
     _socket!.on('connect', (_) {
       for (final id in _joinedConversations) {
@@ -80,6 +107,13 @@ class MessengerRemoteDataSource {
   Stream<String> get disconnectStream => _disconnectCtrl.stream;
   Stream<Map<String, dynamic>> get messageUpdatedStream => _messageUpdatedCtrl.stream;
   Stream<Map<String, dynamic>> get messagesReadStream => _messagesReadCtrl.stream;
+  // Group streams
+  Stream<Map<String, dynamic>> get groupUpdatedStream => _groupUpdatedCtrl.stream;
+  Stream<Map<String, dynamic>> get groupMemberAddedStream => _groupMemberAddedCtrl.stream;
+  Stream<Map<String, dynamic>> get groupMemberRemovedStream => _groupMemberRemovedCtrl.stream;
+  Stream<Map<String, dynamic>> get groupRoleChangedStream => _groupRoleChangedCtrl.stream;
+  Stream<Map<String, dynamic>> get groupCreatedStream => _groupCreatedCtrl.stream;
+  Stream<Map<String, dynamic>> get groupDeletedStream => _groupDeletedCtrl.stream;
   bool get isSocketConnected => _socket?.connected ?? false;
 
   void joinConversation(String id) {
@@ -125,6 +159,8 @@ class MessengerRemoteDataSource {
   void markRead(String conversationId) =>
       _socket?.emit('mark_read', {'conversationId': conversationId});
 
+  // ─── REST: Direct ───
+
   Future<List<ConversationEntity>> getConversations() async {
     final data = await _http.get('/messenger/conversations', fromJson: (d) => d as List);
     return data
@@ -158,6 +194,68 @@ class MessengerRemoteDataSource {
         .toList();
   }
 
+  // ─── REST: Groups ───
+
+  Future<ConversationEntity> createGroupConversation(String name, List<String> participantIds) async {
+    final data = await _http.post(
+      '/messenger/conversations/group',
+      data: {'name': name, 'participantIds': participantIds},
+      fromJson: (d) => Map<String, dynamic>.from(d as Map),
+    );
+    return ConversationEntity.fromJson(data);
+  }
+
+  Future<List<GroupMemberEntity>> getGroupMembers(String conversationId) async {
+    final data = await _http.get(
+      '/messenger/conversations/$conversationId/members',
+      fromJson: (d) => d as List,
+    );
+    return data
+        .map((e) => GroupMemberEntity.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<void> addGroupMembers(String conversationId, List<String> userIds) async {
+    await _http.post(
+      '/messenger/conversations/$conversationId/members',
+      data: {'userIds': userIds},
+      fromJson: (d) => d,
+    );
+  }
+
+  Future<void> removeGroupMember(String conversationId, String userId) async {
+    await _http.delete('/messenger/conversations/$conversationId/members/$userId');
+  }
+
+  Future<void> changeGroupMemberRole(String conversationId, String userId, String role) async {
+    await _http.patch(
+      '/messenger/conversations/$conversationId/members/$userId/role',
+      data: {'role': role},
+    );
+  }
+
+  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl}) async {
+    await _http.patch(
+      '/messenger/conversations/$conversationId',
+      data: {
+        if (name != null) 'name': name,
+        if (avatarUrl != null) 'avatarUrl': avatarUrl,
+      },
+    );
+  }
+
+  Future<void> leaveGroup(String conversationId) async {
+    await _http.post(
+      '/messenger/conversations/$conversationId/leave',
+      data: {},
+      fromJson: (d) => d,
+    );
+  }
+
+  Future<void> deleteGroup(String conversationId) async {
+    await _http.delete('/messenger/conversations/$conversationId');
+  }
+
   void dispose() {
     _socket?.dispose();
     _messageCtrl.close();
@@ -166,5 +264,11 @@ class MessengerRemoteDataSource {
     _disconnectCtrl.close();
     _messageUpdatedCtrl.close();
     _messagesReadCtrl.close();
+    _groupUpdatedCtrl.close();
+    _groupMemberAddedCtrl.close();
+    _groupMemberRemovedCtrl.close();
+    _groupRoleChangedCtrl.close();
+    _groupCreatedCtrl.close();
+    _groupDeletedCtrl.close();
   }
 }
