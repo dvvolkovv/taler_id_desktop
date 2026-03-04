@@ -321,7 +321,9 @@ String? notificationToRoute(RemoteMessage message) {
       final roomName = data['roomName'] as String?;
       final convId = data['conversationId'] as String?;
       if (roomName != null && convId != null) {
-        return '/dashboard/voice?room=$roomName&convId=$convId&incoming=1';
+        final e2eeKey = data['e2eeKey'] as String?;
+        final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
+        return '/dashboard/voice?room=$roomName&convId=$convId&incoming=1$e2eeParam';
       }
       return null;
     case 'new_message':

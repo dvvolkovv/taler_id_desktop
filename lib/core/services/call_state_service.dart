@@ -11,6 +11,7 @@ class CallStateService {
   lk.Room? room;
   String? roomName;
   String? conversationId;
+  String? e2eeKey;
   bool _bgConnecting = false;
 
   final _stateCtrl = StreamController<bool>.broadcast();
@@ -20,10 +21,11 @@ class CallStateService {
       room != null &&
       room!.connectionState != lk.ConnectionState.disconnected;
 
-  void setRoom(lk.Room r, String name, String? convId) {
+  void setRoom(lk.Room r, String name, String? convId, {String? e2eeKeyValue}) {
     room = r;
     roomName = name;
     conversationId = convId;
+    e2eeKey = e2eeKeyValue;
     _stateCtrl.add(true);
   }
 
@@ -32,6 +34,7 @@ class CallStateService {
     room = null;
     roomName = null;
     conversationId = null;
+    e2eeKey = null;
     _bgConnecting = false;
     _stateCtrl.add(false);
   }
@@ -40,6 +43,7 @@ class CallStateService {
     room = null;
     roomName = null;
     conversationId = null;
+    e2eeKey = null;
     _bgConnecting = false;
     _stateCtrl.add(false);
   }
@@ -48,7 +52,7 @@ class CallStateService {
   /// This establishes the audio connection immediately so the caller sees
   /// the callee join the room — even while CallKit's native UI is still showing.
   /// VoiceCallScreen will detect the existing room in initState and resume it.
-  Future<bool> connectInBackground(String rName, String? convId) async {
+  Future<bool> connectInBackground(String rName, String? convId, {String? e2eeKey}) async {
     if (isInCall) return true;
     if (_bgConnecting) return false;
     _bgConnecting = true;
@@ -61,19 +65,28 @@ class CallStateService {
       );
       final token = res['token'] as String;
       final r = lk.Room();
+
+      lk.E2EEOptions? e2eeOptions;
+      if (e2eeKey != null) {
+        final keyProvider = await lk.BaseKeyProvider.create(sharedKey: true);
+        await keyProvider.setSharedKey(e2eeKey);
+        e2eeOptions = lk.E2EEOptions(keyProvider: keyProvider);
+      }
+
       await r.connect(
         'wss://id.taler.tirol/livekit/',
         token,
-        roomOptions: const lk.RoomOptions(
-          defaultAudioPublishOptions: lk.AudioPublishOptions(audioBitrate: 32000),
+        roomOptions: lk.RoomOptions(
+          e2eeOptions: e2eeOptions,
+          defaultAudioPublishOptions: const lk.AudioPublishOptions(audioBitrate: 32000),
         ),
       );
-      setRoom(r, rName, convId);
+      setRoom(r, rName, convId, e2eeKeyValue: e2eeKey);
       // Enable microphone — CallKit's audio session is active so this should work
       try {
         await r.localParticipant?.setMicrophoneEnabled(true);
       } catch (_) {}
-      debugPrint('[CallState] connectInBackground OK, room=$rName');
+      debugPrint('[CallState] connectInBackground OK, room=$rName, e2ee=${e2eeKey != null}');
       _bgConnecting = false;
       return true;
     } catch (e) {

@@ -20,12 +20,14 @@ class VoiceCallScreen extends StatefulWidget {
   final String? conversationId; // for sending call_ended when hanging up
   final bool isIncoming; // opened from FCM push notification
   final String? calleeName; // name of the person being called (outgoing)
+  final String? e2eeKey; // E2EE shared key for human-to-human calls (null = no E2EE)
   const VoiceCallScreen({
     super.key,
     this.roomName,
     this.conversationId,
     this.isIncoming = false,
     this.calleeName,
+    this.e2eeKey,
   });
 
   @override
@@ -180,17 +182,27 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
       final token = res['token'] as String;
       _roomName = (res['roomName'] as String?) ?? widget.roomName;
-      debugPrint('[VoiceCall] API join OK, roomName=$_roomName');
+      debugPrint('[VoiceCall] API join OK, roomName=$_roomName, e2ee=${widget.e2eeKey != null}');
       _room = lk.Room();
 
       _room!.addListener(_onRoomChanged);
       _subscribeRoomEvents();
 
+      // Configure E2EE for human-to-human calls
+      lk.E2EEOptions? e2eeOptions;
+      final e2eeKey = widget.e2eeKey ?? CallStateService.instance.e2eeKey;
+      if (e2eeKey != null) {
+        final keyProvider = await lk.BaseKeyProvider.create(sharedKey: true);
+        await keyProvider.setSharedKey(e2eeKey);
+        e2eeOptions = lk.E2EEOptions(keyProvider: keyProvider);
+      }
+
       await _room!.connect(
         'wss://id.taler.tirol/livekit/',
         token,
-        roomOptions: const lk.RoomOptions(
-          defaultAudioPublishOptions: lk.AudioPublishOptions(
+        roomOptions: lk.RoomOptions(
+          e2eeOptions: e2eeOptions,
+          defaultAudioPublishOptions: const lk.AudioPublishOptions(
             audioBitrate: 32000,
           ),
         ),
@@ -202,6 +214,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         _room!,
         _roomName!,
         widget.conversationId,
+        e2eeKeyValue: e2eeKey,
       );
 
       // Notify other devices: this device answered the call (dismiss CallKit on others)
@@ -362,15 +375,25 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         newRoom.addListener(_onRoomChanged);
         _subscribeRoomEvents();
 
+        // Re-apply E2EE on reconnect
+        lk.E2EEOptions? reconnectE2eeOptions;
+        final reconnectKey = widget.e2eeKey ?? CallStateService.instance.e2eeKey;
+        if (reconnectKey != null) {
+          final kp = await lk.BaseKeyProvider.create(sharedKey: true);
+          await kp.setSharedKey(reconnectKey);
+          reconnectE2eeOptions = lk.E2EEOptions(keyProvider: kp);
+        }
+
         await newRoom.connect(
           'wss://id.taler.tirol/livekit/',
           token,
-          roomOptions: const lk.RoomOptions(
-            defaultAudioPublishOptions: lk.AudioPublishOptions(audioBitrate: 32000),
+          roomOptions: lk.RoomOptions(
+            e2eeOptions: reconnectE2eeOptions,
+            defaultAudioPublishOptions: const lk.AudioPublishOptions(audioBitrate: 32000),
           ),
         );
 
-        CallStateService.instance.setRoom(newRoom, roomName, widget.conversationId);
+        CallStateService.instance.setRoom(newRoom, roomName, widget.conversationId, e2eeKeyValue: reconnectKey);
 
         try { await newRoom.localParticipant?.setMicrophoneEnabled(!_muted); } catch (_) {}
         try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}

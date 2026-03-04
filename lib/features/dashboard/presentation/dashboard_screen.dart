@@ -294,15 +294,17 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         final extra = call['extra'] as Map?;
         final roomName = extra?['roomName'] as String?;
         final convId = extra?['conversationId'] as String?;
+        final e2eeKey = extra?['e2eeKey'] as String?;
         if (roomName == null || roomName.isEmpty) continue;
         debugPrint('[CallKit] _checkActiveCallKitCalls: found orphaned call, room=$roomName');
         _waitingForCallAccept = true;
         // Connect to LiveKit immediately if not already connected
         if (!CallStateService.instance.isInCall) {
-          CallStateService.instance.connectInBackground(roomName, convId);
+          CallStateService.instance.connectInBackground(roomName, convId, e2eeKey: e2eeKey);
         }
+        final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
         final voiceRoute =
-            '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
+            '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1$e2eeParam';
         if (mounted) {
           context.push(voiceRoute);
         }
@@ -350,6 +352,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     final fromName = data['fromUserName'] as String? ?? 'Пользователь';
     final roomName = data['roomName'] as String? ?? '';
     final convId = data['conversationId'] as String? ?? '';
+    final e2eeKey = data['e2eeKey'] as String?;
 
     // If already in a call, silently dismiss incoming call invite
     if (CallStateService.instance.isInCall) {
@@ -371,7 +374,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
     if (isForegrounded) {
       // App is visible: show in-app dialog
-      _showIncomingCallDialog(context, fromName: fromName, roomName: roomName, convId: convId);
+      _showIncomingCallDialog(context, fromName: fromName, roomName: roomName, convId: convId, e2eeKey: e2eeKey);
     } else {
       // App is backgrounded/paused: use native CallKit UI
       showCallkitIncoming(
@@ -388,6 +391,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     required String fromName,
     required String roomName,
     required String convId,
+    String? e2eeKey,
   }) {
     // Deduplicate: don't show a second dialog for the same room
     if (_showingCallDialogRoom == roomName) return;
@@ -418,8 +422,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               Navigator.of(context, rootNavigator: true).pop();
               // Dismiss native CallKit ringing (may have started from FCM background handler)
               FlutterCallkitIncoming.endAllCalls();
+              final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
               final uri = '/dashboard/voice?room=$roomName'
-                  '${convId.isNotEmpty ? '&convId=$convId' : ''}';
+                  '${convId.isNotEmpty ? '&convId=$convId' : ''}$e2eeParam';
               context.push(uri);
             },
             icon: const Icon(Icons.call, color: Colors.white),

@@ -41,15 +41,17 @@ void _setupCallkitListener() {
     final extra = event!.body['extra'] as Map?;
     final roomName = extra?['roomName'] as String?;
     final convId = extra?['conversationId'] as String?;
+    final e2eeKey = extra?['e2eeKey'] as String?;
     if (roomName == null || roomName.isEmpty) return;
+    final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
     final route =
-        '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
-    debugPrint('[CallKit] accept: roomName=$roomName, setting pending route');
+        '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1$e2eeParam';
+    debugPrint('[CallKit] accept: roomName=$roomName, e2ee=${e2eeKey != null}, setting pending route');
     // Store for DashboardScreen's cold-start initState path.
     NotificationService.setPendingCallRoute(route);
     // Connect to LiveKit immediately in background so the caller sees
     // the callee join the room right away (even while CallKit UI is showing).
-    _connectCallInBackground(roomName, convId);
+    _connectCallInBackground(roomName, convId, e2eeKey: e2eeKey);
     // Poll until the app is fully resumed, then navigate via the global router.
     // This is the primary navigation mechanism for incoming calls.
     _navigateWhenResumed(route, 0);
@@ -92,13 +94,13 @@ void _navigateWhenResumed(String route, int attempt) {
 
 /// Try to connect to LiveKit in the background right after CallKit accept.
 /// DI may not be ready during killed-app cold start — silently skip in that case.
-void _connectCallInBackground(String roomName, String? convId) {
+void _connectCallInBackground(String roomName, String? convId, {String? e2eeKey}) {
   try {
     if (!sl.isRegistered<DioClient>()) {
       debugPrint('[CallKit] DI not ready, skipping background connect');
       return;
     }
-    CallStateService.instance.connectInBackground(roomName, convId);
+    CallStateService.instance.connectInBackground(roomName, convId, e2eeKey: e2eeKey);
   } catch (e) {
     debugPrint('[CallKit] _connectCallInBackground error: $e');
   }
@@ -117,14 +119,16 @@ Future<void> _checkInitialCallKitCall() async {
       final extra = call['extra'] as Map?;
       final roomName = extra?['roomName'] as String?;
       final convId = extra?['conversationId'] as String?;
+      final e2eeKey = extra?['e2eeKey'] as String?;
       if (roomName == null || roomName.isEmpty) continue;
       // Only set if EventChannel hasn't already set it
       if (NotificationService.hasPendingCallRoute) return;
+      final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
       final route =
-          '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
+          '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1$e2eeParam';
       debugPrint('[CallKit] _checkInitialCallKitCall: found active call, route=$route');
       NotificationService.setPendingCallRoute(route);
-      _connectCallInBackground(roomName, convId);
+      _connectCallInBackground(roomName, convId, e2eeKey: e2eeKey);
       _navigateWhenResumed(route, 0);
       return;
     }
