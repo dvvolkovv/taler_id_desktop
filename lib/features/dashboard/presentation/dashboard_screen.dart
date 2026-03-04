@@ -297,6 +297,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         if (roomName == null || roomName.isEmpty) continue;
         debugPrint('[CallKit] _checkActiveCallKitCalls: found orphaned call, room=$roomName');
         _waitingForCallAccept = true;
+        // Connect to LiveKit immediately if not already connected
+        if (!CallStateService.instance.isInCall) {
+          CallStateService.instance.connectInBackground(roomName, convId);
+        }
         final voiceRoute =
             '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
         if (mounted) {

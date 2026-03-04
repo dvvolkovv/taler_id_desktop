@@ -7,6 +7,7 @@ import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
+import 'core/api/dio_client.dart';
 import 'core/di/service_locator.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/services/call_state_service.dart';
@@ -46,6 +47,9 @@ void _setupCallkitListener() {
     debugPrint('[CallKit] accept: roomName=$roomName, setting pending route');
     // Store for DashboardScreen's cold-start initState path.
     NotificationService.setPendingCallRoute(route);
+    // Connect to LiveKit immediately in background so the caller sees
+    // the callee join the room right away (even while CallKit UI is showing).
+    _connectCallInBackground(roomName, convId);
     // Poll until the app is fully resumed, then navigate via the global router.
     // This is the primary navigation mechanism for incoming calls.
     _navigateWhenResumed(route, 0);
@@ -86,6 +90,20 @@ void _navigateWhenResumed(String route, int attempt) {
   }
 }
 
+/// Try to connect to LiveKit in the background right after CallKit accept.
+/// DI may not be ready during killed-app cold start — silently skip in that case.
+void _connectCallInBackground(String roomName, String? convId) {
+  try {
+    if (!sl.isRegistered<DioClient>()) {
+      debugPrint('[CallKit] DI not ready, skipping background connect');
+      return;
+    }
+    CallStateService.instance.connectInBackground(roomName, convId);
+  } catch (e) {
+    debugPrint('[CallKit] _connectCallInBackground error: $e');
+  }
+}
+
 /// Fallback for killed-app scenario: check if CallKit has an active call
 /// that was accepted before the EventChannel listener was registered.
 /// The native CallKit delegate processes the accept on the native side,
@@ -106,6 +124,7 @@ Future<void> _checkInitialCallKitCall() async {
           '/dashboard/voice?room=$roomName&convId=${convId ?? ''}&incoming=1';
       debugPrint('[CallKit] _checkInitialCallKitCall: found active call, route=$route');
       NotificationService.setPendingCallRoute(route);
+      _connectCallInBackground(roomName, convId);
       _navigateWhenResumed(route, 0);
       return;
     }

@@ -85,7 +85,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       }
     });
     final cs = CallStateService.instance;
-    // Resume existing room if already connected
+    // Resume existing room if already connected (e.g. from background connect)
     if (cs.isInCall && cs.room != null) {
       _room = cs.room;
       _roomName = cs.roomName;
@@ -93,6 +93,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       _participants.addAll(_room!.remoteParticipants.values);
       _room!.addListener(_onRoomChanged);
       _subscribeRoomEvents();
+      // End CallKit now that the voice screen is visible — release native UI
+      if (widget.isIncoming) {
+        FlutterCallkitIncoming.endAllCalls();
+      }
+      // Notify other devices this device answered (dismiss their CallKit)
+      if (widget.isIncoming && widget.conversationId != null && _roomName != null) {
+        try {
+          sl<MessengerRemoteDataSource>().sendCallAnswered(widget.conversationId!, _roomName!);
+        } catch (_) {}
+      }
+      WakelockPlus.enable();
     } else {
       _connect();
     }
