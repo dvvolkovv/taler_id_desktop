@@ -93,10 +93,12 @@ final appRouter = GoRouter(
         final roomName = state.uri.queryParameters['room'];
         final conversationId = state.uri.queryParameters['convId'];
         final incoming = state.uri.queryParameters['incoming'] == '1';
+        final callee = state.uri.queryParameters['callee'];
         return VoiceCallScreen(
           roomName: roomName,
           conversationId: conversationId,
           isIncoming: incoming,
+          calleeName: callee,
         );
       },
     ),

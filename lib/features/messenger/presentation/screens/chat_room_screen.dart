@@ -101,7 +101,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final roomName = res['roomName'] as String;
       sl<MessengerRemoteDataSource>()
           .sendCallInvite(widget.conversationId, roomName);
-      if (mounted) context.push('/dashboard/voice?room=$roomName&convId=${widget.conversationId}');
+      final calleeName = context.read<MessengerBloc>().state.conversations
+          .where((c) => c.id == widget.conversationId)
+          .firstOrNull
+          ?.otherUserName;
+      final calleeParam = calleeName != null && calleeName.isNotEmpty
+          ? '&callee=${Uri.encodeComponent(calleeName)}'
+          : '';
+      if (mounted) context.push('/dashboard/voice?room=$roomName&convId=${widget.conversationId}$calleeParam');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
@@ -18,11 +19,13 @@ class VoiceCallScreen extends StatefulWidget {
   final String? roomName; // null = create new room with AI
   final String? conversationId; // for sending call_ended when hanging up
   final bool isIncoming; // opened from FCM push notification
+  final String? calleeName; // name of the person being called (outgoing)
   const VoiceCallScreen({
     super.key,
     this.roomName,
     this.conversationId,
     this.isIncoming = false,
+    this.calleeName,
   });
 
   @override
@@ -55,6 +58,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     'headphones': 'Наушники',
   };
   String? _error;
+  bool _ringing = false; // outgoing: ringback playing, waiting for callee to answer
   bool _navigatedAway = false;
   String? _roomName; // actual room name (resolved after connect)
   final List<lk.RemoteParticipant> _participants = [];
@@ -117,6 +121,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _connect() async {
+    debugPrint('[VoiceCall] _connect() called, isIncoming=${widget.isIncoming}, room=${widget.roomName}');
     if (widget.isIncoming) {
       // Release the CallKit-owned audio session before LiveKit connects.
       // When accepting from locked screen, CallKit activates the audio session
@@ -126,7 +131,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       // so endAllCalls() no longer causes iOS to re-lock the screen.
       try {
         await FlutterCallkitIncoming.endAllCalls();
-      } catch (_) {}
+        debugPrint('[VoiceCall] endAllCalls() done');
+      } catch (e) {
+        debugPrint('[VoiceCall] endAllCalls() error: $e');
+      }
       // Re-activate audio session independently for LiveKit
       try {
         await _audioChannel.invokeMethod('requestAudioFocus');
@@ -137,6 +145,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       try {
         await _ringPlayer.setReleaseMode(ReleaseMode.loop);
         await _ringPlayer.play(AssetSource('audio/ringback.wav'), volume: 0.6);
+        if (mounted) setState(() => _ringing = true);
       } catch (_) {}
     }
     try {
@@ -159,6 +168,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
       final token = res['token'] as String;
       _roomName = (res['roomName'] as String?) ?? widget.roomName;
+      debugPrint('[VoiceCall] API join OK, roomName=$_roomName');
       _room = lk.Room();
 
       _room!.addListener(_onRoomChanged);
@@ -173,6 +183,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           ),
         ),
       );
+      debugPrint('[VoiceCall] LiveKit connected, state=${_room!.connectionState}');
 
       // Register in global state so call persists across navigation
       CallStateService.instance.setRoom(
@@ -204,9 +215,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         await _room!.localParticipant?.setMicrophoneEnabled(true);
       } catch (_) {}
 
-      // Stop ringback — room is connected (callee may already be present)
-      await _ringPlayer.stop();
-
       setState(() => _connecting = false);
       WakelockPlus.enable();
 
@@ -214,6 +222,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       // Call twice: once early, once after LiveKit audio stack fully initialises.
       _forceEarpiece();
     } catch (e) {
+      debugPrint('[VoiceCall] _connect() error: $e');
       setState(() {
         _error = e.toString();
         _connecting = false;
@@ -268,6 +277,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
         if (event.participant.identity != 'ai-assistant') {
           await _ringPlayer.stop();
+          if (mounted) setState(() => _ringing = false);
         }
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
@@ -482,6 +492,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   Future<void> _hangUp() async {
+    // Stop ringback if still playing (call not answered)
+    try { await _ringPlayer.stop(); } catch (_) {}
+    if (mounted) setState(() => _ringing = false);
     // Disable microphone first to release audio track
     try {
       await _room?.localParticipant?.setMicrophoneEnabled(false);
@@ -579,7 +592,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     return Scaffold(
       backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
-        title: const Text('Голосовой звонок'),
+        title: Text(widget.calleeName ?? 'Голосовой звонок'),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: _hangUp,
@@ -621,21 +634,56 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     );
   }
 
-  Widget _buildBody() {
-    if (_connecting) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
+  Widget _buildOutgoingCallCenter({required String statusText}) {
+    final colors = AppColors.of(context);
+    final name = widget.calleeName;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 48,
+            backgroundColor: colors.primary.withOpacity(0.15),
+            child: Text(
+              name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                color: colors.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (name != null && name.isNotEmpty)
             Text(
-              'Подключение...',
-              style: TextStyle(color: AppColors.of(context).textSecondary),
+              name,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            statusText,
+            style: TextStyle(color: colors.textSecondary, fontSize: 15),
+          ),
+          if (_connecting) ...[
+            const SizedBox(height: 24),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_connecting) {
+      return _buildOutgoingCallCenter(statusText: 'Подключение...');
     }
     if (_error != null) {
       return Center(
@@ -696,7 +744,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Звонок активен',
+                _ringing ? 'Вызов...' : 'Звонок активен',
                 style: TextStyle(
                   color: AppColors.of(context).textPrimary,
                   fontSize: 14,
@@ -709,26 +757,28 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         // Participants list
         Expanded(
           child: _participants.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 64,
-                        color: AppColors.of(context).textSecondary,
+              ? _ringing
+                  ? _buildOutgoingCallCenter(statusText: 'Вызов...')
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 64,
+                            color: AppColors.of(context).textSecondary,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Ожидание участников...',
+                            style: TextStyle(
+                              color: AppColors.of(context).textSecondary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Ожидание участников...',
-                        style: TextStyle(
-                          color: AppColors.of(context).textSecondary,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
+                    )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _participants.length,
