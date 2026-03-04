@@ -78,6 +78,7 @@ import flutter_callkit_incoming
           }
         case "requestAudioFocus":
           do {
+            try session.setCategory(.playAndRecord, options: [.allowBluetooth, .allowBluetoothA2DP])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             result(nil)
           } catch {

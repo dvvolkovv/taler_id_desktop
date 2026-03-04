@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/notifications/notification_service.dart';
@@ -19,6 +20,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pageController = PageController();
   int _currentPage = 0;
   bool _notificationsRequested = false;
+  bool _microphoneRequested = false;
+
+  static const _totalPages = 4;
 
   @override
   void dispose() {
@@ -39,8 +43,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _notificationsRequested = true);
   }
 
+  Future<void> _requestMicrophone() async {
+    if (!kIsWeb) {
+      await Permission.microphone.request();
+    }
+    setState(() => _microphoneRequested = true);
+  }
+
   void _nextPage() {
-    if (_currentPage < 2) {
+    if (_currentPage < _totalPages - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -70,6 +81,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         icon: Icons.notifications_active_outlined,
         title: l10n.onboardingTitle3,
         description: l10n.onboardingDesc3,
+        colors: colors,
+      ),
+      _OnboardingPage(
+        icon: Icons.mic_rounded,
+        title: l10n.onboardingTitle4,
+        description: l10n.onboardingDesc4,
         colors: colors,
       ),
     ];
@@ -108,7 +125,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (i) {
+                children: List.generate(_totalPages, (i) {
                   final active = i == _currentPage;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -127,13 +144,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             // Bottom buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-              child: _currentPage < 2
-                  ? _buildNextButton(l10n, colors)
-                  : _buildLastPageButtons(l10n, colors),
+              child: _buildBottomButtons(l10n, colors),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBottomButtons(AppLocalizations l10n, AppColorsExtension colors) {
+    // Pages 0-1: simple Next button
+    if (_currentPage < 2) {
+      return _buildNextButton(l10n, colors);
+    }
+
+    // Page 2: Notifications
+    if (_currentPage == 2) {
+      return _buildPermissionPage(
+        requested: _notificationsRequested,
+        onRequest: _requestNotifications,
+        icon: Icons.notifications_active,
+        enableLabel: l10n.onboardingEnableNotifications,
+        afterLabel: l10n.onboardingNext,
+        onAfter: _nextPage,
+        colors: colors,
+      );
+    }
+
+    // Page 3: Microphone (last page)
+    return _buildPermissionPage(
+      requested: _microphoneRequested,
+      onRequest: _requestMicrophone,
+      icon: Icons.mic_rounded,
+      enableLabel: l10n.onboardingEnableMicrophone,
+      afterLabel: l10n.onboardingStart,
+      onAfter: _finish,
+      colors: colors,
     );
   }
 
@@ -148,17 +194,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildLastPageButtons(AppLocalizations l10n, AppColorsExtension colors) {
-    return Column(
-      children: [
-        if (!_notificationsRequested) ...[
+  Widget _buildPermissionPage({
+    required bool requested,
+    required VoidCallback onRequest,
+    required IconData icon,
+    required String enableLabel,
+    required String afterLabel,
+    required VoidCallback onAfter,
+    required AppColorsExtension colors,
+  }) {
+    if (!requested) {
+      return Column(
+        children: [
           SizedBox(
             width: double.infinity,
             height: 52,
             child: ElevatedButton.icon(
-              onPressed: _requestNotifications,
-              icon: const Icon(Icons.notifications_active, color: Colors.white),
-              label: Text(l10n.onboardingEnableNotifications),
+              onPressed: onRequest,
+              icon: Icon(icon, color: Colors.white),
+              label: Text(enableLabel),
             ),
           ),
           const SizedBox(height: 12),
@@ -166,21 +220,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: double.infinity,
             height: 52,
             child: OutlinedButton(
-              onPressed: _finish,
-              child: Text(l10n.onboardingStart),
-            ),
-          ),
-        ] else ...[
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _finish,
-              child: Text(l10n.onboardingStart),
+              onPressed: onAfter,
+              child: Text(afterLabel),
             ),
           ),
         ],
-      ],
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: onAfter,
+        child: Text(afterLabel),
+      ),
     );
   }
 }

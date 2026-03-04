@@ -1,7 +1,7 @@
 name: taler_id_mobile
 description: Taler ID — мобильное приложение для iOS и Android
 publish_to: 'none'
-version: 1.0.5+40
+version: 1.0.5+41
 
 environment:
   sdk: '>=3.6.0 <4.0.0'
@@ -92,6 +92,9 @@ dependencies:
 
   # Video
   video_player: ^2.9.2
+
+  # Permissions
+  permission_handler: ^11.3.1
 
   # Utils
   intl: any

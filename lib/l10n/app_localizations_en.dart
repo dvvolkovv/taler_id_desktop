@@ -808,6 +808,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingEnableNotifications => 'Enable Notifications';
 
   @override
+  String get onboardingTitle4 => 'Voice Calls';
+
+  @override
+  String get onboardingDesc4 =>
+      'Grant microphone access for voice calls and AI assistant. You can change this later in settings.';
+
+  @override
+  String get onboardingEnableMicrophone => 'Enable Microphone';
+
+  @override
   String get onboardingStart => 'Get Started';
 
   @override

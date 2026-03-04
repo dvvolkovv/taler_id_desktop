@@ -283,6 +283,9 @@
   "onboardingDesc3": "Get notified about verification status, logins from new devices, and incoming calls.",
   "onboardingNext": "Next",
   "onboardingEnableNotifications": "Enable Notifications",
+  "onboardingTitle4": "Voice Calls",
+  "onboardingDesc4": "Grant microphone access for voice calls and AI assistant. You can change this later in settings.",
+  "onboardingEnableMicrophone": "Enable Microphone",
   "onboardingStart": "Get Started",
   "onboardingSkip": "Skip",
 

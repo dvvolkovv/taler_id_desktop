@@ -810,6 +810,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get onboardingEnableNotifications => 'Включить уведомления';
 
   @override
+  String get onboardingTitle4 => 'Голосовые звонки';
+
+  @override
+  String get onboardingDesc4 =>
+      'Разрешите доступ к микрофону для звонков и AI-ассистента. Вы можете изменить это позже в настройках.';
+
+  @override
+  String get onboardingEnableMicrophone => 'Включить микрофон';
+
+  @override
   String get onboardingStart => 'Начать';
 
   @override

@@ -283,6 +283,9 @@
   "onboardingDesc3": "Получайте уведомления о статусе верификации, входах с новых устройств и входящих звонках.",
   "onboardingNext": "Далее",
   "onboardingEnableNotifications": "Включить уведомления",
+  "onboardingTitle4": "Голосовые звонки",
+  "onboardingDesc4": "Разрешите доступ к микрофону для звонков и AI-ассистента. Вы можете изменить это позже в настройках.",
+  "onboardingEnableMicrophone": "Включить микрофон",
   "onboardingStart": "Начать",
   "onboardingSkip": "Пропустить",
 

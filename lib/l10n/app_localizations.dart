@@ -1622,6 +1622,24 @@ abstract class AppLocalizations {
   /// **'Enable Notifications'**
   String get onboardingEnableNotifications;
 
+  /// No description provided for @onboardingTitle4.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Calls'**
+  String get onboardingTitle4;
+
+  /// No description provided for @onboardingDesc4.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant microphone access for voice calls and AI assistant. You can change this later in settings.'**
+  String get onboardingDesc4;
+
+  /// No description provided for @onboardingEnableMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Microphone'**
+  String get onboardingEnableMicrophone;
+
   /// No description provided for @onboardingStart.
   ///
   /// In en, this message translates to:

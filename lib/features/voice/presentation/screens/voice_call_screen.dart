@@ -32,7 +32,8 @@ class VoiceCallScreen extends StatefulWidget {
   State<VoiceCallScreen> createState() => _VoiceCallScreenState();
 }
 
-class _VoiceCallScreenState extends State<VoiceCallScreen> {
+class _VoiceCallScreenState extends State<VoiceCallScreen>
+    with WidgetsBindingObserver {
   lk.Room? _room;
   bool _connecting = true;
   bool _muted = false;
@@ -72,6 +73,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Listen for audio interruptions from native (parallel call from phone/other app)
     _audioChannel.setMethodCallHandler(_onNativeAudioEvent);
     // Listen for call_ended socket event — the other party hung up
@@ -602,7 +604,24 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _room != null && !_connecting) {
+      _reactivateAudio();
+    }
+  }
+
+  Future<void> _reactivateAudio() async {
+    // Re-activate AVAudioSession after returning from lock screen / background
+    try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+    // Re-enable mic (LiveKit may have suspended the track while backgrounded)
+    try { await _room?.localParticipant?.setMicrophoneEnabled(!_muted); } catch (_) {}
+    // Restore earpiece mode if applicable
+    if (_audioOutputType == 'earpiece') _forceEarpiece();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _callEndedSub?.cancel();
     _ringbackTimer?.cancel();
     _ringbackActive = false;
