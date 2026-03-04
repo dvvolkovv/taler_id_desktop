@@ -43,6 +43,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   static const _kMaxReconnectAttempts = 8;
   static const _kReconnectDelays = [2, 3, 4, 5, 8, 10, 15, 20];
   final AudioPlayer _ringPlayer = AudioPlayer();
+  bool _ringbackActive = false;
+  Timer? _ringbackTimer;
 
   static const _outputIcons = <String, IconData>{
     'earpiece': Icons.phone_in_talk_rounded,
@@ -142,11 +144,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     }
     // Play ringback tone for outgoing calls to user (not incoming, not AI assistant)
     if (!widget.isIncoming && widget.roomName != null) {
-      try {
-        await _ringPlayer.setReleaseMode(ReleaseMode.loop);
-        await _ringPlayer.play(AssetSource('audio/ringback.wav'), volume: 0.6);
-        if (mounted) setState(() => _ringing = true);
-      } catch (_) {}
+      if (mounted) setState(() => _ringing = true);
+      _startRingback();
     }
     try {
       final client = sl<DioClient>();
@@ -276,8 +275,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       ..on<lk.ParticipantConnectedEvent>((event) async {
         // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
         if (event.participant.identity != 'ai-assistant') {
-          await _ringPlayer.stop();
-          if (mounted) setState(() => _ringing = false);
+          _stopRingback();
         }
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
@@ -389,6 +387,30 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     }
   }
 
+  // Ringback with proper phone-like pattern: ~2s ring, ~4s silence, repeat
+  void _startRingback() {
+    _ringbackActive = true;
+    _scheduleNextRing();
+  }
+
+  void _scheduleNextRing() {
+    if (!_ringbackActive || !mounted) return;
+    _ringPlayer.setReleaseMode(ReleaseMode.stop);
+    _ringPlayer.play(AssetSource('audio/ringback.wav'), volume: 0.6).catchError((_) {});
+    // ringback.wav is ~2.1s; after it plays, wait ~4s silence, then ring again
+    _ringbackTimer = Timer(const Duration(milliseconds: 6200), () {
+      if (_ringbackActive && mounted) _scheduleNextRing();
+    });
+  }
+
+  void _stopRingback() {
+    _ringbackActive = false;
+    _ringbackTimer?.cancel();
+    _ringbackTimer = null;
+    _ringPlayer.stop().catchError((_) {});
+    if (mounted) setState(() => _ringing = false);
+  }
+
   Future<void> _playReconnectBeep() async {
     try {
       await _ringPlayer.stop();
@@ -493,8 +515,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   Future<void> _hangUp() async {
     // Stop ringback if still playing (call not answered)
-    try { await _ringPlayer.stop(); } catch (_) {}
-    if (mounted) setState(() => _ringing = false);
+    _stopRingback();
     // Disable microphone first to release audio track
     try {
       await _room?.localParticipant?.setMicrophoneEnabled(false);
@@ -572,6 +593,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void dispose() {
     _callEndedSub?.cancel();
+    _ringbackTimer?.cancel();
+    _ringbackActive = false;
     _audioChannel.setMethodCallHandler(null);
     WakelockPlus.disable();
     _eventsListener?.dispose();
