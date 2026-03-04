@@ -963,6 +963,11 @@ class _ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconColor = color.opacity < 0.9
+        ? AppColors.of(context).primary
+        : (color.computeLuminance() > 0.4
+            ? AppColors.of(context).textPrimary
+            : Colors.white);
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -976,7 +981,7 @@ class _ControlButton extends StatelessWidget {
             ),
             child: Icon(
               icon,
-              color: Colors.white,
+              color: iconColor,
               size: large ? 32 : 24,
             ),
           ),
