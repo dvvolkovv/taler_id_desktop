@@ -305,6 +305,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           _startManualReconnect();
         }
       })
+      ..on<lk.LocalTrackPublishedEvent>((_) {
+        // Rebuild when local camera track is published (may happen async on iOS)
+        if (mounted) setState(() {});
+      })
+      ..on<lk.LocalTrackUnpublishedEvent>((_) {
+        if (mounted) setState(() {});
+      })
       ..on<lk.ParticipantConnectedEvent>((event) async {
         // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
         if (event.participant.identity != 'ai-assistant') {
@@ -488,8 +495,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     final newCameraOn = !_cameraOn;
     try {
       await _room?.localParticipant?.setCameraEnabled(newCameraOn);
-    } catch (_) {}
-    if (mounted) setState(() => _cameraOn = newCameraOn);
+      if (mounted) setState(() => _cameraOn = newCameraOn);
+    } catch (e) {
+      debugPrint('[VoiceCall] Camera toggle error: $e');
+    }
   }
 
   Future<void> _flipCamera() async {
