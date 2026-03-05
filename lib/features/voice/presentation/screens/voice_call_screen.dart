@@ -362,11 +362,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
         if (!mounted || _navigatedAway) return;
-        // If the disconnected participant is human (not AI), check if any humans remain
-        final hasHumanParticipants = _room?.remoteParticipants.values
-            .any((p) => p.identity != 'ai-assistant') ?? false;
-        if (!hasHumanParticipants) {
-          // No human participants left — auto-end the call
+        // When any human participant leaves, end the call for everyone
+        if (event.participant.identity != 'ai-assistant') {
           _hangUp();
         }
       });
@@ -391,6 +388,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           ..clear()
           ..addAll(room.remoteParticipants.values);
       });
+      // Stop ringback if human participants appeared
+      if (_ringing && _participants.any((p) => p.identity != 'ai-assistant')) {
+        _stopRingback();
+      }
     }
   }
 
