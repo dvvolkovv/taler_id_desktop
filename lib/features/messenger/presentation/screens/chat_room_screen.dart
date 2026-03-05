@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -253,10 +254,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
       sl<MessengerRemoteDataSource>()
           .sendCallInvite(widget.conversationId, roomName, e2eeKey: e2eeKey);
-      final calleeName = context.read<MessengerBloc>().state.conversations
+      final _conv = context.read<MessengerBloc>().state.conversations
           .where((c) => c.id == widget.conversationId)
-          .firstOrNull
-          ?.otherUserName;
+          .firstOrNull;
+      final calleeName = _conv?.type == 'GROUP' ? _conv?.name : _conv?.otherUserName;
       final calleeParam = calleeName != null && calleeName.isNotEmpty
           ? '&callee=${Uri.encodeComponent(calleeName)}'
           : '';
@@ -671,7 +672,19 @@ class _MessageBubble extends StatelessWidget {
       return _buildSystemMessage(context);
     }
 
-    return Align(
+    return GestureDetector(
+      onLongPress: message.fileUrl == null && message.content.isNotEmpty
+          ? () {
+              Clipboard.setData(ClipboardData(text: message.content));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Скопировано'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          : null,
+      child: Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -775,6 +788,7 @@ class _MessageBubble extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
