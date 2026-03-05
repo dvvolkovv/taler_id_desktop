@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -509,6 +510,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     final newCameraOn = !_cameraOn;
     debugPrint('[VoiceCall] setCameraEnabled($newCameraOn) start, localParticipant=${_room?.localParticipant?.identity}');
     try {
+      // iOS: switch AVAudioSession to videoChat mode before enabling camera.
+      // Default voiceChat mode blocks RTCCameraVideoCapturer initialization.
+      if (Platform.isIOS) {
+        if (newCameraOn) {
+          await _audioChannel.invokeMethod('setAudioSessionForVideo');
+          debugPrint('[VoiceCall] setAudioSessionForVideo called');
+        } else {
+          await _audioChannel.invokeMethod('requestAudioFocus');
+        }
+      }
       await _room?.localParticipant?.setCameraEnabled(newCameraOn);
       debugPrint('[VoiceCall] setCameraEnabled($newCameraOn) done, pubs=${_room?.localParticipant?.videoTrackPublications.length}');
       if (mounted) setState(() => _cameraOn = newCameraOn);

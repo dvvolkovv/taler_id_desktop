@@ -78,8 +78,17 @@ import flutter_callkit_incoming
           }
         case "requestAudioFocus":
           do {
-            try session.setCategory(.playAndRecord, options: [.allowBluetooth, .allowBluetoothA2DP])
+            try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
+            result(nil)
+          } catch {
+            result(nil) // Non-fatal
+          }
+        case "setAudioSessionForVideo":
+          // Switch AVAudioSession to videoChat mode so camera capture works alongside audio
+          do {
+            try session.setCategory(.playAndRecord, mode: .videoChat, options: [.allowBluetooth, .allowBluetoothA2DP])
+            try session.setActive(true)
             result(nil)
           } catch {
             result(nil) // Non-fatal
