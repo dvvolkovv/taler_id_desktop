@@ -212,7 +212,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       }
 
       final token = res['token'] as String;
-      _roomName = (res['roomName'] as String?) ?? widget.roomName;
+      _roomName = (res['roomName'] as String?) ?? widget.roomName ?? 'room-${DateTime.now().millisecondsSinceEpoch}';
       debugPrint('[VoiceCall] API join OK, roomName=$_roomName, e2ee=${widget.e2eeKey != null}');
       _room = lk.Room();
 
