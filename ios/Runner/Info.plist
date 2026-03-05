@@ -44,7 +44,7 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Face ID используется для быстрого входа в приложение</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Камера необходима для верификации личности</string>
+	<string>Камера необходима для верификации личности и видеозвонков</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Микрофон необходим для голосового ввода и видео-верификации</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

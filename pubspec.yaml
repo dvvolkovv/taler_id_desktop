@@ -19,6 +19,9 @@ dependencies:
   # Navigation
   go_router: ^14.6.3
 
+  # Utilities
+  collection: ^1.18.0
+
   # HTTP
   dio: ^5.7.0
 

@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
@@ -69,6 +71,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   final List<lk.RemoteParticipant> _participants = [];
   lk.EventsListener<lk.RoomEvent>? _eventsListener;
   StreamSubscription? _callEndedSub;
+
+  // Video state
+  bool _cameraOn = false;
+  bool _isFrontCamera = true;
+  lk.RemoteParticipant? _pinnedParticipant;
 
   static const _audioChannel = MethodChannel('taler_id/audio');
 
@@ -396,6 +403,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         CallStateService.instance.setRoom(newRoom, roomName, widget.conversationId, e2eeKeyValue: reconnectKey);
 
         try { await newRoom.localParticipant?.setMicrophoneEnabled(!_muted); } catch (_) {}
+        if (_cameraOn) { try { await newRoom.localParticipant?.setCameraEnabled(true); } catch (_) {} }
         try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
         _forceEarpiece();
 
@@ -470,6 +478,38 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     final newMuted = !_muted;
     await _room?.localParticipant?.setMicrophoneEnabled(!newMuted);
     setState(() => _muted = newMuted);
+  }
+
+  Future<void> _toggleCamera() async {
+    if (!_cameraOn) {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) return;
+    }
+    final newCameraOn = !_cameraOn;
+    try {
+      await _room?.localParticipant?.setCameraEnabled(newCameraOn);
+    } catch (_) {}
+    if (mounted) setState(() => _cameraOn = newCameraOn);
+  }
+
+  Future<void> _flipCamera() async {
+    if (!_cameraOn) return;
+    final newFront = !_isFrontCamera;
+    try {
+      await _room?.localParticipant?.setCameraEnabled(
+        true,
+        cameraCaptureOptions: lk.CameraCaptureOptions(
+          cameraPosition: newFront ? lk.CameraPosition.front : lk.CameraPosition.back,
+        ),
+      );
+      setState(() => _isFrontCamera = newFront);
+    } catch (_) {}
+  }
+
+  bool get _hasAnyVideo {
+    if (_cameraOn) return true;
+    return _participants.any((p) =>
+        p.videoTrackPublications.any((pub) => pub.subscribed && pub.track != null));
   }
 
   Future<void> _showAudioOutputPicker() async {
@@ -830,84 +870,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             ],
           ),
         ),
-        // Participants list
+        // Participants list or video grid
         Expanded(
-          child: _participants.isEmpty
-              ? _ringing
-                  ? _buildOutgoingCallCenter(statusText: 'Вызов...')
-                  : Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.person_outline,
-                            size: 64,
-                            color: AppColors.of(context).textSecondary,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Ожидание участников...',
-                            style: TextStyle(
-                              color: AppColors.of(context).textSecondary,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _participants.length,
-                  itemBuilder: (_, i) {
-                    final p = _participants[i];
-                    final isAI = p.identity == 'ai-assistant';
-                    final hasMic = _participantHasMic(p);
-                    final displayName = isAI
-                        ? 'AI Ассистент'
-                        : (p.name?.isNotEmpty == true ? p.name! : p.identity);
-                    return Card(
-                      color: AppColors.of(context).card,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isAI
-                              ? AppColors.of(context).primary
-                              : AppColors.of(context).surface,
-                          child: Icon(
-                            isAI
-                                ? Icons.smart_toy_rounded
-                                : Icons.person_rounded,
-                            color: isAI
-                                ? Colors.black
-                                : AppColors.of(context).textPrimary,
-                          ),
-                        ),
-                        title: Text(
-                          displayName,
-                          style: TextStyle(
-                            color: AppColors.of(context).textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        trailing: isAI
-                            ? Icon(
-                                Icons.graphic_eq_rounded,
-                                color: AppColors.of(context).primary,
-                              )
-                            : Icon(
-                                hasMic
-                                    ? Icons.mic_rounded
-                                    : Icons.mic_off_rounded,
-                                color: hasMic
-                                    ? Colors.green
-                                    : AppColors.of(context).textSecondary,
-                              ),
-                      ),
-                    );
-                  },
-                ),
+          child: _hasAnyVideo ? _buildVideoGrid() : _buildParticipantsList(),
         ),
-        // Self participant indicator
+        // Self participant indicator (audio mode only)
+        if (!_hasAnyVideo)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Card(
@@ -951,6 +919,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                 onTap: _toggleMute,
               ),
               _ControlButton(
+                icon: _cameraOn ? Icons.videocam_rounded : Icons.videocam_off_rounded,
+                label: _cameraOn ? 'Камера вкл.' : 'Камера',
+                color: _cameraOn
+                    ? AppColors.of(context).primary.withValues(alpha: 0.2)
+                    : AppColors.of(context).card,
+                onTap: _toggleCamera,
+              ),
+              _ControlButton(
                 icon: Icons.call_end_rounded,
                 label: 'Завершить',
                 color: AppColors.of(context).error,
@@ -968,6 +944,194 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildParticipantsList() {
+    return _participants.isEmpty
+        ? _ringing
+            ? _buildOutgoingCallCenter(statusText: 'Вызов...')
+            : Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_outline, size: 64, color: AppColors.of(context).textSecondary),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Ожидание участников...',
+                      style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 16),
+                    ),
+                  ],
+                ),
+              )
+        : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _participants.length,
+            itemBuilder: (_, i) {
+              final p = _participants[i];
+              final isAI = p.identity == 'ai-assistant';
+              final hasMic = _participantHasMic(p);
+              final displayName = isAI
+                  ? 'AI Ассистент'
+                  : (p.name?.isNotEmpty == true ? p.name! : p.identity);
+              return Card(
+                color: AppColors.of(context).card,
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: isAI
+                        ? AppColors.of(context).primary
+                        : AppColors.of(context).surface,
+                    child: Icon(
+                      isAI ? Icons.smart_toy_rounded : Icons.person_rounded,
+                      color: isAI ? Colors.black : AppColors.of(context).textPrimary,
+                    ),
+                  ),
+                  title: Text(
+                    displayName,
+                    style: TextStyle(color: AppColors.of(context).textPrimary, fontWeight: FontWeight.w600),
+                  ),
+                  trailing: isAI
+                      ? Icon(Icons.graphic_eq_rounded, color: AppColors.of(context).primary)
+                      : Icon(
+                          hasMic ? Icons.mic_rounded : Icons.mic_off_rounded,
+                          color: hasMic ? Colors.green : AppColors.of(context).textSecondary,
+                        ),
+                ),
+              );
+            },
+          );
+  }
+
+  Widget _buildVideoGrid() {
+    final localTrack = _room?.localParticipant
+        ?.videoTrackPublications
+        .firstWhereOrNull((p) => !p.muted && p.track != null)
+        ?.track;
+
+    // Find main remote participant: pinned or first with video
+    lk.RemoteParticipant? mainParticipant = _pinnedParticipant;
+    if (mainParticipant != null &&
+        !mainParticipant.videoTrackPublications.any((p) => p.subscribed && p.track != null)) {
+      mainParticipant = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _pinnedParticipant = null);
+      });
+    }
+    mainParticipant ??= _participants.firstWhereOrNull(
+        (p) => p.videoTrackPublications.any((pub) => pub.subscribed && pub.track != null));
+
+    final mainRemoteTrack = mainParticipant?.videoTrackPublications
+        .firstWhereOrNull((pub) => pub.subscribed && pub.track != null)
+        ?.track;
+
+    final showLocalAsMain = mainRemoteTrack == null && localTrack != null;
+    final showLocalPip = mainRemoteTrack != null && localTrack != null;
+    final others = _participants.where((p) => p != mainParticipant).toList();
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Main video
+        if (mainRemoteTrack != null)
+          lk.VideoTrackRenderer(mainRemoteTrack)
+        else if (showLocalAsMain)
+          lk.VideoTrackRenderer(localTrack!)
+        else
+          Container(
+            color: Colors.black87,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.videocam_off_rounded, size: 64, color: Colors.white54),
+                  const SizedBox(height: 12),
+                  Text('Видео недоступно', style: TextStyle(color: Colors.white54, fontSize: 16)),
+                ],
+              ),
+            ),
+          ),
+
+        // Local PiP (top-right, tap to flip camera)
+        if (showLocalPip)
+          Positioned(
+            right: 12,
+            top: 12,
+            width: 90,
+            height: 130,
+            child: GestureDetector(
+              onTap: _flipCamera,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    lk.VideoTrackRenderer(localTrack!),
+                    Positioned(
+                      bottom: 4,
+                      right: 4,
+                      child: Icon(Icons.flip_camera_ios_rounded, color: Colors.white70, size: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        // Thumbnails for other participants
+        if (others.isNotEmpty)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: 76,
+              color: Colors.black45,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                itemCount: others.length,
+                itemBuilder: (_, i) {
+                  final p = others[i];
+                  final track = p.videoTrackPublications
+                      .firstWhereOrNull((pub) => pub.subscribed && pub.track != null)
+                      ?.track;
+                  final name = p.name?.isNotEmpty == true ? p.name! : p.identity;
+                  final isPinned = _pinnedParticipant == p;
+                  return GestureDetector(
+                    onTap: () => setState(() => _pinnedParticipant = isPinned ? null : p),
+                    child: Container(
+                      width: 54,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.of(context).surface,
+                        border: isPinned
+                            ? Border.all(color: AppColors.of(context).primary, width: 2)
+                            : null,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: track != null
+                            ? lk.VideoTrackRenderer(track)
+                            : Center(
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                  style: TextStyle(
+                                    color: AppColors.of(context).textPrimary,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
       ],
     );
   }
