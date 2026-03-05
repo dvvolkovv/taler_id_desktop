@@ -82,7 +82,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   // Video state
   bool _cameraOn = false;
   bool _isFrontCamera = true;
-  lk.RemoteParticipant? _pinnedParticipant;
 
   static const _audioChannel = MethodChannel('taler_id/audio');
 
@@ -260,6 +259,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       setState(() {
         _participants.addAll(_room!.remoteParticipants.values);
       });
+
+      // If there are already human participants in the room, stop ringback immediately
+      if (_participants.any((p) => p.identity != 'ai-assistant')) {
+        _stopRingback();
+      }
 
       // Request audio focus BEFORE enabling microphone — ensures the audio session
       // is active (critical after endAllCalls() deactivated it for incoming calls).
@@ -1081,139 +1085,185 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   }
 
   Widget _buildVideoGrid() {
+    // Collect all tiles: local + remote participants
     final localPubs = _room?.localParticipant?.videoTrackPublications ?? [];
-    debugPrint('[VoiceCall] _buildVideoGrid: localPubs=${localPubs.length}, '
-        'pubs=${localPubs.map((p) => "muted=${p.muted} track=${p.track != null}").toList()}');
-    // Don't filter by muted — on iOS the track may be published as muted during initialization
-    final localTrack = localPubs
-        .firstWhereOrNull((p) => p.track != null)
-        ?.track;
+    final localTrack = localPubs.firstWhereOrNull((p) => p.track != null)?.track;
+    final localName = _room?.localParticipant?.name ?? _room?.localParticipant?.identity ?? '';
 
-    // Find main remote participant: pinned or first with video
-    lk.RemoteParticipant? mainParticipant = _pinnedParticipant;
-    if (mainParticipant != null &&
-        !mainParticipant.videoTrackPublications.any((p) => p.subscribed && p.track != null)) {
-      mainParticipant = null;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _pinnedParticipant = null);
-      });
+    // Build tile data list
+    final tiles = <_VideoTileData>[];
+
+    // Add remote participants
+    for (final p in _participants) {
+      final track = p.videoTrackPublications
+          .firstWhereOrNull((pub) => pub.subscribed && pub.track != null)
+          ?.track as lk.VideoTrack?;
+      final isAI = p.identity == 'ai-assistant';
+      final name = isAI
+          ? 'AI Ассистент'
+          : (p.name?.isNotEmpty == true ? p.name! : p.identity);
+      final hasMic = _participantHasMic(p);
+      tiles.add(_VideoTileData(
+        name: name,
+        track: track,
+        hasMic: hasMic,
+        isLocal: false,
+        isAI: isAI,
+      ));
     }
-    mainParticipant ??= _participants.firstWhereOrNull(
-        (p) => p.videoTrackPublications.any((pub) => pub.subscribed && pub.track != null));
 
-    final mainRemoteTrack = mainParticipant?.videoTrackPublications
-        .firstWhereOrNull((pub) => pub.subscribed && pub.track != null)
-        ?.track;
+    // Add local participant
+    if (_cameraOn || tiles.isNotEmpty) {
+      tiles.add(_VideoTileData(
+        name: localName,
+        track: localTrack as lk.VideoTrack?,
+        hasMic: !_muted,
+        isLocal: true,
+        isAI: false,
+      ));
+    }
 
-    final showLocalAsMain = mainRemoteTrack == null && localTrack != null;
-    final showLocalPip = mainRemoteTrack != null && localTrack != null;
-    final others = _participants.where((p) => p != mainParticipant).toList();
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Main video
-        if (mainRemoteTrack != null)
-          lk.VideoTrackRenderer(mainRemoteTrack)
-        else if (showLocalAsMain)
-          lk.VideoTrackRenderer(localTrack!)
-        else
-          Container(
-            color: Colors.black87,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.videocam_off_rounded, size: 64, color: Colors.white54),
-                  const SizedBox(height: 12),
-                  Text('Видео недоступно', style: TextStyle(color: Colors.white54, fontSize: 16)),
-                ],
-              ),
-            ),
+    if (tiles.isEmpty) {
+      return Container(
+        color: Colors.black87,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.videocam_off_rounded, size: 64, color: Colors.white54),
+              const SizedBox(height: 12),
+              Text('Видео недоступно', style: TextStyle(color: Colors.white54, fontSize: 16)),
+            ],
           ),
+        ),
+      );
+    }
 
-        // Local PiP (top-right, tap to flip camera)
-        if (showLocalPip)
-          Positioned(
-            right: 12,
-            top: 12,
-            width: 90,
-            height: 130,
-            child: GestureDetector(
-              onTap: _flipCamera,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    lk.VideoTrackRenderer(localTrack!),
-                    Positioned(
-                      bottom: 4,
-                      right: 4,
-                      child: Icon(Icons.flip_camera_ios_rounded, color: Colors.white70, size: 16),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    // Grid layout: adapt columns based on tile count
+    final count = tiles.length;
+    final crossAxisCount = count <= 1 ? 1 : count <= 4 ? 2 : 3;
 
-        // Thumbnails for other participants
-        if (others.isNotEmpty)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
+    return GridView.builder(
+      padding: const EdgeInsets.all(4),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 4,
+        mainAxisSpacing: 4,
+        childAspectRatio: count <= 2 ? 3 / 4 : 3 / 4,
+      ),
+      itemCount: count,
+      itemBuilder: (_, i) {
+        final tile = tiles[i];
+        return GestureDetector(
+          onTap: tile.isLocal ? _flipCamera : null,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
             child: Container(
-              height: 76,
-              color: Colors.black45,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                itemCount: others.length,
-                itemBuilder: (_, i) {
-                  final p = others[i];
-                  final track = p.videoTrackPublications
-                      .firstWhereOrNull((pub) => pub.subscribed && pub.track != null)
-                      ?.track;
-                  final name = p.name?.isNotEmpty == true ? p.name! : p.identity;
-                  final isPinned = _pinnedParticipant == p;
-                  return GestureDetector(
-                    onTap: () => setState(() => _pinnedParticipant = isPinned ? null : p),
-                    child: Container(
-                      width: 54,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: AppColors.of(context).surface,
-                        border: isPinned
-                            ? Border.all(color: AppColors.of(context).primary, width: 2)
-                            : null,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: track != null
-                            ? lk.VideoTrackRenderer(track)
-                            : Center(
-                                child: Text(
-                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                  style: TextStyle(
-                                    color: AppColors.of(context).textPrimary,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+              color: AppColors.of(context).surface,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Video or avatar
+                  if (tile.track != null)
+                    lk.VideoTrackRenderer(tile.track!)
+                  else
+                    Center(
+                      child: CircleAvatar(
+                        radius: count <= 2 ? 40 : 28,
+                        backgroundColor: tile.isAI
+                            ? AppColors.of(context).primary
+                            : AppColors.of(context).card,
+                        child: tile.isAI
+                            ? Icon(Icons.smart_toy_rounded, size: count <= 2 ? 36 : 24, color: Colors.black)
+                            : Text(
+                                tile.name.isNotEmpty ? tile.name[0].toUpperCase() : '?',
+                                style: TextStyle(
+                                  fontSize: count <= 2 ? 32 : 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.of(context).textPrimary,
                                 ),
                               ),
                       ),
                     ),
-                  );
-                },
+
+                  // Name label at bottom
+                  Positioned(
+                    left: 6,
+                    right: 6,
+                    bottom: 6,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              tile.isLocal ? '${tile.name} (вы)' : tile.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        if (!tile.hasMic)
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(Icons.mic_off_rounded, size: 14, color: Colors.white),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Flip camera icon for local tile
+                  if (tile.isLocal && tile.track != null)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black38,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white70, size: 16),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
-      ],
+        );
+      },
     );
   }
+}
+
+class _VideoTileData {
+  final String name;
+  final lk.VideoTrack? track;
+  final bool hasMic;
+  final bool isLocal;
+  final bool isAI;
+
+  const _VideoTileData({
+    required this.name,
+    required this.track,
+    required this.hasMic,
+    required this.isLocal,
+    required this.isAI,
+  });
 }
 
 class _UserSearchSheet extends StatefulWidget {
