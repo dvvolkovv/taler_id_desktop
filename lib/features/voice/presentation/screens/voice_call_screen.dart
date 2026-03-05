@@ -529,7 +529,23 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     if (!_cameraOn) {
       final status = await Permission.camera.request();
       debugPrint('[VoiceCall] Camera permission: $status');
-      if (!status.isGranted) return;
+      if (!status.isGranted) {
+        // iOS: after first denial the system never shows the dialog again.
+        // Direct the user to Settings so they can enable camera manually.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Разрешите доступ к камере в Настройках → Конфиденциальность → Камера → TalerID'),
+              action: SnackBarAction(
+                label: 'Открыть',
+                onPressed: openAppSettings,
+              ),
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
+        return;
+      }
     }
     final newCameraOn = !_cameraOn;
     debugPrint('[VoiceCall] setCameraEnabled($newCameraOn) start, localParticipant=${_room?.localParticipant?.identity}');
