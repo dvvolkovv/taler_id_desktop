@@ -77,56 +77,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       } else {
         _showMuteDurationSheet();
       }
-    } else if (action == 'call_link') {
-      _createCallLink();
-    }
-  }
-
-  Future<void> _createCallLink() async {
-    try {
-      final client = sl<DioClient>();
-      final res = await client.post(
-        '/voice/rooms/public',
-        data: {'title': ''},
-        fromJson: (d) => Map<String, dynamic>.from(d as Map),
-      );
-      final code = res['code'] as String;
-      final link = 'https://id.taler.tirol/room/$code';
-      if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.of(context).card,
-          title: Text(l10n.callLinkTitle, style: TextStyle(color: AppColors.of(context).textPrimary)),
-          content: SelectableText(link, style: TextStyle(color: AppColors.of(context).primary, fontSize: 14)),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-              },
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () {
-                // Copy to clipboard and send as message
-                context.read<MessengerBloc>().add(SendMessage(widget.conversationId, link));
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.callLinkCopied), backgroundColor: AppColors.of(context).primary),
-                );
-              },
-              child: Text('Отправить', style: TextStyle(color: AppColors.of(context).primary)),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.of(context).error),
-        );
-      }
     }
   }
 
@@ -508,16 +458,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         Text(isMuted
                             ? AppLocalizations.of(context)!.unmuteNotifications
                             : AppLocalizations.of(context)!.muteNotifications),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'call_link',
-                    child: Row(
-                      children: [
-                        Icon(Icons.link, size: 20, color: AppColors.of(context).textPrimary),
-                        const SizedBox(width: 12),
-                        Text(AppLocalizations.of(context)!.createCallLink),
                       ],
                     ),
                   ),
