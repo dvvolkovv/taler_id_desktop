@@ -177,26 +177,35 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     }
     try {
       final client = sl<DioClient>();
-      final Map<String, dynamic> res;
+      late Map<String, dynamic> res;
 
       if (widget.publicCode != null) {
-        // Public room join — no auth required
-        String guestName = 'Guest';
+        // Public room join — try authenticated endpoint first, fall back to guest
         try {
-          final pState = context.read<ProfileBloc>().state;
-          if (pState is ProfileLoaded) {
-            guestName = [pState.user.firstName, pState.user.lastName]
-                .where((s) => s != null && s.isNotEmpty)
-                .join(' ');
-            if (guestName.isEmpty) guestName = 'Guest';
-          }
-        } catch (_) {}
-        final rawDio = dio_pkg.Dio(dio_pkg.BaseOptions(baseUrl: ApiConstants.baseUrl));
-        final resp = await rawDio.post(
-          '/voice/rooms/public/${widget.publicCode}/join',
-          data: {'name': guestName},
-        );
-        res = Map<String, dynamic>.from(resp.data as Map);
+          res = await client.post(
+            '/voice/rooms/public/${widget.publicCode}/join-auth',
+            data: {},
+            fromJson: (d) => Map<String, dynamic>.from(d as Map),
+          );
+        } catch (_) {
+          // Not logged in or auth failed — join as guest
+          String guestName = 'Guest';
+          try {
+            final pState = context.read<ProfileBloc>().state;
+            if (pState is ProfileLoaded) {
+              guestName = [pState.user.firstName, pState.user.lastName]
+                  .where((s) => s != null && s.isNotEmpty)
+                  .join(' ');
+              if (guestName.isEmpty) guestName = 'Guest';
+            }
+          } catch (_) {}
+          final rawDio = dio_pkg.Dio(dio_pkg.BaseOptions(baseUrl: ApiConstants.baseUrl));
+          final resp = await rawDio.post(
+            '/voice/rooms/public/${widget.publicCode}/join',
+            data: {'name': guestName},
+          );
+          res = Map<String, dynamic>.from(resp.data as Map);
+        }
       } else if (widget.roomName == null) {
         res = await client.post(
           '/voice/rooms',
@@ -362,10 +371,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
         if (!mounted || _navigatedAway) return;
-        // When any human participant leaves, end the call for everyone
-        if (event.participant.identity != 'ai-assistant') {
-          _hangUp();
-        }
+        // Just update UI — each participant leaves on their own
+        if (mounted) setState(() {});
       });
   }
 
