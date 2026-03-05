@@ -49,6 +49,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<LeaveGroup>(_onLeaveGroup);
     on<DeleteGroup>(_onDeleteGroup);
     on<GroupEventReceived>(_onGroupEventReceived);
+    on<MuteConversation>(_onMuteConversation);
+    on<UnmuteConversation>(_onUnmuteConversation);
   }
 
   Future<void> _onConnect(
@@ -395,5 +397,34 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _groupDeletedSub?.cancel();
     _repo.dispose();
     return super.close();
+  }
+
+  // ─── Mute handlers ───
+
+  Future<void> _onMuteConversation(MuteConversation event, Emitter<MessengerState> emit) async {
+    try {
+      final result = await _repo.muteConversation(event.conversationId, durationMinutes: event.durationMinutes);
+      final mutedUntil = result['mutedUntil'] != null ? DateTime.parse(result['mutedUntil'] as String) : null;
+      final updated = state.conversations.map((c) {
+        if (c.id == event.conversationId) {
+          return c.copyWith(isMuted: true, mutedUntil: mutedUntil);
+        }
+        return c;
+      }).toList();
+      emit(state.copyWith(conversations: updated));
+    } catch (_) {}
+  }
+
+  Future<void> _onUnmuteConversation(UnmuteConversation event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.unmuteConversation(event.conversationId);
+      final updated = state.conversations.map((c) {
+        if (c.id == event.conversationId) {
+          return c.copyWith(isMuted: false, mutedUntil: null);
+        }
+        return c;
+      }).toList();
+      emit(state.copyWith(conversations: updated));
+    } catch (_) {}
   }
 }

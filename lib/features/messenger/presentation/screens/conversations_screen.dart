@@ -362,21 +362,32 @@ class _ConversationTile extends StatelessWidget {
                   style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
                 )
               : null,
-      trailing: (timeStr.isNotEmpty || conversation.unreadCount > 0)
+      trailing: (timeStr.isNotEmpty || conversation.unreadCount > 0 || conversation.isMuted)
           ? Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (timeStr.isNotEmpty)
-                  Text(timeStr,
-                      style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(timeStr,
+                          style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)),
+                      if (conversation.isMuted) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.volume_off, size: 14, color: AppColors.of(context).textSecondary),
+                      ],
+                    ],
+                  ),
                 if (conversation.unreadCount > 0) ...[
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.of(context).error,
+                      color: conversation.isMuted
+                          ? AppColors.of(context).textSecondary
+                          : AppColors.of(context).error,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(

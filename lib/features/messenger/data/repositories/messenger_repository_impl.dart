@@ -102,6 +102,15 @@ class MessengerRepositoryImpl implements IMessengerRepository {
   @override
   Stream<Map<String, dynamic>> get groupDeletedStream => _remote.groupDeletedStream;
 
+  // Mute methods
+  @override
+  Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes}) =>
+      _remote.muteConversation(conversationId, durationMinutes: durationMinutes);
+
+  @override
+  Future<void> unmuteConversation(String conversationId) =>
+      _remote.unmuteConversation(conversationId);
+
   @override
   void dispose() => _remote.dispose();
 }

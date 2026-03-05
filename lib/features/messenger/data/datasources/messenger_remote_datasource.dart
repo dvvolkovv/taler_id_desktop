@@ -256,6 +256,24 @@ class MessengerRemoteDataSource {
     await _http.delete('/messenger/conversations/$conversationId');
   }
 
+  // ─── REST: Mute ───
+
+  Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes}) async {
+    return _http.post(
+      '/messenger/conversations/$conversationId/mute',
+      data: {if (durationMinutes != null) 'duration': durationMinutes},
+      fromJson: (d) => Map<String, dynamic>.from(d as Map),
+    );
+  }
+
+  Future<void> unmuteConversation(String conversationId) async {
+    await _http.post(
+      '/messenger/conversations/$conversationId/unmute',
+      data: {},
+      fromJson: (d) => d,
+    );
+  }
+
   void dispose() {
     _socket?.dispose();
     _messageCtrl.close();

@@ -330,5 +330,13 @@
   "@roleChangedTo": { "placeholders": { "name": { "type": "String" }, "role": { "type": "String" } } },
   "participantsCount": "{count} participants",
   "@participantsCount": { "placeholders": { "count": { "type": "int" } } },
-  "enterGroupName": "Enter group name"
+  "enterGroupName": "Enter group name",
+
+  "muteNotifications": "Mute notifications",
+  "unmuteNotifications": "Unmute notifications",
+  "muteFor1Hour": "For 1 hour",
+  "muteFor8Hours": "For 8 hours",
+  "muteFor2Days": "For 2 days",
+  "muteForever": "Forever",
+  "muted": "Muted"
 }

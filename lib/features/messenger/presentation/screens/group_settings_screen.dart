@@ -257,6 +257,29 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
               // Member list
               ...members.map((m) => _buildMemberTile(m, myRole, state.currentUserId, l10n)),
               const Divider(height: 32),
+              // Mute notifications
+              SwitchListTile(
+                secondary: Icon(
+                  conv?.isMuted == true ? Icons.volume_off : Icons.volume_up,
+                  color: AppColors.of(context).textPrimary,
+                ),
+                title: Text(l10n.muteNotifications, style: TextStyle(color: AppColors.of(context).textPrimary)),
+                subtitle: conv?.isMuted == true
+                    ? Text(l10n.muted, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13))
+                    : null,
+                value: conv?.isMuted ?? false,
+                activeColor: AppColors.of(context).primary,
+                onChanged: (val) {
+                  if (val) {
+                    context.read<MessengerBloc>().add(
+                        MuteConversation(conversationId: widget.conversationId));
+                  } else {
+                    context.read<MessengerBloc>().add(
+                        UnmuteConversation(widget.conversationId));
+                  }
+                },
+              ),
+              const Divider(height: 32),
               // Leave group
               ListTile(
                 leading: Icon(Icons.exit_to_app_rounded, color: AppColors.of(context).error),

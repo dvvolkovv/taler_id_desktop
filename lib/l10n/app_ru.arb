@@ -330,5 +330,13 @@
   "@roleChangedTo": { "placeholders": { "name": { "type": "String" }, "role": { "type": "String" } } },
   "participantsCount": "{count} участников",
   "@participantsCount": { "placeholders": { "count": { "type": "int" } } },
-  "enterGroupName": "Введите название группы"
+  "enterGroupName": "Введите название группы",
+
+  "muteNotifications": "Отключить уведомления",
+  "unmuteNotifications": "Включить уведомления",
+  "muteFor1Hour": "На 1 час",
+  "muteFor8Hours": "На 8 часов",
+  "muteFor2Days": "На 2 дня",
+  "muteForever": "Навсегда",
+  "muted": "Без звука"
 }

@@ -1849,6 +1849,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter group name'**
   String get enterGroupName;
+
+  /// No description provided for @muteNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute notifications'**
+  String get muteNotifications;
+
+  /// No description provided for @unmuteNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute notifications'**
+  String get unmuteNotifications;
+
+  /// No description provided for @muteFor1Hour.
+  ///
+  /// In en, this message translates to:
+  /// **'For 1 hour'**
+  String get muteFor1Hour;
+
+  /// No description provided for @muteFor8Hours.
+  ///
+  /// In en, this message translates to:
+  /// **'For 8 hours'**
+  String get muteFor8Hours;
+
+  /// No description provided for @muteFor2Days.
+  ///
+  /// In en, this message translates to:
+  /// **'For 2 days'**
+  String get muteFor2Days;
+
+  /// No description provided for @muteForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Forever'**
+  String get muteForever;
+
+  /// No description provided for @muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get muted;
 }
 
 class _AppLocalizationsDelegate

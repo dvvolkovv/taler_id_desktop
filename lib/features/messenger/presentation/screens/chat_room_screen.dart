@@ -69,6 +69,86 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _prevKeyboardHeight = kh;
   }
 
+  void _handleMenuAction(String action, bool isMuted) {
+    if (action == 'mute') {
+      if (isMuted) {
+        context.read<MessengerBloc>().add(UnmuteConversation(widget.conversationId));
+      } else {
+        _showMuteDurationSheet();
+      }
+    }
+  }
+
+  void _showMuteDurationSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.of(context).card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.of(context).textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(l10n.muteNotifications,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.of(context).textPrimary)),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Icon(Icons.schedule, color: AppColors.of(context).textPrimary),
+              title: Text(l10n.muteFor1Hour, style: TextStyle(color: AppColors.of(context).textPrimary)),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.read<MessengerBloc>().add(
+                    MuteConversation(conversationId: widget.conversationId, durationMinutes: 60));
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.schedule, color: AppColors.of(context).textPrimary),
+              title: Text(l10n.muteFor8Hours, style: TextStyle(color: AppColors.of(context).textPrimary)),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.read<MessengerBloc>().add(
+                    MuteConversation(conversationId: widget.conversationId, durationMinutes: 480));
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.schedule, color: AppColors.of(context).textPrimary),
+              title: Text(l10n.muteFor2Days, style: TextStyle(color: AppColors.of(context).textPrimary)),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.read<MessengerBloc>().add(
+                    MuteConversation(conversationId: widget.conversationId, durationMinutes: 2880));
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.volume_off, color: AppColors.of(context).textPrimary),
+              title: Text(l10n.muteForever, style: TextStyle(color: AppColors.of(context).textPrimary)),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.read<MessengerBloc>().add(
+                    MuteConversation(conversationId: widget.conversationId));
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _startCall() async {
     // Guard: only one call at a time
     if (CallStateService.instance.isInCall) {
@@ -334,6 +414,40 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             icon: const Icon(Icons.phone_outlined),
             onPressed: _startCall,
             tooltip: 'Позвонить',
+          ),
+          BlocBuilder<MessengerBloc, MessengerState>(
+            buildWhen: (prev, curr) => prev.conversations != curr.conversations,
+            builder: (context, state) {
+              final conv = state.conversations
+                  .where((c) => c.id == widget.conversationId)
+                  .firstOrNull;
+              final isMuted = conv?.isMuted ?? false;
+              return PopupMenuButton<String>(
+                icon: Icon(
+                  isMuted ? Icons.volume_off : Icons.more_vert,
+                  color: isMuted ? AppColors.of(context).textSecondary : null,
+                ),
+                onSelected: (value) => _handleMenuAction(value, isMuted),
+                itemBuilder: (ctx) => [
+                  PopupMenuItem(
+                    value: 'mute',
+                    child: Row(
+                      children: [
+                        Icon(
+                          isMuted ? Icons.volume_up : Icons.volume_off,
+                          size: 20,
+                          color: AppColors.of(context).textPrimary,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(isMuted
+                            ? AppLocalizations.of(context)!.unmuteNotifications
+                            : AppLocalizations.of(context)!.muteNotifications),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

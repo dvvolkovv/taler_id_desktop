@@ -36,6 +36,8 @@ mixin _$ConversationEntity {
   String? get otherUserId => throw _privateConstructorUsedError;
   String? get otherUserAvatar => throw _privateConstructorUsedError;
   int get unreadCount => throw _privateConstructorUsedError;
+  bool get isMuted => throw _privateConstructorUsedError;
+  DateTime? get mutedUntil => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -65,7 +67,9 @@ abstract class $ConversationEntityCopyWith<$Res> {
       String? otherUserName,
       String? otherUserId,
       String? otherUserAvatar,
-      int unreadCount});
+      int unreadCount,
+      bool isMuted,
+      DateTime? mutedUntil});
 }
 
 /// @nodoc
@@ -97,6 +101,8 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
     Object? otherUserId = freezed,
     Object? otherUserAvatar = freezed,
     Object? unreadCount = null,
+    Object? isMuted = null,
+    Object? mutedUntil = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -163,6 +169,14 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
           ? _value.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
               as int,
+      isMuted: null == isMuted
+          ? _value.isMuted
+          : isMuted // ignore: cast_nullable_to_non_nullable
+              as bool,
+      mutedUntil: freezed == mutedUntil
+          ? _value.mutedUntil
+          : mutedUntil // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ) as $Val);
   }
 }
@@ -191,7 +205,9 @@ abstract class _$$ConversationEntityImplCopyWith<$Res>
       String? otherUserName,
       String? otherUserId,
       String? otherUserAvatar,
-      int unreadCount});
+      int unreadCount,
+      bool isMuted,
+      DateTime? mutedUntil});
 }
 
 /// @nodoc
@@ -221,6 +237,8 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
     Object? otherUserId = freezed,
     Object? otherUserAvatar = freezed,
     Object? unreadCount = null,
+    Object? isMuted = null,
+    Object? mutedUntil = freezed,
   }) {
     return _then(_$ConversationEntityImpl(
       id: null == id
@@ -287,6 +305,14 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
           ? _value.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
               as int,
+      isMuted: null == isMuted
+          ? _value.isMuted
+          : isMuted // ignore: cast_nullable_to_non_nullable
+              as bool,
+      mutedUntil: freezed == mutedUntil
+          ? _value.mutedUntil
+          : mutedUntil // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ));
   }
 }
@@ -310,7 +336,9 @@ class _$ConversationEntityImpl implements _ConversationEntity {
       this.otherUserName,
       this.otherUserId,
       this.otherUserAvatar,
-      this.unreadCount = 0})
+      this.unreadCount = 0,
+      this.isMuted = false,
+      this.mutedUntil})
       : _participantIds = participantIds;
 
   factory _$ConversationEntityImpl.fromJson(Map<String, dynamic> json) =>
@@ -358,10 +386,15 @@ class _$ConversationEntityImpl implements _ConversationEntity {
   @override
   @JsonKey()
   final int unreadCount;
+  @override
+  @JsonKey()
+  final bool isMuted;
+  @override
+  final DateTime? mutedUntil;
 
   @override
   String toString() {
-    return 'ConversationEntity(id: $id, participantIds: $participantIds, type: $type, name: $name, avatarUrl: $avatarUrl, participantCount: $participantCount, myRole: $myRole, lastMessageContent: $lastMessageContent, lastMessageAt: $lastMessageAt, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageIsSystem: $lastMessageIsSystem, otherUserName: $otherUserName, otherUserId: $otherUserId, otherUserAvatar: $otherUserAvatar, unreadCount: $unreadCount)';
+    return 'ConversationEntity(id: $id, participantIds: $participantIds, type: $type, name: $name, avatarUrl: $avatarUrl, participantCount: $participantCount, myRole: $myRole, lastMessageContent: $lastMessageContent, lastMessageAt: $lastMessageAt, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageIsSystem: $lastMessageIsSystem, otherUserName: $otherUserName, otherUserId: $otherUserId, otherUserAvatar: $otherUserAvatar, unreadCount: $unreadCount, isMuted: $isMuted, mutedUntil: $mutedUntil)';
   }
 
   @override
@@ -396,7 +429,10 @@ class _$ConversationEntityImpl implements _ConversationEntity {
             (identical(other.otherUserAvatar, otherUserAvatar) ||
                 other.otherUserAvatar == otherUserAvatar) &&
             (identical(other.unreadCount, unreadCount) ||
-                other.unreadCount == unreadCount));
+                other.unreadCount == unreadCount) &&
+            (identical(other.isMuted, isMuted) || other.isMuted == isMuted) &&
+            (identical(other.mutedUntil, mutedUntil) ||
+                other.mutedUntil == mutedUntil));
   }
 
   @JsonKey(ignore: true)
@@ -418,7 +454,9 @@ class _$ConversationEntityImpl implements _ConversationEntity {
       otherUserName,
       otherUserId,
       otherUserAvatar,
-      unreadCount);
+      unreadCount,
+      isMuted,
+      mutedUntil);
 
   @JsonKey(ignore: true)
   @override
@@ -452,7 +490,9 @@ abstract class _ConversationEntity implements ConversationEntity {
       final String? otherUserName,
       final String? otherUserId,
       final String? otherUserAvatar,
-      final int unreadCount}) = _$ConversationEntityImpl;
+      final int unreadCount,
+      final bool isMuted,
+      final DateTime? mutedUntil}) = _$ConversationEntityImpl;
 
   factory _ConversationEntity.fromJson(Map<String, dynamic> json) =
       _$ConversationEntityImpl.fromJson;
@@ -489,6 +529,10 @@ abstract class _ConversationEntity implements ConversationEntity {
   String? get otherUserAvatar;
   @override
   int get unreadCount;
+  @override
+  bool get isMuted;
+  @override
+  DateTime? get mutedUntil;
   @override
   @JsonKey(ignore: true)
   _$$ConversationEntityImplCopyWith<_$ConversationEntityImpl> get copyWith =>

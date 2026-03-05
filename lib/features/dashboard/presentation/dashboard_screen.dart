@@ -31,10 +31,10 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   static const _tabs = [
-    RouteConstants.assistant,
-    RouteConstants.callHistory,
-    RouteConstants.settings,
     RouteConstants.messenger,
+    RouteConstants.callHistory,
+    RouteConstants.assistant,
+    RouteConstants.settings,
   ];
 
   StreamSubscription? _disconnectSub;
@@ -554,21 +554,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 unselectedLabelStyle: const TextStyle(fontSize: 11),
                 items: [
                   BottomNavigationBarItem(
-                    icon: const Icon(Icons.headset_mic_outlined),
-                    activeIcon: const Icon(Icons.headset_mic),
-                    label: l10n.tabAssistant,
-                  ),
-                  const BottomNavigationBarItem(
-                    icon: Icon(Icons.call_outlined),
-                    activeIcon: Icon(Icons.call),
-                    label: 'Звонки',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.settings_outlined),
-                    activeIcon: const Icon(Icons.settings),
-                    label: l10n.tabSettings,
-                  ),
-                  BottomNavigationBarItem(
                     icon: BlocBuilder<MessengerBloc, MessengerState>(
                       buildWhen: (p, c) =>
                           p.conversations.fold<int>(0, (s, e) => s + e.unreadCount) !=
@@ -588,6 +573,21 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                     ),
                     activeIcon: const Icon(Icons.chat_bubble_rounded),
                     label: l10n.tabMessenger,
+                  ),
+                  const BottomNavigationBarItem(
+                    icon: Icon(Icons.call_outlined),
+                    activeIcon: Icon(Icons.call),
+                    label: 'Звонки',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.headset_mic_outlined),
+                    activeIcon: const Icon(Icons.headset_mic),
+                    label: l10n.tabAssistant,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.settings_outlined),
+                    activeIcon: const Icon(Icons.settings),
+                    label: l10n.tabSettings,
                   ),
                 ],
               ),

@@ -171,6 +171,23 @@ class DeleteGroup extends MessengerEvent {
   List<Object?> get props => [conversationId];
 }
 
+// ─── Mute events ───
+
+class MuteConversation extends MessengerEvent {
+  final String conversationId;
+  final int? durationMinutes;
+  const MuteConversation({required this.conversationId, this.durationMinutes});
+  @override
+  List<Object?> get props => [conversationId, durationMinutes];
+}
+
+class UnmuteConversation extends MessengerEvent {
+  final String conversationId;
+  const UnmuteConversation(this.conversationId);
+  @override
+  List<Object?> get props => [conversationId];
+}
+
 class GroupEventReceived extends MessengerEvent {
   final String eventType;
   final Map<String, dynamic> data;

@@ -940,4 +940,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get enterGroupName => 'Введите название группы';
+
+  @override
+  String get muteNotifications => 'Отключить уведомления';
+
+  @override
+  String get unmuteNotifications => 'Включить уведомления';
+
+  @override
+  String get muteFor1Hour => 'На 1 час';
+
+  @override
+  String get muteFor8Hours => 'На 8 часов';
+
+  @override
+  String get muteFor2Days => 'На 2 дня';
+
+  @override
+  String get muteForever => 'Навсегда';
+
+  @override
+  String get muted => 'Без звука';
 }

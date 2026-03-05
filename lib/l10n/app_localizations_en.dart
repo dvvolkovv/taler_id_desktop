@@ -938,4 +938,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enterGroupName => 'Enter group name';
+
+  @override
+  String get muteNotifications => 'Mute notifications';
+
+  @override
+  String get unmuteNotifications => 'Unmute notifications';
+
+  @override
+  String get muteFor1Hour => 'For 1 hour';
+
+  @override
+  String get muteFor8Hours => 'For 8 hours';
+
+  @override
+  String get muteFor2Days => 'For 2 days';
+
+  @override
+  String get muteForever => 'Forever';
+
+  @override
+  String get muted => 'Muted';
 }

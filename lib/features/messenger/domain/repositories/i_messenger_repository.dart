@@ -34,5 +34,8 @@ abstract class IMessengerRepository {
   Stream<Map<String, dynamic>> get groupRoleChangedStream;
   Stream<Map<String, dynamic>> get groupCreatedStream;
   Stream<Map<String, dynamic>> get groupDeletedStream;
+  // Mute methods
+  Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes});
+  Future<void> unmuteConversation(String conversationId);
   void dispose();
 }
