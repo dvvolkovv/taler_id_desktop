@@ -99,6 +99,9 @@ dependencies:
   # Permissions
   permission_handler: ^11.3.1
 
+  # Share
+  share_plus: ^10.1.4
+
   # Utils
   intl: any
   package_info_plus: ^8.1.3
