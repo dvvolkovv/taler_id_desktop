@@ -305,11 +305,24 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           _startManualReconnect();
         }
       })
-      ..on<lk.LocalTrackPublishedEvent>((_) {
-        // Rebuild when local camera track is published (may happen async on iOS)
+      ..on<lk.LocalTrackPublishedEvent>((event) {
+        debugPrint('[VoiceCall] LocalTrackPublished: sid=${event.publication.sid} '
+            'muted=${event.publication.muted} kind=${event.publication.kind}');
         if (mounted) setState(() {});
       })
       ..on<lk.LocalTrackUnpublishedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<lk.TrackSubscribedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<lk.TrackUnsubscribedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<lk.TrackMutedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<lk.TrackUnmutedEvent>((_) {
         if (mounted) setState(() {});
       })
       ..on<lk.ParticipantConnectedEvent>((event) async {
@@ -490,11 +503,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   Future<void> _toggleCamera() async {
     if (!_cameraOn) {
       final status = await Permission.camera.request();
+      debugPrint('[VoiceCall] Camera permission: $status');
       if (!status.isGranted) return;
     }
     final newCameraOn = !_cameraOn;
+    debugPrint('[VoiceCall] setCameraEnabled($newCameraOn) start, localParticipant=${_room?.localParticipant?.identity}');
     try {
       await _room?.localParticipant?.setCameraEnabled(newCameraOn);
+      debugPrint('[VoiceCall] setCameraEnabled($newCameraOn) done, pubs=${_room?.localParticipant?.videoTrackPublications.length}');
       if (mounted) setState(() => _cameraOn = newCameraOn);
     } catch (e) {
       debugPrint('[VoiceCall] Camera toggle error: $e');
@@ -1014,9 +1030,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   }
 
   Widget _buildVideoGrid() {
-    final localTrack = _room?.localParticipant
-        ?.videoTrackPublications
-        .firstWhereOrNull((p) => !p.muted && p.track != null)
+    final localPubs = _room?.localParticipant?.videoTrackPublications ?? [];
+    debugPrint('[VoiceCall] _buildVideoGrid: localPubs=${localPubs.length}, '
+        'pubs=${localPubs.map((p) => "muted=${p.muted} track=${p.track != null}").toList()}');
+    // Don't filter by muted — on iOS the track may be published as muted during initialization
+    final localTrack = localPubs
+        .firstWhereOrNull((p) => p.track != null)
         ?.track;
 
     // Find main remote participant: pinned or first with video
