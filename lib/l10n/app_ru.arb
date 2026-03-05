@@ -338,5 +338,11 @@
   "muteFor8Hours": "На 8 часов",
   "muteFor2Days": "На 2 дня",
   "muteForever": "Навсегда",
-  "muted": "Без звука"
+  "muted": "Без звука",
+
+  "callInProgress": "Идёт звонок",
+  "joinCall": "Присоединиться",
+  "createCallLink": "Ссылка на звонок",
+  "callLinkCopied": "Ссылка скопирована",
+  "callLinkTitle": "Ссылка на комнату"
 }

@@ -24,6 +24,7 @@ class ConversationEntity with _$ConversationEntity {
     @Default(0) int unreadCount,
     @Default(false) bool isMuted,
     DateTime? mutedUntil,
+    String? activeCallRoomName,
   }) = _ConversationEntity;
 
   factory ConversationEntity.fromJson(Map<String, dynamic> json) =>

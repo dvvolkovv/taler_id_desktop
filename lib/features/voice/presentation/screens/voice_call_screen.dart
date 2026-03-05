@@ -12,9 +12,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
+import 'package:dio/dio.dart' as dio_pkg;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/api/dio_client.dart';
 import '../../../../core/utils/constants.dart';
 import '../../../../core/services/call_state_service.dart';
+import '../../../profile/presentation/bloc/profile_bloc.dart';
+import '../../../profile/presentation/bloc/profile_state.dart';
 import '../../../messenger/data/datasources/messenger_remote_datasource.dart';
 import '../../../messenger/domain/entities/user_search_entity.dart';
 
@@ -24,6 +28,7 @@ class VoiceCallScreen extends StatefulWidget {
   final bool isIncoming; // opened from FCM push notification
   final String? calleeName; // name of the person being called (outgoing)
   final String? e2eeKey; // E2EE shared key for human-to-human calls (null = no E2EE)
+  final String? publicCode; // public room code — join without auth via /voice/rooms/public/{code}/join
   const VoiceCallScreen({
     super.key,
     this.roomName,
@@ -31,6 +36,7 @@ class VoiceCallScreen extends StatefulWidget {
     this.isIncoming = false,
     this.calleeName,
     this.e2eeKey,
+    this.publicCode,
   });
 
   @override
@@ -174,7 +180,25 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       final client = sl<DioClient>();
       final Map<String, dynamic> res;
 
-      if (widget.roomName == null) {
+      if (widget.publicCode != null) {
+        // Public room join — no auth required
+        String guestName = 'Guest';
+        try {
+          final pState = context.read<ProfileBloc>().state;
+          if (pState is ProfileLoaded) {
+            guestName = [pState.user.firstName, pState.user.lastName]
+                .where((s) => s != null && s.isNotEmpty)
+                .join(' ');
+            if (guestName.isEmpty) guestName = 'Guest';
+          }
+        } catch (_) {}
+        final rawDio = dio_pkg.Dio(dio_pkg.BaseOptions(baseUrl: ApiConstants.baseUrl));
+        final resp = await rawDio.post(
+          '/voice/rooms/public/${widget.publicCode}/join',
+          data: {'name': guestName},
+        );
+        res = Map<String, dynamic>.from(resp.data as Map);
+      } else if (widget.roomName == null) {
         res = await client.post(
           '/voice/rooms',
           data: {},

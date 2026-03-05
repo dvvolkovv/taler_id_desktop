@@ -959,4 +959,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get muted => 'Muted';
+
+  @override
+  String get callInProgress => 'Call in progress';
+
+  @override
+  String get joinCall => 'Join';
+
+  @override
+  String get createCallLink => 'Call link';
+
+  @override
+  String get callLinkCopied => 'Link copied';
+
+  @override
+  String get callLinkTitle => 'Room link';
 }

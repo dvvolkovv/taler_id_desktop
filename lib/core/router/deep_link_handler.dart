@@ -37,6 +37,16 @@ class DeepLinkHandler {
       }
     }
 
+    // Handle public room links:
+    // https://id.taler.tirol/room/{code}
+    if (uri.path.startsWith('/room/')) {
+      final code = uri.pathSegments.last;
+      if (code.isNotEmpty) {
+        router.go('/dashboard/voice?publicCode=$code');
+        return;
+      }
+    }
+
     // Handle OAuth callback:
     // talerid://oauth/callback?code=X
     if (uri.path.contains('oauth/callback')) {

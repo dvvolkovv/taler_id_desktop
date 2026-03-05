@@ -18,6 +18,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   StreamSubscription? _groupRoleChangedSub;
   StreamSubscription? _groupCreatedSub;
   StreamSubscription? _groupDeletedSub;
+  StreamSubscription? _groupCallStartedSub;
+  StreamSubscription? _groupCallEndedSub;
 
   MessengerBloc({required IMessengerRepository repo})
       : _repo = repo,
@@ -51,6 +53,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<GroupEventReceived>(_onGroupEventReceived);
     on<MuteConversation>(_onMuteConversation);
     on<UnmuteConversation>(_onUnmuteConversation);
+    on<GroupCallStarted>(_onGroupCallStarted);
+    on<GroupCallEnded>(_onGroupCallEnded);
   }
 
   Future<void> _onConnect(
@@ -103,6 +107,21 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _groupDeletedSub = _repo.groupDeletedStream.listen((data) {
       add(GroupEventReceived('group_deleted', data));
     });
+    _groupCallStartedSub?.cancel();
+    _groupCallStartedSub = _repo.groupCallStartedStream.listen((data) {
+      final convId = data['conversationId'] as String?;
+      final roomName = data['roomName'] as String?;
+      if (convId != null && roomName != null) {
+        add(GroupCallStarted(conversationId: convId, roomName: roomName));
+      }
+    });
+    _groupCallEndedSub?.cancel();
+    _groupCallEndedSub = _repo.groupCallEndedStream.listen((data) {
+      final convId = data['conversationId'] as String?;
+      if (convId != null) {
+        add(GroupCallEnded(convId));
+      }
+    });
     emit(state.copyWith(
       isConnected: true,
       currentUserId: event.userId ?? state.currentUserId,
@@ -123,7 +142,14 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         if (bTime == null) return -1;
         return bTime.compareTo(aTime);
       });
-      emit(state.copyWith(conversations: convs, isLoading: false));
+      // Initialize active group calls from conversation data
+      final activeCalls = Map<String, String>.from(state.activeGroupCalls);
+      for (final c in convs) {
+        if (c.activeCallRoomName != null) {
+          activeCalls[c.id] = c.activeCallRoomName!;
+        }
+      }
+      emit(state.copyWith(conversations: convs, isLoading: false, activeGroupCalls: activeCalls));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
@@ -395,6 +421,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _groupRoleChangedSub?.cancel();
     _groupCreatedSub?.cancel();
     _groupDeletedSub?.cancel();
+    _groupCallStartedSub?.cancel();
+    _groupCallEndedSub?.cancel();
     _repo.dispose();
     return super.close();
   }
@@ -426,5 +454,19 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
       }).toList();
       emit(state.copyWith(conversations: updated));
     } catch (_) {}
+  }
+
+  // ─── Group call handlers ───
+
+  void _onGroupCallStarted(GroupCallStarted event, Emitter<MessengerState> emit) {
+    final updated = Map<String, String>.from(state.activeGroupCalls);
+    updated[event.conversationId] = event.roomName;
+    emit(state.copyWith(activeGroupCalls: updated));
+  }
+
+  void _onGroupCallEnded(GroupCallEnded event, Emitter<MessengerState> emit) {
+    final updated = Map<String, String>.from(state.activeGroupCalls);
+    updated.remove(event.conversationId);
+    emit(state.copyWith(activeGroupCalls: updated));
   }
 }

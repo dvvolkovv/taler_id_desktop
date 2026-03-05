@@ -76,6 +76,56 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       } else {
         _showMuteDurationSheet();
       }
+    } else if (action == 'call_link') {
+      _createCallLink();
+    }
+  }
+
+  Future<void> _createCallLink() async {
+    try {
+      final client = sl<DioClient>();
+      final res = await client.post(
+        '/voice/rooms/public',
+        data: {'title': ''},
+        fromJson: (d) => Map<String, dynamic>.from(d as Map),
+      );
+      final code = res['code'] as String;
+      final link = 'https://id.taler.tirol/room/$code';
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.of(context).card,
+          title: Text(l10n.callLinkTitle, style: TextStyle(color: AppColors.of(context).textPrimary)),
+          content: SelectableText(link, style: TextStyle(color: AppColors.of(context).primary, fontSize: 14)),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+              },
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                // Copy to clipboard and send as message
+                context.read<MessengerBloc>().add(SendMessage(widget.conversationId, link));
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.callLinkCopied), backgroundColor: AppColors.of(context).primary),
+                );
+              },
+              child: Text('Отправить', style: TextStyle(color: AppColors.of(context).primary)),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.of(context).error),
+        );
+      }
     }
   }
 
@@ -147,6 +197,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _joinActiveCall(String roomName) async {
+    if (CallStateService.instance.isInCall) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Уже идёт звонок'),
+            backgroundColor: AppColors.of(context).error,
+          ),
+        );
+      }
+      return;
+    }
+    if (mounted) context.push('/dashboard/voice?room=$roomName&convId=${widget.conversationId}');
   }
 
   Future<void> _startCall() async {
@@ -445,6 +510,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       ],
                     ),
                   ),
+                  PopupMenuItem(
+                    value: 'call_link',
+                    child: Row(
+                      children: [
+                        Icon(Icons.link, size: 20, color: AppColors.of(context).textPrimary),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context)!.createCallLink),
+                      ],
+                    ),
+                  ),
                 ],
               );
             },
@@ -478,8 +553,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               .firstOrNull;
           final isGroup = conv?.type == 'GROUP';
           final otherUserName = conv?.otherUserName;
+          final activeRoomName = state.activeGroupCalls[widget.conversationId];
           return Column(
             children: [
+              // Active call banner for group conversations
+              if (isGroup && activeRoomName != null)
+                _ActiveCallBanner(
+                  onJoin: () => _joinActiveCall(activeRoomName),
+                ),
               Expanded(
                 child: messages.isEmpty
                     ? Center(
@@ -529,6 +610,45 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final uid = state.currentUserId;
     if (uid == null) return msg.id.startsWith('temp_');
     return msg.senderId == uid;
+  }
+}
+
+class _ActiveCallBanner extends StatelessWidget {
+  final VoidCallback onJoin;
+  const _ActiveCallBanner({required this.onJoin});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2E7D32),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              AppLocalizations.of(context)!.callInProgress,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ),
+          TextButton(
+            onPressed: onJoin,
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+            child: Text(AppLocalizations.of(context)!.joinCall, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 }
 

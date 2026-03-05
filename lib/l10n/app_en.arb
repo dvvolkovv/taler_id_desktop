@@ -338,5 +338,11 @@
   "muteFor8Hours": "For 8 hours",
   "muteFor2Days": "For 2 days",
   "muteForever": "Forever",
-  "muted": "Muted"
+  "muted": "Muted",
+
+  "callInProgress": "Call in progress",
+  "joinCall": "Join",
+  "createCallLink": "Call link",
+  "callLinkCopied": "Link copied",
+  "callLinkTitle": "Room link"
 }

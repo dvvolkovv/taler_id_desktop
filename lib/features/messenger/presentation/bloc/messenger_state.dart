@@ -16,6 +16,7 @@ class MessengerState extends Equatable {
   final String? currentUserId;
   final Map<String, dynamic>? pendingCallInvite;
   final Map<String, List<GroupMemberEntity>> groupMembers;
+  final Map<String, String> activeGroupCalls; // conversationId → roomName
 
   const MessengerState({
     this.conversations = const [],
@@ -29,6 +30,7 @@ class MessengerState extends Equatable {
     this.currentUserId,
     this.pendingCallInvite,
     this.groupMembers = const {},
+    this.activeGroupCalls = const {},
   });
 
   MessengerState copyWith({
@@ -43,6 +45,7 @@ class MessengerState extends Equatable {
     String? currentUserId,
     Map<String, dynamic>? pendingCallInvite,
     Map<String, List<GroupMemberEntity>>? groupMembers,
+    Map<String, String>? activeGroupCalls,
     bool clearError = false,
     bool clearNewConversation = false,
     bool clearCallInvite = false,
@@ -62,6 +65,7 @@ class MessengerState extends Equatable {
       pendingCallInvite:
           clearCallInvite ? null : (pendingCallInvite ?? this.pendingCallInvite),
       groupMembers: groupMembers ?? this.groupMembers,
+      activeGroupCalls: activeGroupCalls ?? this.activeGroupCalls,
     );
   }
 
@@ -78,5 +82,6 @@ class MessengerState extends Equatable {
         currentUserId,
         pendingCallInvite,
         groupMembers,
+        activeGroupCalls,
       ];
 }

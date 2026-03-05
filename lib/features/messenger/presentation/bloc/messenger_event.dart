@@ -188,6 +188,23 @@ class UnmuteConversation extends MessengerEvent {
   List<Object?> get props => [conversationId];
 }
 
+// ─── Group call events ───
+
+class GroupCallStarted extends MessengerEvent {
+  final String conversationId;
+  final String roomName;
+  const GroupCallStarted({required this.conversationId, required this.roomName});
+  @override
+  List<Object?> get props => [conversationId, roomName];
+}
+
+class GroupCallEnded extends MessengerEvent {
+  final String conversationId;
+  const GroupCallEnded(this.conversationId);
+  @override
+  List<Object?> get props => [conversationId];
+}
+
 class GroupEventReceived extends MessengerEvent {
   final String eventType;
   final Map<String, dynamic> data;

@@ -961,4 +961,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get muted => 'Без звука';
+
+  @override
+  String get callInProgress => 'Идёт звонок';
+
+  @override
+  String get joinCall => 'Присоединиться';
+
+  @override
+  String get createCallLink => 'Ссылка на звонок';
+
+  @override
+  String get callLinkCopied => 'Ссылка скопирована';
+
+  @override
+  String get callLinkTitle => 'Ссылка на комнату';
 }

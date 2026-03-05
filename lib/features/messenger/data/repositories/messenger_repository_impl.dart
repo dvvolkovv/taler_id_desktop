@@ -102,6 +102,12 @@ class MessengerRepositoryImpl implements IMessengerRepository {
   @override
   Stream<Map<String, dynamic>> get groupDeletedStream => _remote.groupDeletedStream;
 
+  // Group call streams
+  @override
+  Stream<Map<String, dynamic>> get groupCallStartedStream => _remote.groupCallStartedStream;
+  @override
+  Stream<Map<String, dynamic>> get groupCallEndedStream => _remote.groupCallEndedStream;
+
   // Mute methods
   @override
   Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes}) =>

@@ -1891,6 +1891,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Muted'**
   String get muted;
+
+  /// No description provided for @callInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Call in progress'**
+  String get callInProgress;
+
+  /// No description provided for @joinCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get joinCall;
+
+  /// No description provided for @createCallLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Call link'**
+  String get createCallLink;
+
+  /// No description provided for @callLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get callLinkCopied;
+
+  /// No description provided for @callLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Room link'**
+  String get callLinkTitle;
 }
 
 class _AppLocalizationsDelegate

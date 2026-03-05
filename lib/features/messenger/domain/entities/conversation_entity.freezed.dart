@@ -38,6 +38,7 @@ mixin _$ConversationEntity {
   int get unreadCount => throw _privateConstructorUsedError;
   bool get isMuted => throw _privateConstructorUsedError;
   DateTime? get mutedUntil => throw _privateConstructorUsedError;
+  String? get activeCallRoomName => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -69,7 +70,8 @@ abstract class $ConversationEntityCopyWith<$Res> {
       String? otherUserAvatar,
       int unreadCount,
       bool isMuted,
-      DateTime? mutedUntil});
+      DateTime? mutedUntil,
+      String? activeCallRoomName});
 }
 
 /// @nodoc
@@ -103,6 +105,7 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
     Object? unreadCount = null,
     Object? isMuted = null,
     Object? mutedUntil = freezed,
+    Object? activeCallRoomName = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -177,6 +180,10 @@ class _$ConversationEntityCopyWithImpl<$Res, $Val extends ConversationEntity>
           ? _value.mutedUntil
           : mutedUntil // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      activeCallRoomName: freezed == activeCallRoomName
+          ? _value.activeCallRoomName
+          : activeCallRoomName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -207,7 +214,8 @@ abstract class _$$ConversationEntityImplCopyWith<$Res>
       String? otherUserAvatar,
       int unreadCount,
       bool isMuted,
-      DateTime? mutedUntil});
+      DateTime? mutedUntil,
+      String? activeCallRoomName});
 }
 
 /// @nodoc
@@ -239,6 +247,7 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
     Object? unreadCount = null,
     Object? isMuted = null,
     Object? mutedUntil = freezed,
+    Object? activeCallRoomName = freezed,
   }) {
     return _then(_$ConversationEntityImpl(
       id: null == id
@@ -313,6 +322,10 @@ class __$$ConversationEntityImplCopyWithImpl<$Res>
           ? _value.mutedUntil
           : mutedUntil // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      activeCallRoomName: freezed == activeCallRoomName
+          ? _value.activeCallRoomName
+          : activeCallRoomName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -338,7 +351,8 @@ class _$ConversationEntityImpl implements _ConversationEntity {
       this.otherUserAvatar,
       this.unreadCount = 0,
       this.isMuted = false,
-      this.mutedUntil})
+      this.mutedUntil,
+      this.activeCallRoomName})
       : _participantIds = participantIds;
 
   factory _$ConversationEntityImpl.fromJson(Map<String, dynamic> json) =>
@@ -391,10 +405,12 @@ class _$ConversationEntityImpl implements _ConversationEntity {
   final bool isMuted;
   @override
   final DateTime? mutedUntil;
+  @override
+  final String? activeCallRoomName;
 
   @override
   String toString() {
-    return 'ConversationEntity(id: $id, participantIds: $participantIds, type: $type, name: $name, avatarUrl: $avatarUrl, participantCount: $participantCount, myRole: $myRole, lastMessageContent: $lastMessageContent, lastMessageAt: $lastMessageAt, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageIsSystem: $lastMessageIsSystem, otherUserName: $otherUserName, otherUserId: $otherUserId, otherUserAvatar: $otherUserAvatar, unreadCount: $unreadCount, isMuted: $isMuted, mutedUntil: $mutedUntil)';
+    return 'ConversationEntity(id: $id, participantIds: $participantIds, type: $type, name: $name, avatarUrl: $avatarUrl, participantCount: $participantCount, myRole: $myRole, lastMessageContent: $lastMessageContent, lastMessageAt: $lastMessageAt, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageIsSystem: $lastMessageIsSystem, otherUserName: $otherUserName, otherUserId: $otherUserId, otherUserAvatar: $otherUserAvatar, unreadCount: $unreadCount, isMuted: $isMuted, mutedUntil: $mutedUntil, activeCallRoomName: $activeCallRoomName)';
   }
 
   @override
@@ -432,31 +448,35 @@ class _$ConversationEntityImpl implements _ConversationEntity {
                 other.unreadCount == unreadCount) &&
             (identical(other.isMuted, isMuted) || other.isMuted == isMuted) &&
             (identical(other.mutedUntil, mutedUntil) ||
-                other.mutedUntil == mutedUntil));
+                other.mutedUntil == mutedUntil) &&
+            (identical(other.activeCallRoomName, activeCallRoomName) ||
+                other.activeCallRoomName == activeCallRoomName));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      const DeepCollectionEquality().hash(_participantIds),
-      type,
-      name,
-      avatarUrl,
-      participantCount,
-      myRole,
-      lastMessageContent,
-      lastMessageAt,
-      lastMessageSenderId,
-      lastMessageSenderName,
-      lastMessageIsSystem,
-      otherUserName,
-      otherUserId,
-      otherUserAvatar,
-      unreadCount,
-      isMuted,
-      mutedUntil);
+  int get hashCode => Object.hashAll([
+        runtimeType,
+        id,
+        const DeepCollectionEquality().hash(_participantIds),
+        type,
+        name,
+        avatarUrl,
+        participantCount,
+        myRole,
+        lastMessageContent,
+        lastMessageAt,
+        lastMessageSenderId,
+        lastMessageSenderName,
+        lastMessageIsSystem,
+        otherUserName,
+        otherUserId,
+        otherUserAvatar,
+        unreadCount,
+        isMuted,
+        mutedUntil,
+        activeCallRoomName
+      ]);
 
   @JsonKey(ignore: true)
   @override
@@ -492,7 +512,8 @@ abstract class _ConversationEntity implements ConversationEntity {
       final String? otherUserAvatar,
       final int unreadCount,
       final bool isMuted,
-      final DateTime? mutedUntil}) = _$ConversationEntityImpl;
+      final DateTime? mutedUntil,
+      final String? activeCallRoomName}) = _$ConversationEntityImpl;
 
   factory _ConversationEntity.fromJson(Map<String, dynamic> json) =
       _$ConversationEntityImpl.fromJson;
@@ -533,6 +554,8 @@ abstract class _ConversationEntity implements ConversationEntity {
   bool get isMuted;
   @override
   DateTime? get mutedUntil;
+  @override
+  String? get activeCallRoomName;
   @override
   @JsonKey(ignore: true)
   _$$ConversationEntityImplCopyWith<_$ConversationEntityImpl> get copyWith =>

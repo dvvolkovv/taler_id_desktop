@@ -33,6 +33,7 @@ _$ConversationEntityImpl _$$ConversationEntityImplFromJson(
       mutedUntil: json['mutedUntil'] == null
           ? null
           : DateTime.parse(json['mutedUntil'] as String),
+      activeCallRoomName: json['activeCallRoomName'] as String?,
     );
 
 Map<String, dynamic> _$$ConversationEntityImplToJson(
@@ -56,4 +57,5 @@ Map<String, dynamic> _$$ConversationEntityImplToJson(
       'unreadCount': instance.unreadCount,
       'isMuted': instance.isMuted,
       'mutedUntil': instance.mutedUntil?.toIso8601String(),
+      'activeCallRoomName': instance.activeCallRoomName,
     };
