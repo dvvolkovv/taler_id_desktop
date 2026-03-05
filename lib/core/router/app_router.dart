@@ -84,6 +84,14 @@ final appRouter = GoRouter(
         return InviteScreen(token: token);
       },
     ),
+    // Public room deep link: /room/{code} → redirect to voice screen
+    GoRoute(
+      path: '/room/:code',
+      redirect: (_, state) {
+        final code = state.pathParameters['code'] ?? '';
+        return '${RouteConstants.voice}?publicCode=$code';
+      },
+    ),
     // Chat (full-screen, outside ShellRoute)
     GoRoute(
       path: RouteConstants.chat,
@@ -212,6 +220,9 @@ Future<String?> _globalRedirect(BuildContext context, GoRouterState state) async
     RouteConstants.forgotPassword,
   ];
   if (publicRoutes.any((r) => state.matchedLocation.startsWith(r))) return null;
+
+  // Public room deep links don't need auth — join endpoint is unauthenticated
+  if (state.matchedLocation.startsWith('/room/')) return null;
 
   // Incoming voice calls are time-critical: bypass token check so the voice screen
   // opens immediately after CallKit accept. The join API itself requires a valid
