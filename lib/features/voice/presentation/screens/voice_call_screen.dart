@@ -74,6 +74,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   String? _error;
   bool _ringing = false; // outgoing: ringback playing, waiting for callee to answer
   bool _navigatedAway = false;
+  bool _aiRecording = false;
   String? _roomName; // actual room name (resolved after connect)
   final List<lk.RemoteParticipant> _participants = [];
   lk.EventsListener<lk.RoomEvent>? _eventsListener;
@@ -648,6 +649,23 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     }
   }
 
+  Future<void> _toggleAiRecorder() async {
+    final roomName = _roomName;
+    if (roomName == null) return;
+    final client = sl<DioClient>();
+
+    try {
+      if (!_aiRecording) {
+        await client.dio.post('/voice/rooms/$roomName/recorder/start');
+      } else {
+        await client.dio.post('/voice/rooms/$roomName/recorder/stop');
+      }
+      if (mounted) setState(() => _aiRecording = !_aiRecording);
+    } catch (e) {
+      debugPrint('[VoiceCall] AI recorder error: $e');
+    }
+  }
+
   bool get _hasAnyVideo {
     if (_cameraOn) return true;
     return _participants.any((p) =>
@@ -1075,6 +1093,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                   color: AppColors.of(context).card,
                   onTap: _flipCamera,
                 ),
+              _ControlButton(
+                icon: _aiRecording ? Icons.smart_toy : Icons.smart_toy_outlined,
+                label: _aiRecording ? 'AI Стоп' : 'AI Запись',
+                color: _aiRecording
+                    ? AppColors.of(context).primary.withValues(alpha: 0.3)
+                    : AppColors.of(context).card,
+                onTap: _toggleAiRecorder,
+              ),
               _ControlButton(
                 icon: Icons.call_end_rounded,
                 label: 'Завершить',

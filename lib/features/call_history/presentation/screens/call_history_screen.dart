@@ -237,6 +237,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
             const SizedBox(height: 12),
             // ── Create meeting button ──
             _buildCreateMeetingButton(colors),
+            const SizedBox(height: 12),
+            // ── Meeting summaries button ──
+            _buildMeetingSummariesButton(colors),
             const SizedBox(height: 24),
             // ── Call history ──
             Text(
@@ -372,6 +375,40 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
             Expanded(
               child: Text(
                 'Создать встречу',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: colors.textSecondary, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeetingSummariesButton(AppColorsExtension colors) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const MeetingSummariesScreen()),
+      ),
+      child: AppCard(
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: colors.primary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.smart_toy_outlined, color: colors.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Резюме встреч',
                 style: TextStyle(
                   color: colors.textPrimary,
                   fontSize: 15,
@@ -642,6 +679,292 @@ class _CallEntry {
       isOutgoing: json['isOutgoing'] as bool? ?? true,
       withAi: withAi,
       conversationId: json['conversationId'] as String?,
+    );
+  }
+}
+
+// ─── Meeting Summaries Screen ───
+
+class MeetingSummariesScreen extends StatefulWidget {
+  const MeetingSummariesScreen({super.key});
+  @override
+  State<MeetingSummariesScreen> createState() => _MeetingSummariesScreenState();
+}
+
+class _MeetingSummariesScreenState extends State<MeetingSummariesScreen> {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  Future<List<Map<String, dynamic>>> _load() async {
+    final data = await sl<DioClient>().get<dynamic>('/voice/meetings');
+    final items = data as List? ?? [];
+    return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(title: const Text('Резюме встреч')),
+      body: RefreshIndicator(
+        color: colors.primary,
+        onRefresh: () async { setState(() => _future = _load()); },
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _future,
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary));
+            }
+            if (snap.hasError) {
+              return Center(child: Text('Ошибка загрузки', style: TextStyle(color: colors.error)));
+            }
+            final items = snap.data ?? [];
+            if (items.isEmpty) {
+              return ListView(
+                children: [
+                  const SizedBox(height: 80),
+                  Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.smart_toy_outlined, size: 48, color: colors.textSecondary),
+                        const SizedBox(height: 12),
+                        Text('Нет резюме', style: TextStyle(color: colors.textSecondary, fontSize: 15)),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Нажмите "AI Запись" во время звонка',
+                          style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (ctx, i) => _buildSummaryCard(items[i], colors),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(Map<String, dynamic> item, AppColorsExtension colors) {
+    final participants = (item['participants'] as List?)?.join(', ') ?? '';
+    final summary = item['summary'] as String? ?? '';
+    final durationSec = item['durationSec'] as int?;
+    final actionItemsCount = item['actionItemsCount'] as int? ?? 0;
+    final createdAt = DateTime.tryParse(item['createdAt'] as String? ?? '') ?? DateTime.now();
+    final timeStr = '${createdAt.day}.${createdAt.month.toString().padLeft(2, '0')} ${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
+    final durationStr = durationSec != null ? '${durationSec ~/ 60} мин' : '';
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => MeetingSummaryDetailScreen(id: item['id'] as String)),
+      ),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.smart_toy, size: 18, color: colors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Встреча $timeStr',
+                    style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            if (participants.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(participants, style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+            ],
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                if (durationStr.isNotEmpty) ...[
+                  Text(durationStr, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                  const SizedBox(width: 12),
+                ],
+                if (actionItemsCount > 0)
+                  Text('$actionItemsCount задач', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w500)),
+              ],
+            ),
+            if (summary.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                summary.length > 120 ? '${summary.substring(0, 120)}...' : summary,
+                style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Meeting Summary Detail Screen ───
+
+class MeetingSummaryDetailScreen extends StatefulWidget {
+  final String id;
+  const MeetingSummaryDetailScreen({super.key, required this.id});
+  @override
+  State<MeetingSummaryDetailScreen> createState() => _MeetingSummaryDetailScreenState();
+}
+
+class _MeetingSummaryDetailScreenState extends State<MeetingSummaryDetailScreen> {
+  late Future<Map<String, dynamic>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  Future<Map<String, dynamic>> _load() async {
+    final data = await sl<DioClient>().get<dynamic>('/voice/meetings/${widget.id}');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(title: const Text('Резюме встречи')),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _future,
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary));
+          }
+          if (snap.hasError) {
+            return Center(child: Text('Ошибка загрузки', style: TextStyle(color: colors.error)));
+          }
+          final data = snap.data!;
+          final summary = data['summary'] as String? ?? '';
+          final keyPoints = (data['keyPoints'] as List?)?.cast<String>() ?? [];
+          final actionItems = (data['actionItems'] as List?) ?? [];
+          final decisions = (data['decisions'] as List?)?.cast<String>() ?? [];
+          final transcript = data['transcript'] as String? ?? '';
+          final participants = (data['participants'] as List?)?.join(', ') ?? '';
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (participants.isNotEmpty) ...[
+                Text('Участники', style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(participants, style: TextStyle(color: colors.textPrimary, fontSize: 14)),
+                const SizedBox(height: 20),
+              ],
+              if (summary.isNotEmpty) ...[
+                _sectionTitle('Резюме', Icons.summarize_rounded, colors),
+                const SizedBox(height: 8),
+                Text(summary, style: TextStyle(color: colors.textPrimary, fontSize: 14, height: 1.5)),
+                const SizedBox(height: 20),
+              ],
+              if (keyPoints.isNotEmpty) ...[
+                _sectionTitle('Ключевые моменты', Icons.lightbulb_outline_rounded, colors),
+                const SizedBox(height: 8),
+                ...keyPoints.map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('  •  ', style: TextStyle(color: colors.primary, fontSize: 14)),
+                      Expanded(child: Text(p, style: TextStyle(color: colors.textPrimary, fontSize: 14, height: 1.4))),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 20),
+              ],
+              if (actionItems.isNotEmpty) ...[
+                _sectionTitle('Задачи', Icons.task_alt_rounded, colors),
+                const SizedBox(height: 8),
+                ...actionItems.map((item) {
+                  final task = item is Map ? (item['task'] as String? ?? '') : item.toString();
+                  final assignee = item is Map ? (item['assignee'] as String?) : null;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(task, style: TextStyle(color: colors.textPrimary, fontSize: 14)),
+                          if (assignee != null && assignee.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text('Ответственный: $assignee', style: TextStyle(color: colors.primary, fontSize: 12)),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 20),
+              ],
+              if (decisions.isNotEmpty) ...[
+                _sectionTitle('Принятые решения', Icons.check_circle_outline_rounded, colors),
+                const SizedBox(height: 8),
+                ...decisions.map((d) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.check_rounded, size: 16, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(d, style: TextStyle(color: colors.textPrimary, fontSize: 14, height: 1.4))),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 20),
+              ],
+              if (transcript.isNotEmpty) ...[
+                _sectionTitle('Транскрипт', Icons.article_outlined, colors),
+                const SizedBox(height: 8),
+                ExpansionTile(
+                  title: Text('Показать полный транскрипт', style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: SelectableText(
+                        transcript,
+                        style: TextStyle(color: colors.textPrimary, fontSize: 13, height: 1.6, fontFamily: 'monospace'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, IconData icon, AppColorsExtension colors) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: colors.primary),
+        const SizedBox(width: 8),
+        Text(title, style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }
