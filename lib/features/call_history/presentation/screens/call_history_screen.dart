@@ -829,6 +829,7 @@ class MeetingSummaryDetailScreen extends StatefulWidget {
 
 class _MeetingSummaryDetailScreenState extends State<MeetingSummaryDetailScreen> {
   late Future<Map<String, dynamic>> _future;
+  Map<String, dynamic>? _data;
 
   @override
   void initState() {
@@ -838,7 +839,17 @@ class _MeetingSummaryDetailScreenState extends State<MeetingSummaryDetailScreen>
 
   Future<Map<String, dynamic>> _load() async {
     final data = await sl<DioClient>().get<dynamic>('/voice/meetings/${widget.id}');
-    return Map<String, dynamic>.from(data as Map);
+    _data = Map<String, dynamic>.from(data as Map);
+    return _data!;
+  }
+
+  void _share() {
+    final url = 'https://id.taler.tirol/meeting/${widget.id}';
+    final summary = _data?['summary'] as String? ?? '';
+    final text = summary.isNotEmpty
+        ? 'Резюме встречи:\n${summary.length > 200 ? '${summary.substring(0, 200)}...' : summary}\n\n$url'
+        : url;
+    Share.share(text);
   }
 
   @override
@@ -846,7 +857,16 @@ class _MeetingSummaryDetailScreenState extends State<MeetingSummaryDetailScreen>
     final colors = AppColors.of(context);
     return Scaffold(
       backgroundColor: colors.background,
-      appBar: AppBar(title: const Text('Резюме встречи')),
+      appBar: AppBar(
+        title: const Text('Резюме встречи'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded),
+            tooltip: 'Поделиться',
+            onPressed: _share,
+          ),
+        ],
+      ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _future,
         builder: (context, snap) {
