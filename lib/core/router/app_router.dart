@@ -224,6 +224,13 @@ Future<String?> _globalRedirect(BuildContext context, GoRouterState state) async
   // Public room deep links don't need auth — join endpoint is unauthenticated
   if (state.matchedLocation.startsWith('/room/')) return null;
 
+  // Public room voice calls: join-auth is tried first, guest join with name dialog
+  // as fallback — no login required. The screen handles auth itself.
+  if (state.uri.path == RouteConstants.voice &&
+      state.uri.queryParameters['publicCode'] != null) {
+    return null;
+  }
+
   // Incoming voice calls are time-critical: bypass token check so the voice screen
   // opens immediately after CallKit accept. The join API itself requires a valid
   // token — AuthInterceptor refreshes it if expired. Blocking navigation here

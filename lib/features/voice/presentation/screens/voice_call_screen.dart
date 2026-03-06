@@ -188,17 +188,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             fromJson: (d) => Map<String, dynamic>.from(d as Map),
           );
         } catch (_) {
-          // Not logged in or auth failed — join as guest
-          String guestName = 'Guest';
-          try {
-            final pState = context.read<ProfileBloc>().state;
-            if (pState is ProfileLoaded) {
-              guestName = [pState.user.firstName, pState.user.lastName]
-                  .where((s) => s != null && s.isNotEmpty)
-                  .join(' ');
-              if (guestName.isEmpty) guestName = 'Guest';
-            }
-          } catch (_) {}
+          // Not logged in or auth failed — ask user for their name then guest join
+          final guestName = await _askForGuestName();
+          if (guestName == null || !mounted) return;
           final rawDio = dio_pkg.Dio(dio_pkg.BaseOptions(baseUrl: ApiConstants.baseUrl));
           final resp = await rawDio.post(
             '/voice/rooms/public/${widget.publicCode}/join',
@@ -529,6 +521,63 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     } else {
       context.go(RouteConstants.assistant);
     }
+  }
+
+  /// Ask the user to enter their display name before joining as guest.
+  /// Returns the name, or null if the user cancelled.
+  Future<String?> _askForGuestName() async {
+    if (!mounted) return null;
+    // If ProfileBloc is available and loaded, use the real name automatically.
+    try {
+      final pState = context.read<ProfileBloc>().state;
+      if (pState is ProfileLoaded) {
+        final full = [pState.user.firstName, pState.user.lastName]
+            .where((s) => s != null && s.isNotEmpty)
+            .join(' ');
+        if (full.isNotEmpty) return full;
+      }
+    } catch (_) {}
+
+    // Otherwise prompt the user for a name.
+    final colors = AppColors.of(context);
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.surface,
+        title: Text('Войти в комнату',
+            style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: TextStyle(color: colors.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Ваше имя',
+            hintStyle: TextStyle(color: colors.textSecondary),
+          ),
+          onSubmitted: (v) {
+            final t = v.trim();
+            if (t.isNotEmpty) Navigator.of(ctx).pop(t);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: Text('Отмена', style: TextStyle(color: colors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              final t = controller.text.trim();
+              if (t.isNotEmpty) Navigator.of(ctx).pop(t);
+            },
+            child: Text('Войти', style: TextStyle(color: colors.primary)),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return name;
   }
 
   Future<void> _toggleMute() async {
