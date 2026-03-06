@@ -109,6 +109,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       _roomName = cs.roomName;
       _connecting = false;
       _participants.addAll(_room!.remoteParticipants.values);
+      // Detect if recorder is already in the room
+      _aiRecording = _participants.any((p) => p.identity == 'meeting-recorder');
       _room!.addListener(_onRoomChanged);
       _subscribeRoomEvents();
       // End CallKit now that the voice screen is visible — release native UI
@@ -361,9 +363,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         if (event.participant.identity != 'ai-assistant') {
           _stopRingback();
         }
+        // Auto-detect meeting recorder joining
+        if (event.participant.identity == 'meeting-recorder') {
+          if (mounted) setState(() => _aiRecording = true);
+        }
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
         if (!mounted || _navigatedAway) return;
+        // Auto-detect meeting recorder leaving
+        if (event.participant.identity == 'meeting-recorder') {
+          if (mounted) setState(() => _aiRecording = false);
+        }
         // Just update UI — each participant leaves on their own
         if (mounted) setState(() {});
       });
@@ -1005,7 +1015,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       children: [
         // Status
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           color: AppColors.of(context).card,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1013,8 +1023,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
               Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
+                decoration: BoxDecoration(
+                  color: _aiRecording ? Colors.red : Colors.green,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -1027,6 +1037,31 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (_aiRecording) ...[
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6, height: 6,
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'AI REC',
+                        style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1064,57 +1099,70 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             ),
           ),
         ),
-        // Controls
+        // Controls — two rows for small screens
         Padding(
-          padding: const EdgeInsets.all(32),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _ControlButton(
-                icon: _muted
-                    ? Icons.mic_off_rounded
-                    : Icons.mic_rounded,
-                label: _muted ? 'Включить' : 'Выкл. микр.',
-                color: _muted ? AppColors.of(context).error : AppColors.of(context).card,
-                onTap: _toggleMute,
+              // Secondary row: AI Record, Audio Output, Flip Camera
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _ControlButton(
+                    icon: _aiRecording ? Icons.smart_toy : Icons.smart_toy_outlined,
+                    label: _aiRecording ? 'AI Стоп' : 'AI Запись',
+                    color: _aiRecording
+                        ? Colors.red.withOpacity(0.2)
+                        : AppColors.of(context).card,
+                    onTap: _toggleAiRecorder,
+                  ),
+                  _ControlButton(
+                    icon: _outputIcons[_audioOutputType] ?? Icons.volume_up_rounded,
+                    label: _outputLabels[_audioOutputType] ?? 'Аудио',
+                    color: _audioOutputType != 'earpiece'
+                        ? AppColors.of(context).primary.withValues(alpha: 0.2)
+                        : AppColors.of(context).card,
+                    onTap: _showAudioOutputPicker,
+                  ),
+                  if (_cameraOn)
+                    _ControlButton(
+                      icon: Icons.flip_camera_ios_rounded,
+                      label: 'Повернуть',
+                      color: AppColors.of(context).card,
+                      onTap: _flipCamera,
+                    ),
+                ],
               ),
-              _ControlButton(
-                icon: _cameraOn ? Icons.videocam_rounded : Icons.videocam_off_rounded,
-                label: _cameraOn ? 'Камера вкл.' : 'Камера',
-                color: _cameraOn
-                    ? AppColors.of(context).primary.withValues(alpha: 0.2)
-                    : AppColors.of(context).card,
-                onTap: _toggleCamera,
-              ),
-              if (_cameraOn)
-                _ControlButton(
-                  icon: Icons.flip_camera_ios_rounded,
-                  label: 'Повернуть',
-                  color: AppColors.of(context).card,
-                  onTap: _flipCamera,
-                ),
-              _ControlButton(
-                icon: _aiRecording ? Icons.smart_toy : Icons.smart_toy_outlined,
-                label: _aiRecording ? 'AI Стоп' : 'AI Запись',
-                color: _aiRecording
-                    ? AppColors.of(context).primary.withValues(alpha: 0.3)
-                    : AppColors.of(context).card,
-                onTap: _toggleAiRecorder,
-              ),
-              _ControlButton(
-                icon: Icons.call_end_rounded,
-                label: 'Завершить',
-                color: AppColors.of(context).error,
-                onTap: _hangUp,
-                large: true,
-              ),
-              _ControlButton(
-                icon: _outputIcons[_audioOutputType] ?? Icons.volume_up_rounded,
-                label: _outputLabels[_audioOutputType] ?? 'Аудио',
-                color: _audioOutputType != 'earpiece'
-                    ? AppColors.of(context).primary.withValues(alpha: 0.2)
-                    : AppColors.of(context).card,
-                onTap: _showAudioOutputPicker,
+              const SizedBox(height: 12),
+              // Primary row: Mic, Camera, End Call
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _ControlButton(
+                    icon: _muted
+                        ? Icons.mic_off_rounded
+                        : Icons.mic_rounded,
+                    label: _muted ? 'Включить' : 'Микрофон',
+                    color: _muted ? AppColors.of(context).error : AppColors.of(context).card,
+                    onTap: _toggleMute,
+                  ),
+                  _ControlButton(
+                    icon: Icons.call_end_rounded,
+                    label: 'Завершить',
+                    color: AppColors.of(context).error,
+                    onTap: _hangUp,
+                    large: true,
+                  ),
+                  _ControlButton(
+                    icon: _cameraOn ? Icons.videocam_rounded : Icons.videocam_off_rounded,
+                    label: _cameraOn ? 'Камера вкл.' : 'Камера',
+                    color: _cameraOn
+                        ? AppColors.of(context).primary.withValues(alpha: 0.2)
+                        : AppColors.of(context).card,
+                    onTap: _toggleCamera,
+                  ),
+                ],
               ),
             ],
           ),
@@ -1146,33 +1194,57 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             itemBuilder: (_, i) {
               final p = _participants[i];
               final isAI = p.identity == 'ai-assistant';
+              final isRecorder = p.identity == 'meeting-recorder';
               final hasMic = _participantHasMic(p);
               final displayName = isAI
                   ? 'AI Ассистент'
-                  : (p.name?.isNotEmpty == true ? p.name! : p.identity);
+                  : isRecorder
+                      ? 'AI Запись'
+                      : (p.name?.isNotEmpty == true ? p.name! : p.identity);
               return Card(
                 color: AppColors.of(context).card,
                 margin: const EdgeInsets.only(bottom: 12),
+                shape: isRecorder
+                    ? RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.red.withOpacity(0.5), width: 1.5),
+                      )
+                    : null,
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: isAI
-                        ? AppColors.of(context).primary
-                        : AppColors.of(context).surface,
+                    backgroundColor: isRecorder
+                        ? Colors.red.withOpacity(0.15)
+                        : isAI
+                            ? AppColors.of(context).primary
+                            : AppColors.of(context).surface,
                     child: Icon(
-                      isAI ? Icons.smart_toy_rounded : Icons.person_rounded,
-                      color: isAI ? Colors.black : AppColors.of(context).textPrimary,
+                      isRecorder ? Icons.fiber_manual_record_rounded : isAI ? Icons.smart_toy_rounded : Icons.person_rounded,
+                      color: isRecorder ? Colors.red : isAI ? Colors.black : AppColors.of(context).textPrimary,
+                      size: isRecorder ? 20 : 24,
                     ),
                   ),
                   title: Text(
                     displayName,
-                    style: TextStyle(color: AppColors.of(context).textPrimary, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: isRecorder ? Colors.red : AppColors.of(context).textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  trailing: isAI
-                      ? Icon(Icons.graphic_eq_rounded, color: AppColors.of(context).primary)
-                      : Icon(
-                          hasMic ? Icons.mic_rounded : Icons.mic_off_rounded,
-                          color: hasMic ? Colors.green : AppColors.of(context).textSecondary,
-                        ),
+                  trailing: isRecorder
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text('REC', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w700)),
+                        )
+                      : isAI
+                          ? Icon(Icons.graphic_eq_rounded, color: AppColors.of(context).primary)
+                          : Icon(
+                              hasMic ? Icons.mic_rounded : Icons.mic_off_rounded,
+                              color: hasMic ? Colors.green : AppColors.of(context).textSecondary,
+                            ),
                 ),
               );
             },
@@ -1194,9 +1266,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           .firstWhereOrNull((pub) => pub.subscribed && pub.track != null)
           ?.track as lk.VideoTrack?;
       final isAI = p.identity == 'ai-assistant';
+      final isRecorder = p.identity == 'meeting-recorder';
       final name = isAI
           ? 'AI Ассистент'
-          : (p.name?.isNotEmpty == true ? p.name! : p.identity);
+          : isRecorder
+              ? 'AI Запись'
+              : (p.name?.isNotEmpty == true ? p.name! : p.identity);
       final hasMic = _participantHasMic(p);
       tiles.add(_VideoTileData(
         name: name,
@@ -1204,6 +1279,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         hasMic: hasMic,
         isLocal: false,
         isAI: isAI,
+        isRecorder: isRecorder,
       ));
     }
 
@@ -1265,12 +1341,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                     Center(
                       child: CircleAvatar(
                         radius: count <= 2 ? 40 : 28,
-                        backgroundColor: tile.isAI
-                            ? AppColors.of(context).primary
-                            : AppColors.of(context).card,
-                        child: tile.isAI
-                            ? Icon(Icons.smart_toy_rounded, size: count <= 2 ? 36 : 24, color: Colors.black)
-                            : Text(
+                        backgroundColor: tile.isRecorder
+                            ? Colors.red.withOpacity(0.15)
+                            : tile.isAI
+                                ? AppColors.of(context).primary
+                                : AppColors.of(context).card,
+                        child: tile.isRecorder
+                            ? Icon(Icons.fiber_manual_record_rounded, size: count <= 2 ? 32 : 22, color: Colors.red)
+                            : tile.isAI
+                                ? Icon(Icons.smart_toy_rounded, size: count <= 2 ? 36 : 24, color: Colors.black)
+                                : Text(
                                 tile.name.isNotEmpty ? tile.name[0].toUpperCase() : '?',
                                 style: TextStyle(
                                   fontSize: count <= 2 ? 32 : 22,
@@ -1321,6 +1401,28 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                     ),
                   ),
 
+                  // Recording badge for recorder tile
+                  if (tile.isRecorder)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+                            const SizedBox(width: 4),
+                            const Text('REC', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   // Flip camera icon for local tile
                   if (tile.isLocal && tile.track != null)
                     Positioned(
@@ -1351,6 +1453,7 @@ class _VideoTileData {
   final bool hasMic;
   final bool isLocal;
   final bool isAI;
+  final bool isRecorder;
 
   const _VideoTileData({
     required this.name,
@@ -1358,6 +1461,7 @@ class _VideoTileData {
     required this.hasMic,
     required this.isLocal,
     required this.isAI,
+    this.isRecorder = false,
   });
 }
 

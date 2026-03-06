@@ -542,13 +542,14 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   }
 
   String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
     final now = DateTime.now();
-    final diff = now.difference(dt);
+    final diff = now.difference(local);
     final time =
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    if (diff.inDays == 0) return 'Сегодня, $time';
-    if (diff.inDays == 1) return 'Вчера, $time';
-    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}, $time';
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    if (diff.inDays == 0 && local.day == now.day) return 'Сегодня, $time';
+    if (diff.inDays <= 1 && now.day - local.day == 1) return 'Вчера, $time';
+    return '${local.day.toString().padLeft(2, '0')}.${local.month.toString().padLeft(2, '0')}.${local.year}, $time';
   }
 
   String _formatDuration(int sec) {
@@ -763,7 +764,7 @@ class _MeetingSummariesScreenState extends State<MeetingSummariesScreen> {
     final summary = item['summary'] as String? ?? '';
     final durationSec = item['durationSec'] as int?;
     final actionItemsCount = item['actionItemsCount'] as int? ?? 0;
-    final createdAt = DateTime.tryParse(item['createdAt'] as String? ?? '') ?? DateTime.now();
+    final createdAt = (DateTime.tryParse(item['createdAt'] as String? ?? '') ?? DateTime.now()).toLocal();
     final timeStr = '${createdAt.day}.${createdAt.month.toString().padLeft(2, '0')} ${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
     final durationStr = durationSec != null ? '${durationSec ~/ 60} мин' : '';
 
