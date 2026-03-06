@@ -817,7 +817,16 @@ class _LinkifiedText extends StatelessWidget {
         recognizer: TapGestureRecognizer()
           ..onTap = () {
             final uri = Uri.tryParse(url);
-            if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
+            if (uri == null) return;
+            // Open room links inside the app instead of the browser
+            if (uri.host == 'id.taler.tirol' && uri.path.startsWith('/room/')) {
+              final code = uri.pathSegments.last;
+              if (code.isNotEmpty) {
+                GoRouter.of(context).go('/dashboard/voice?publicCode=$code');
+                return;
+              }
+            }
+            launchUrl(uri, mode: LaunchMode.externalApplication);
           },
       ));
       lastEnd = m.end;
