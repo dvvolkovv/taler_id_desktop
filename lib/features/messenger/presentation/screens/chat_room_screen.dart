@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -692,11 +693,16 @@ class _MessageBubble extends StatelessWidget {
                 ),
               )
             else
-              Text(
-                message.content,
+              _LinkifiedText(
+                text: message.content,
                 style: TextStyle(
                   color: AppColors.of(context).textPrimary,
                   fontSize: 14,
+                ),
+                linkStyle: TextStyle(
+                  color: AppColors.of(context).primary,
+                  fontSize: 14,
+                  decoration: TextDecoration.underline,
                 ),
               ),
             const SizedBox(height: 4),
@@ -773,6 +779,53 @@ class _MessageBubble extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+final _urlRegex = RegExp(
+  r'https?://[^\s<>\"\)]+',
+  caseSensitive: false,
+);
+
+class _LinkifiedText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+  final TextStyle linkStyle;
+  const _LinkifiedText({
+    required this.text,
+    required this.style,
+    required this.linkStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final matches = _urlRegex.allMatches(text).toList();
+    if (matches.isEmpty) {
+      return Text(text, style: style);
+    }
+
+    final spans = <InlineSpan>[];
+    var lastEnd = 0;
+    for (final m in matches) {
+      if (m.start > lastEnd) {
+        spans.add(TextSpan(text: text.substring(lastEnd, m.start), style: style));
+      }
+      final url = m.group(0)!;
+      spans.add(TextSpan(
+        text: url,
+        style: linkStyle,
+        recognizer: TapGestureRecognizer()
+          ..onTap = () {
+            final uri = Uri.tryParse(url);
+            if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
+          },
+      ));
+      lastEnd = m.end;
+    }
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastEnd), style: style));
+    }
+    return Text.rich(TextSpan(children: spans));
   }
 }
 

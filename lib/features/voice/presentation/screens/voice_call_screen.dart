@@ -633,14 +633,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     if (!_cameraOn) return;
     final newFront = !_isFrontCamera;
     try {
-      await _room?.localParticipant?.setCameraEnabled(
-        true,
-        cameraCaptureOptions: lk.CameraCaptureOptions(
-          cameraPosition: newFront ? lk.CameraPosition.front : lk.CameraPosition.back,
-        ),
-      );
-      setState(() => _isFrontCamera = newFront);
-    } catch (_) {}
+      final pubs = _room?.localParticipant?.videoTrackPublications ?? [];
+      final videoTrack = pubs.firstWhereOrNull((p) => p.track != null)?.track as lk.LocalVideoTrack?;
+      if (videoTrack != null) {
+        await videoTrack.restartTrack(
+          lk.CameraCaptureOptions(
+            cameraPosition: newFront ? lk.CameraPosition.front : lk.CameraPosition.back,
+          ),
+        );
+      }
+      if (mounted) setState(() => _isFrontCamera = newFront);
+    } catch (e) {
+      debugPrint('[VoiceCall] flipCamera error: $e');
+    }
   }
 
   bool get _hasAnyVideo {
@@ -1063,6 +1068,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                     : AppColors.of(context).card,
                 onTap: _toggleCamera,
               ),
+              if (_cameraOn)
+                _ControlButton(
+                  icon: Icons.flip_camera_ios_rounded,
+                  label: 'Повернуть',
+                  color: AppColors.of(context).card,
+                  onTap: _flipCamera,
+                ),
               _ControlButton(
                 icon: Icons.call_end_rounded,
                 label: 'Завершить',
@@ -1169,8 +1181,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       ));
     }
 
-    // Add local participant
-    if (_cameraOn || tiles.isNotEmpty) {
+    // Add local participant — only when camera is on (no avatar placeholder when camera off)
+    if (_cameraOn) {
       tiles.add(_VideoTileData(
         name: localName,
         track: localTrack as lk.VideoTrack?,
