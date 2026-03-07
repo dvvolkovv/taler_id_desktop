@@ -199,9 +199,13 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
         sl<MessengerRemoteDataSource>().sendCallInvite(e.conversationId!, roomName);
       }
       if (mounted) {
+        final calleeParam = e.otherPartyName.isNotEmpty
+            ? '&callee=${Uri.encodeComponent(e.otherPartyName)}'
+            : '';
         context.push(
           '/dashboard/voice?room=$roomName'
-          '${e.conversationId != null && e.conversationId!.isNotEmpty ? "&convId=${e.conversationId}" : ""}',
+          '${e.conversationId != null && e.conversationId!.isNotEmpty ? "&convId=${e.conversationId}" : ""}'
+          '$calleeParam',
         );
       }
     } catch (err) {

@@ -41,6 +41,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isRecording = false;
   String? _recordingPath;
   double _prevKeyboardHeight = 0;
+  MessageEntity? _replyTo;
+  String? _replyToSenderName;
 
   @override
   void initState() {
@@ -69,6 +71,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       });
     }
     _prevKeyboardHeight = kh;
+  }
+
+  void _setReply(MessageEntity msg, String? senderName) {
+    setState(() {
+      _replyTo = msg;
+      _replyToSenderName = senderName;
+    });
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyTo = null;
+      _replyToSenderName = null;
+    });
   }
 
   void _handleMenuAction(String action, bool isMuted) {
@@ -274,14 +290,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         fromJson: (d) => Map<String, dynamic>.from(d as Map),
       );
       if (!mounted) return;
+      String msgContent = caption.isNotEmpty ? caption : file.name;
+      if (_replyTo != null) {
+        final quoted = _replyTo!.fileUrl != null
+            ? (_replyTo!.fileName ?? '📎 Файл')
+            : _replyTo!.content;
+        final q = quoted.length > 60 ? '${quoted.substring(0, 60)}...' : quoted;
+        final who = _replyToSenderName != null ? '$_replyToSenderName: ' : '';
+        msgContent = '↩ $who«$q»\n$msgContent';
+      }
       context.read<MessengerBloc>().add(SendMessage(
         widget.conversationId,
-        caption.isNotEmpty ? caption : file.name,
+        msgContent,
         fileUrl: res['fileUrl'] as String,
         fileName: res['fileName'] as String,
         fileSize: res['fileSize'] as int?,
         fileType: res['fileType'] as String,
       ));
+      _cancelReply();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -293,10 +319,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _sendMessage() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
-    context
-        .read<MessengerBloc>()
-        .add(SendMessage(widget.conversationId, text));
+    String content = text;
+    if (_replyTo != null) {
+      final quoted = _replyTo!.fileUrl != null
+          ? (_replyTo!.fileName ?? '📎 Файл')
+          : _replyTo!.content;
+      final q = quoted.length > 60 ? '${quoted.substring(0, 60)}...' : quoted;
+      final who = _replyToSenderName != null ? '$_replyToSenderName: ' : '';
+      content = '↩ $who«$q»\n$text';
+    }
+    context.read<MessengerBloc>().add(SendMessage(widget.conversationId, content));
     _ctrl.clear();
+    _cancelReply();
     // With reverse:true, new messages appear at offset 0
     Future.delayed(const Duration(milliseconds: 50), () {
       if (_scrollCtrl.hasClients && _scrollCtrl.offset > 0) {
@@ -521,17 +555,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         itemBuilder: (context, index) {
                           final msg = messages[messages.length - 1 - index];
                           final isMe = _isMyMessage(msg, state);
+                          final sName = isMe ? null : (msg.senderName ?? otherUserName);
                           return _MessageBubble(
                             message: msg,
                             isMe: isMe,
                             isGroup: isGroup,
-                            senderName: isMe
-                                ? null
-                                : (msg.senderName ?? otherUserName),
+                            senderName: sName,
+                            onReply: msg.isSystem ? null : () => _setReply(msg, isMe ? 'Вы' : sName),
                           );
                         },
                       ),
               ),
+              if (_replyTo != null)
+                _ReplyPreviewBar(
+                  message: _replyTo!,
+                  senderName: _replyToSenderName,
+                  onCancel: _cancelReply,
+                ),
               _InputBar(
                 controller: _ctrl,
                 onSend: _sendMessage,
@@ -599,11 +639,13 @@ class _MessageBubble extends StatelessWidget {
   final bool isMe;
   final String? senderName;
   final bool isGroup;
+  final VoidCallback? onReply;
   const _MessageBubble({
     required this.message,
     required this.isMe,
     this.senderName,
     this.isGroup = false,
+    this.onReply,
   });
 
   @override
@@ -614,7 +656,7 @@ class _MessageBubble extends StatelessWidget {
     }
 
     return GestureDetector(
-      onLongPress: message.fileUrl == null && message.content.isNotEmpty
+      onLongPress: isMe && message.fileUrl == null && message.content.isNotEmpty
           ? () {
               Clipboard.setData(ClipboardData(text: message.content));
               ScaffoldMessenger.of(context).showSnackBar(
@@ -624,6 +666,9 @@ class _MessageBubble extends StatelessWidget {
                 ),
               );
             }
+          : null,
+      onTap: !isMe
+          ? () => _showMessageActions(context)
           : null,
       child: Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -735,6 +780,55 @@ class _MessageBubble extends StatelessWidget {
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  void _showMessageActions(BuildContext context) {
+    final colors = AppColors.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: colors.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (onReply != null)
+              ListTile(
+                leading: Icon(Icons.reply_rounded, color: colors.primary),
+                title: Text('Ответить', style: TextStyle(color: colors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onReply!();
+                },
+              ),
+            if (message.fileUrl == null && message.content.isNotEmpty)
+              ListTile(
+                leading: Icon(Icons.copy_rounded, color: colors.textSecondary),
+                title: Text('Копировать', style: TextStyle(color: colors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Clipboard.setData(ClipboardData(text: message.content));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Скопировано'), duration: Duration(seconds: 2)),
+                  );
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -995,6 +1089,60 @@ class _InputBar extends StatelessWidget {
               onPressed: onSend,
               icon: Icon(Icons.send_rounded, color: AppColors.of(context).primary),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReplyPreviewBar extends StatelessWidget {
+  final MessageEntity message;
+  final String? senderName;
+  final VoidCallback onCancel;
+  const _ReplyPreviewBar({required this.message, this.senderName, required this.onCancel});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final preview = message.fileUrl != null
+        ? '📎 ${message.fileName ?? 'Файл'}'
+        : message.content;
+    final previewText = preview.length > 60 ? '${preview.substring(0, 60)}...' : preview;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.card,
+        border: Border(
+          top: BorderSide(color: colors.border),
+          left: BorderSide(color: colors.primary, width: 3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  senderName ?? '',
+                  style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  previewText,
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: onCancel,
+            icon: Icon(Icons.close_rounded, color: colors.textSecondary, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
         ],
       ),
     );
