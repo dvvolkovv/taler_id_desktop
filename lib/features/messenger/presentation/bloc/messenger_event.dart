@@ -171,6 +171,14 @@ class DeleteGroup extends MessengerEvent {
   List<Object?> get props => [conversationId];
 }
 
+class ForwardMessage extends MessengerEvent {
+  final MessageEntity message;
+  final String targetConversationId;
+  const ForwardMessage({required this.message, required this.targetConversationId});
+  @override
+  List<Object?> get props => [message.id, targetConversationId];
+}
+
 // ─── Mute events ───
 
 class MuteConversation extends MessengerEvent {

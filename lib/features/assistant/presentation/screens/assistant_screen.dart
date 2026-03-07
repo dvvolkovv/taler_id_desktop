@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:dio/dio.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/api/dio_client.dart';
+import '../../../../core/storage/secure_storage_service.dart';
+import '../../../../core/utils/constants.dart';
 
 enum _CallState { idle, connecting, connected, error }
 
@@ -21,14 +25,19 @@ class AssistantScreen extends StatefulWidget {
 class _AssistantScreenState extends State<AssistantScreen>
     with SingleTickerProviderStateMixin {
   _CallState _state = _CallState.idle;
-  RTCPeerConnection? _pc;
-  RTCDataChannel? _dc;
-  MediaStream? _localStream;
+  WebSocket? _ws;
+  final _recorder = AudioRecorder();
+  StreamSubscription<Uint8List>? _recordSub;
+  final _player = AudioPlayer();
+
   bool _muted = false;
   bool _speakerOn = false;
   bool _aiSpeaking = false;
   bool _sessionConfigured = false;
   String? _errorMessage;
+
+  // PCM16 audio buffer for AI speech
+  final List<int> _audioBuffer = [];
 
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
@@ -50,23 +59,27 @@ class _AssistantScreenState extends State<AssistantScreen>
     _pulseAnim = Tween<double>(begin: 1.0, end: 1.18).animate(
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _aiSpeaking = false);
+    });
   }
 
   @override
   void dispose() {
     _pulseCtrl.dispose();
     _cleanup();
+    _player.dispose();
     super.dispose();
   }
 
   Future<void> _cleanup() async {
     _sessionConfigured = false;
-    _dc?.close();
-    _dc = null;
-    await _localStream?.dispose();
-    _localStream = null;
-    await _pc?.close();
-    _pc = null;
+    _audioBuffer.clear();
+    await _recordSub?.cancel();
+    _recordSub = null;
+    await _recorder.stop();
+    await _ws?.close();
+    _ws = null;
   }
 
   Future<void> _connect() async {
@@ -75,90 +88,45 @@ class _AssistantScreenState extends State<AssistantScreen>
       _errorMessage = null;
     });
     try {
-      // 1. Get ephemeral token from backend (API key stays on server)
-      final client = sl<DioClient>();
-      final res = await client.post(
-        '/voice/session',
-        data: {},
-        fromJson: (d) => Map<String, dynamic>.from(d as Map),
-      );
-      final sessionToken = res['clientSecret'] as String;
+      // 1. Get JWT token (API key stays on server)
+      final token = await sl<SecureStorageService>().getAccessToken();
+      if (token == null) throw Exception('Not authenticated');
 
-      // 2. Create WebRTC peer connection
-      _pc = await createPeerConnection({
-        'iceServers': [
-          {'urls': 'stun:stun.l.google.com:19302'},
-        ],
-        'sdpSemantics': 'unified-plan',
-      });
+      // 2. Connect to backend WebSocket proxy
+      final wsUrl = Uri(
+        scheme: 'wss',
+        host: Uri.parse(ApiConstants.baseUrl).host,
+        path: '/voice/realtime-proxy',
+        queryParameters: {'token': token},
+      ).toString();
+      _ws = await WebSocket.connect(wsUrl);
 
-      // 3. Capture microphone
-      _localStream = await navigator.mediaDevices.getUserMedia({
-        'audio': {
-          'echoCancellation': true,
-          'noiseSuppression': true,
-          'autoGainControl': true,
+      // 3. Listen for messages from OpenAI via proxy
+      _ws!.listen(
+        (data) => _onMessage(data as String),
+        onDone: () {
+          if (mounted && _state == _CallState.connected) _endCall();
         },
-        'video': false,
-      });
-      for (final track in _localStream!.getAudioTracks()) {
-        _pc!.addTrack(track, _localStream!);
-      }
-
-      // 4. Create data channel for OpenAI events
-      _dc = await _pc!.createDataChannel(
-        'oai-events',
-        RTCDataChannelInit()..ordered = true,
-      );
-      _dc!.onMessage = _onDataChannelMessage;
-      _dc!.onDataChannelState = (state) {
-        if (state == RTCDataChannelState.RTCDataChannelOpen) {
-          _onDataChannelOpen();
-        }
-      };
-
-      // Detect AI speaking via remote audio track
-      _pc!.onTrack = (event) {
-        if (event.track.kind == 'audio') {
-          event.track.onEnded = () {
-            if (mounted) setState(() => _aiSpeaking = false);
-          };
-        }
-      };
-
-      // 5. Create SDP offer
-      final offer = await _pc!.createOffer({'offerToReceiveAudio': true});
-      await _pc!.setLocalDescription(offer);
-
-      // 6. Exchange SDP with OpenAI (direct WebRTC)
-      final dio = Dio();
-      final sdpResponse = await dio.post(
-        'https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17',
-        data: offer.sdp,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $sessionToken',
-            'Content-Type': 'application/sdp',
-          },
-          responseType: ResponseType.plain,
-        ),
+        onError: (e) {
+          if (mounted) {
+            setState(() {
+              _state = _CallState.error;
+              _errorMessage = e.toString();
+            });
+          }
+        },
       );
 
-      final answer = RTCSessionDescription(
-        sdpResponse.data as String,
-        'answer',
-      );
-      await _pc!.setRemoteDescription(answer);
+      // 4. Configure session
+      _onChannelOpen();
 
+      // 5. Start recording microphone and streaming to OpenAI
+      await _startRecording();
+
+      // 6. Enable speaker
       await _setSpeaker(true);
-      setState(() => _state = _CallState.connected);
 
-      // Fallback: send session.update if data channel callback didn't fire
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        if (mounted && !_sessionConfigured && _dc != null) {
-          _onDataChannelOpen();
-        }
-      });
+      setState(() => _state = _CallState.connected);
     } catch (e) {
       await _cleanup();
       setState(() {
@@ -168,12 +136,16 @@ class _AssistantScreenState extends State<AssistantScreen>
     }
   }
 
-  void _onDataChannelOpen() {
+  void _onChannelOpen() {
     if (_sessionConfigured) return;
     _sessionConfigured = true;
     _sendEvent({
       'type': 'session.update',
       'session': {
+        'modalities': ['text', 'audio'],
+        'input_audio_format': 'pcm16',
+        'output_audio_format': 'pcm16',
+        'input_audio_transcription': {'model': 'whisper-1'},
         'tools': [
           {
             'type': 'function',
@@ -201,20 +173,41 @@ class _AssistantScreenState extends State<AssistantScreen>
     });
   }
 
-  void _sendEvent(Map<String, dynamic> event) {
-    final msg = RTCDataChannelMessage(jsonEncode(event));
-    _dc?.send(msg);
+  Future<void> _startRecording() async {
+    const config = RecordConfig(
+      encoder: AudioEncoder.pcm16bits,
+      sampleRate: 24000,
+      numChannels: 1,
+    );
+    final stream = await _recorder.startStream(config);
+    _recordSub = stream.listen((chunk) {
+      if (_muted || _ws == null) return;
+      _sendEvent({
+        'type': 'input_audio_buffer.append',
+        'audio': base64Encode(chunk),
+      });
+    });
   }
 
-  void _onDataChannelMessage(RTCDataChannelMessage msg) {
+  void _sendEvent(Map<String, dynamic> event) {
+    _ws?.add(jsonEncode(event));
+  }
+
+  void _onMessage(String data) {
     try {
-      final event = jsonDecode(msg.text) as Map<String, dynamic>;
+      final event = jsonDecode(data) as Map<String, dynamic>;
       final type = event['type'] as String? ?? '';
 
       if (type == 'response.audio.delta') {
-        if (!_aiSpeaking && mounted) setState(() => _aiSpeaking = true);
-      } else if (type == 'response.audio.done' || type == 'response.done') {
-        if (_aiSpeaking && mounted) setState(() => _aiSpeaking = false);
+        final delta = event['delta'] as String? ?? '';
+        if (delta.isNotEmpty) {
+          _audioBuffer.addAll(base64Decode(delta));
+          if (mounted && !_aiSpeaking) setState(() => _aiSpeaking = true);
+        }
+      } else if (type == 'response.audio.done') {
+        _playBufferedAudio();
+      } else if (type == 'response.done') {
+        if (_audioBuffer.isNotEmpty) _playBufferedAudio();
       } else if (type == 'response.function_call_arguments.delta') {
         _pendingCallId ??= event['call_id'] as String?;
         _pendingCallName ??= event['name'] as String?;
@@ -231,6 +224,41 @@ class _AssistantScreenState extends State<AssistantScreen>
     } catch (_) {}
   }
 
+  Future<void> _playBufferedAudio() async {
+    if (_audioBuffer.isEmpty) return;
+    final pcm = Uint8List.fromList(_audioBuffer);
+    _audioBuffer.clear();
+    final wav = _buildWav(pcm, sampleRate: 24000, channels: 1);
+    await _player.play(BytesSource(wav));
+    if (mounted) setState(() => _aiSpeaking = true);
+  }
+
+  // Build a WAV file from raw PCM16 little-endian data
+  Uint8List _buildWav(Uint8List pcm, {required int sampleRate, required int channels}) {
+    final dataSize = pcm.length;
+    final buf = ByteData(44 + dataSize);
+    final byteRate = sampleRate * channels * 2;
+    // RIFF
+    buf.setUint32(0, 0x52494646, Endian.big);
+    buf.setUint32(4, 36 + dataSize, Endian.little);
+    buf.setUint32(8, 0x57415645, Endian.big);
+    // fmt
+    buf.setUint32(12, 0x666D7420, Endian.big);
+    buf.setUint32(16, 16, Endian.little);
+    buf.setUint16(20, 1, Endian.little);
+    buf.setUint16(22, channels, Endian.little);
+    buf.setUint32(24, sampleRate, Endian.little);
+    buf.setUint32(28, byteRate, Endian.little);
+    buf.setUint16(32, channels * 2, Endian.little);
+    buf.setUint16(34, 16, Endian.little);
+    // data
+    buf.setUint32(36, 0x64617461, Endian.big);
+    buf.setUint32(40, dataSize, Endian.little);
+    final result = buf.buffer.asUint8List();
+    result.setRange(44, 44 + dataSize, pcm);
+    return result;
+  }
+
   Future<void> _handleFunctionCall(
       String callId, String name, String argsJson) async {
     final client = sl<DioClient>();
@@ -244,7 +272,7 @@ class _AssistantScreenState extends State<AssistantScreen>
         output = jsonEncode(data);
       } else if (name == 'update_profile') {
         final args = jsonDecode(argsJson) as Map<String, dynamic>;
-        final data = await client.patch(
+        final data = await client.put(
           '/profile',
           data: args,
           fromJson: (d) => Map<String, dynamic>.from(d as Map),
@@ -268,11 +296,10 @@ class _AssistantScreenState extends State<AssistantScreen>
   }
 
   Future<void> _toggleMute() async {
-    final tracks = _localStream?.getAudioTracks() ?? [];
-    for (final track in tracks) {
-      track.enabled = _muted;
-    }
     setState(() => _muted = !_muted);
+    if (_muted) {
+      _sendEvent({'type': 'input_audio_buffer.clear'});
+    }
   }
 
   Future<void> _setSpeaker(bool on) async {
@@ -287,6 +314,7 @@ class _AssistantScreenState extends State<AssistantScreen>
   Future<void> _endCall() async {
     await _cleanup();
     await _setSpeaker(false);
+    await _player.stop();
     if (mounted) {
       setState(() {
         _state = _CallState.idle;

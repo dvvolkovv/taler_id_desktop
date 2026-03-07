@@ -24,6 +24,7 @@ import '../bloc/messenger_bloc.dart';
 import '../bloc/messenger_event.dart';
 import '../bloc/messenger_state.dart';
 import '../../domain/entities/message_entity.dart';
+import '../../domain/entities/conversation_entity.dart';
 import '../../data/datasources/messenger_remote_datasource.dart';
 
 class ChatRoomScreen extends StatefulWidget {
@@ -869,9 +870,42 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   );
                 },
               ),
+            ListTile(
+              leading: Icon(Icons.forward_rounded, color: colors.textSecondary),
+              title: Text('Переслать', style: TextStyle(color: colors.textPrimary)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showForwardPicker(context);
+              },
+            ),
             const SizedBox(height: 8),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showForwardPicker(BuildContext context) {
+    final bloc = context.read<MessengerBloc>();
+    final conversations = bloc.state.conversations;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.of(context).card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _ForwardPickerSheet(
+        conversations: conversations,
+        onSelected: (targetConversationId) {
+          bloc.add(ForwardMessage(
+            message: widget.message,
+            targetConversationId: targetConversationId,
+          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Сообщение переслано'), duration: Duration(seconds: 2)),
+          );
+        },
       ),
     );
   }
@@ -938,7 +972,7 @@ class _LinkifiedText extends StatelessWidget {
   Widget build(BuildContext context) {
     final matches = _urlRegex.allMatches(text).toList();
     if (matches.isEmpty) {
-      return Text(text, style: style);
+      return SelectionArea(child: Text(text, style: style));
     }
 
     final spans = <InlineSpan>[];
@@ -971,7 +1005,7 @@ class _LinkifiedText extends StatelessWidget {
     if (lastEnd < text.length) {
       spans.add(TextSpan(text: text.substring(lastEnd), style: style));
     }
-    return Text.rich(TextSpan(children: spans));
+    return SelectionArea(child: Text.rich(TextSpan(children: spans)));
   }
 }
 
@@ -1055,6 +1089,118 @@ class _CallOptionsSheetState extends State<_CallOptionsSheet> {
   }
 }
 
+class _ForwardPickerSheet extends StatefulWidget {
+  final List<ConversationEntity> conversations;
+  final void Function(String conversationId) onSelected;
+
+  const _ForwardPickerSheet({
+    required this.conversations,
+    required this.onSelected,
+  });
+
+  @override
+  State<_ForwardPickerSheet> createState() => _ForwardPickerSheetState();
+}
+
+class _ForwardPickerSheetState extends State<_ForwardPickerSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final filtered = widget.conversations.where((c) {
+      final name = c.name ?? c.otherUserName ?? '';
+      return name.toLowerCase().contains(_query.toLowerCase());
+    }).toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (_, scrollController) => Column(
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colors.textSecondary.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Переслать в...',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              autofocus: false,
+              style: TextStyle(color: colors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Поиск...',
+                hintStyle: TextStyle(color: colors.textSecondary),
+                prefixIcon: Icon(Icons.search_rounded, color: colors.textSecondary),
+                filled: true,
+                fillColor: colors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: filtered.length,
+              itemBuilder: (_, i) {
+                final conv = filtered[i];
+                final name = conv.name ?? conv.otherUserName ?? 'Чат';
+                final avatarUrl = conv.type == 'DIRECT' ? conv.otherUserAvatar : conv.avatarUrl;
+                return ListTile(
+                  leading: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: colors.primary.withValues(alpha: 0.2),
+                    backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
+                    child: avatarUrl == null
+                        ? Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold),
+                          )
+                        : null,
+                  ),
+                  title: Text(name, style: TextStyle(color: colors.textPrimary)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onSelected(conv.id);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
@@ -1101,6 +1247,8 @@ class _InputBar extends StatelessWidget {
                     controller: controller,
                     style: TextStyle(color: AppColors.of(context).textPrimary),
                     textCapitalization: TextCapitalization.sentences,
+                    minLines: 1,
+                    maxLines: 5,
                     decoration: InputDecoration(
                       hintText: 'Сообщение...',
                       hintStyle: TextStyle(color: AppColors.of(context).textSecondary),

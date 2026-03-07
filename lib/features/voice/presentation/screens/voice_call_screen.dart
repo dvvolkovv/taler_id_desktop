@@ -77,6 +77,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   bool _aiRecording = false;
   bool _isRecording = false; // simple recording (no AI analysis)
   String? _roomName; // actual room name (resolved after connect)
+  String? _publicRoomCreatorName; // owner name fetched from GET /voice/rooms/public/{code}
+  String? _publicRoomCreatorAvatar; // owner avatar URL
+  String? _publicRoomTitle; // room title
   final List<lk.RemoteParticipant> _participants = [];
   lk.EventsListener<lk.RoomEvent>? _eventsListener;
   StreamSubscription? _callEndedSub;
@@ -184,21 +187,44 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       late Map<String, dynamic> res;
 
       if (widget.publicCode != null) {
-        // Public room join — try authenticated endpoint first, fall back to guest
+        // 1. Fetch public room info (no auth required)
+        Map<String, dynamic>? roomInfo;
+        try {
+          final rawDio = dio_pkg.Dio(dio_pkg.BaseOptions(baseUrl: ApiConstants.baseUrl));
+          final infoResp = await rawDio.get('/voice/rooms/public/${widget.publicCode}');
+          roomInfo = Map<String, dynamic>.from(infoResp.data as Map);
+        } catch (_) {}
+
+        if (!mounted) return;
+
+        // 2. Show join dialog — room info + optional password
+        final joinResult = await _showJoinRoomDialog(roomInfo);
+        if (joinResult == null || !mounted) {
+          _navigateBack();
+          return;
+        }
+        final roomPassword = joinResult['password'] as String?;
+
+        // 3. Try authenticated join first, fall back to guest
         try {
           res = await client.post(
             '/voice/rooms/public/${widget.publicCode}/join-auth',
-            data: {},
+            data: roomPassword != null && roomPassword.isNotEmpty
+                ? {'password': roomPassword}
+                : {},
             fromJson: (d) => Map<String, dynamic>.from(d as Map),
           );
         } catch (_) {
-          // Not logged in or auth failed — ask user for their name then guest join
+          // Not logged in or auth failed — ask for guest name then join
           final guestName = await _askForGuestName();
           if (guestName == null || !mounted) return;
           final rawDio = dio_pkg.Dio(dio_pkg.BaseOptions(baseUrl: ApiConstants.baseUrl));
           final resp = await rawDio.post(
             '/voice/rooms/public/${widget.publicCode}/join',
-            data: {'name': guestName},
+            data: {
+              'name': guestName,
+              if (roomPassword != null && roomPassword.isNotEmpty) 'password': roomPassword,
+            },
           );
           res = Map<String, dynamic>.from(resp.data as Map);
         }
@@ -535,6 +561,133 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     }
   }
 
+  /// Show a dialog with room info (host avatar, name, title) and optional password field.
+  /// Returns {'password': '...'} on confirm, or null if cancelled.
+  Future<Map<String, dynamic>?> _showJoinRoomDialog(Map<String, dynamic>? roomInfo) async {
+    if (!mounted) return null;
+
+    final creatorName = roomInfo?['creatorName'] as String?;
+    final creatorAvatar = roomInfo?['creatorAvatar'] as String?;
+    final title = roomInfo?['title'] as String?;
+    final requiresPassword = roomInfo?['requiresPassword'] as bool? ?? false;
+
+    if (creatorName != null && creatorName.isNotEmpty) {
+      setState(() => _publicRoomCreatorName = creatorName);
+    }
+    if (creatorAvatar != null) {
+      setState(() => _publicRoomCreatorAvatar = creatorAvatar);
+    }
+    if (title != null && title.isNotEmpty) {
+      setState(() => _publicRoomTitle = title);
+    }
+
+    final colors = AppColors.of(context);
+    final passwordController = TextEditingController();
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Host avatar
+            CircleAvatar(
+              radius: 36,
+              backgroundColor: colors.primary.withOpacity(0.15),
+              backgroundImage: creatorAvatar != null ? NetworkImage(creatorAvatar) : null,
+              child: creatorAvatar == null
+                  ? Text(
+                      (creatorName ?? '?')[0].toUpperCase(),
+                      style: TextStyle(
+                        color: colors.primary,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 10),
+            if (creatorName != null && creatorName.isNotEmpty) ...[
+              Text(
+                creatorName,
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'приглашает вас в комнату',
+                style: TextStyle(color: colors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Text(
+              title?.isNotEmpty == true ? title! : 'Комната',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (requiresPassword) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.lock_outline, size: 14, color: colors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Защищена паролем',
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: passwordController,
+                autofocus: true,
+                obscureText: true,
+                style: TextStyle(color: colors.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Пароль',
+                  hintStyle: TextStyle(color: colors.textSecondary),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onSubmitted: (_) =>
+                    Navigator.of(ctx).pop({'password': passwordController.text}),
+              ),
+            ],
+            const SizedBox(height: 4),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: Text('Отмена', style: TextStyle(color: colors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(ctx).pop({'password': passwordController.text}),
+            child: Text(
+              'Войти',
+              style: TextStyle(color: colors.primary, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    passwordController.dispose();
+    return result;
+  }
+
   /// Ask the user to enter their display name before joining as guest.
   /// Returns the name, or null if the user cancelled.
   Future<String?> _askForGuestName() async {
@@ -558,8 +711,25 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface,
-        title: Text('Войти в комнату',
-            style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Войти в комнату',
+                style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+            if (_publicRoomCreatorName != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                _publicRoomCreatorName!,
+                style: TextStyle(
+                  color: colors.primary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -897,7 +1067,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     return Scaffold(
       backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
-        title: Text(widget.calleeName ?? 'Голосовой звонок'),
+        title: Text(
+          widget.calleeName ??
+          (widget.publicCode != null && _publicRoomCreatorName != null
+              ? 'Комната ${_publicRoomCreatorName}'
+              : 'Голосовой звонок'),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: _hangUp,
@@ -941,7 +1116,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   Widget _buildOutgoingCallCenter({required String statusText}) {
     final colors = AppColors.of(context);
-    final name = widget.calleeName;
+    final name = widget.calleeName ?? _publicRoomCreatorName;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -988,7 +1163,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   Widget _buildBody() {
     if (_connecting) {
-      return _buildOutgoingCallCenter(statusText: 'Подключение...');
+      final statusText = widget.publicCode != null && _publicRoomCreatorName != null
+          ? 'Комната ${_publicRoomCreatorName}'
+          : 'Подключение...';
+      return _buildOutgoingCallCenter(statusText: statusText);
     }
     if (_error != null) {
       return Center(
