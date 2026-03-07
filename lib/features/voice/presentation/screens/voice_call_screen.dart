@@ -75,6 +75,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   bool _ringing = false; // outgoing: ringback playing, waiting for callee to answer
   bool _navigatedAway = false;
   bool _aiRecording = false;
+  bool _isRecording = false; // simple recording (no AI analysis)
   String? _roomName; // actual room name (resolved after connect)
   final List<lk.RemoteParticipant> _participants = [];
   lk.EventsListener<lk.RoomEvent>? _eventsListener;
@@ -659,6 +660,23 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     }
   }
 
+  Future<void> _toggleSimpleRecorder() async {
+    final roomName = _roomName;
+    if (roomName == null) return;
+    final client = sl<DioClient>();
+    try {
+      if (!_isRecording) {
+        await client.dio.post('/voice/rooms/$roomName/recorder/start',
+            data: {'withAi': false});
+      } else {
+        await client.dio.post('/voice/rooms/$roomName/recorder/stop');
+      }
+      if (mounted) setState(() => _isRecording = !_isRecording);
+    } catch (e) {
+      debugPrint('[VoiceCall] Recorder error: $e');
+    }
+  }
+
   Future<void> _toggleAiRecorder() async {
     final roomName = _roomName;
     if (roomName == null) return;
@@ -666,7 +684,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
     try {
       if (!_aiRecording) {
-        await client.dio.post('/voice/rooms/$roomName/recorder/start');
+        await client.dio.post('/voice/rooms/$roomName/recorder/start',
+            data: {'withAi': true});
       } else {
         await client.dio.post('/voice/rooms/$roomName/recorder/stop');
       }
@@ -1024,7 +1043,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: _aiRecording ? Colors.red : Colors.green,
+                  color: (_aiRecording || _isRecording) ? Colors.red : Colors.green,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -1037,6 +1056,31 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (_isRecording) ...[
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6, height: 6,
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'REC',
+                        style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (_aiRecording) ...[
                 const SizedBox(width: 12),
                 Container(
@@ -1105,17 +1149,27 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Secondary row: AI Record, Audio Output, Flip Camera
+              // Secondary row: Record, AI Record, Audio Output, [Flip Camera]
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
+                  _ControlButton(
+                    icon: _isRecording ? Icons.stop_circle_rounded : Icons.fiber_manual_record_rounded,
+                    label: _isRecording ? 'Стоп' : 'Запись',
+                    color: _isRecording
+                        ? Colors.red.withOpacity(0.2)
+                        : AppColors.of(context).card,
+                    iconColor: _isRecording ? Colors.red : null,
+                    onTap: (_aiRecording) ? null : _toggleSimpleRecorder,
+                  ),
                   _ControlButton(
                     icon: _aiRecording ? Icons.smart_toy : Icons.smart_toy_outlined,
                     label: _aiRecording ? 'AI Стоп' : 'AI Запись',
                     color: _aiRecording
                         ? Colors.red.withOpacity(0.2)
                         : AppColors.of(context).card,
-                    onTap: _toggleAiRecorder,
+                    iconColor: _aiRecording ? Colors.red : null,
+                    onTap: (_isRecording) ? null : _toggleAiRecorder,
                   ),
                   _ControlButton(
                     icon: _outputIcons[_audioOutputType] ?? Icons.volume_up_rounded,
@@ -1568,8 +1622,9 @@ class _ControlButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool large;
+  final Color? iconColor;
 
   const _ControlButton({
     required this.icon,
@@ -1577,15 +1632,16 @@ class _ControlButton extends StatelessWidget {
     required this.color,
     required this.onTap,
     this.large = false,
+    this.iconColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = color.opacity < 0.9
+    final resolvedIconColor = iconColor ?? (color.opacity < 0.9
         ? AppColors.of(context).primary
         : (color.computeLuminance() > 0.4
             ? AppColors.of(context).textPrimary
-            : Colors.white);
+            : Colors.white));
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -1599,7 +1655,9 @@ class _ControlButton extends StatelessWidget {
             ),
             child: Icon(
               icon,
-              color: iconColor,
+              color: onTap == null
+                  ? AppColors.of(context).textSecondary.withValues(alpha: 0.4)
+                  : resolvedIconColor,
               size: large ? 32 : 24,
             ),
           ),
