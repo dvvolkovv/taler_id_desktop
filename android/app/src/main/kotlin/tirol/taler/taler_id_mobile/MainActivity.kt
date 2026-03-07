@@ -52,8 +52,8 @@ class MainActivity : FlutterFragmentActivity() {
                         val on = call.arguments as? Boolean ?: false
                         val am = getSystemService(AUDIO_SERVICE) as AudioManager
                         am.mode = AudioManager.MODE_IN_COMMUNICATION
-                        am.isSpeakerphoneOn = on
                         if (on) requestAudioFocus(am)
+                        am.isSpeakerphoneOn = on  // Must be after requestAudioFocus (which resets to false)
                         result.success(null)
                     }
                     "getAudioOutputs" -> {

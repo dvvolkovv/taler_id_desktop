@@ -60,8 +60,16 @@ class _AssistantScreenState extends State<AssistantScreen>
     _pulseAnim = Tween<double>(begin: 1.0, end: 1.18).animate(
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
-    _player.onPlayerComplete.listen((_) {
+    _player.onPlayerComplete.listen((_) async {
       if (mounted) setState(() => _aiSpeaking = false);
+      // On Android, audioplayers takes audio focus and stops the recorder.
+      // Restart recording after playback completes.
+      if (_ws != null && _state == _CallState.connected && !_muted) {
+        await _recordSub?.cancel();
+        _recordSub = null;
+        await _recorder.stop();
+        await _startRecording();
+      }
     });
   }
 
