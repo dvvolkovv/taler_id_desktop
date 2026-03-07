@@ -634,7 +634,7 @@ class _ActiveCallBanner extends StatelessWidget {
   }
 }
 
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends StatefulWidget {
   final MessageEntity message;
   final bool isMe;
   final String? senderName;
@@ -649,29 +649,69 @@ class _MessageBubble extends StatelessWidget {
   });
 
   @override
+  State<_MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<_MessageBubble> {
+  double _dragOffset = 0;
+  bool _replyTriggered = false;
+  static const _replyThreshold = 56.0;
+  static const _maxDrag = 72.0;
+
+  @override
   Widget build(BuildContext context) {
-    // System messages: centered, muted style
-    if (message.isSystem) {
+    if (widget.message.isSystem) {
       return _buildSystemMessage(context);
     }
 
     return GestureDetector(
-      onLongPress: isMe && message.fileUrl == null && message.content.isNotEmpty
-          ? () {
-              Clipboard.setData(ClipboardData(text: message.content));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Скопировано'),
-                  duration: Duration(seconds: 2),
+      onLongPress: () => _showMessageActions(context),
+      onHorizontalDragUpdate: (details) {
+        if (details.delta.dx > 0 || _dragOffset > 0) {
+          final newOffset = (_dragOffset + details.delta.dx).clamp(0.0, _maxDrag);
+          if (newOffset >= _replyThreshold && !_replyTriggered) {
+            _replyTriggered = true;
+            HapticFeedback.mediumImpact();
+          }
+          setState(() => _dragOffset = newOffset);
+        }
+      },
+      onHorizontalDragEnd: (_) {
+        if (_replyTriggered && widget.onReply != null) {
+          widget.onReply!();
+        }
+        setState(() {
+          _dragOffset = 0;
+          _replyTriggered = false;
+        });
+      },
+      onHorizontalDragCancel: () {
+        setState(() {
+          _dragOffset = 0;
+          _replyTriggered = false;
+        });
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (_dragOffset > 4)
+            Positioned(
+              left: 4,
+              top: 0,
+              bottom: 8,
+              child: Center(
+                child: Icon(
+                  Icons.reply_rounded,
+                  color: AppColors.of(context).primary.withValues(
+                      alpha: (_dragOffset / _replyThreshold).clamp(0.0, 1.0)),
+                  size: 22,
                 ),
-              );
-            }
-          : null,
-      onTap: !isMe
-          ? () => _showMessageActions(context)
-          : null,
-      child: Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+              ),
+            ),
+          Transform.translate(
+            offset: Offset(_dragOffset * 0.65, 0),
+            child: Align(
+      alignment: widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding:
@@ -685,11 +725,11 @@ class _MessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isMe && senderName != null && senderName!.isNotEmpty && (isGroup || senderName != null))
+            if (!widget.isMe && widget.senderName != null && widget.senderName!.isNotEmpty && (widget.isGroup || widget.senderName != null))
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  senderName!,
+                  widget.senderName!,
                   style: TextStyle(
                     color: AppColors.of(context).primary,
                     fontSize: 12,
@@ -697,25 +737,25 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
               ),
-            if (message.fileUrl != null && message.fileType == 'image')
+            if (widget.message.fileUrl != null && widget.message.fileType == 'image')
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: CachedNetworkImage(
-                    imageUrl: message.fileUrl!,
+                    imageUrl: widget.message.fileUrl!,
                     width: 220,
                     fit: BoxFit.cover,
                     errorWidget: (_, __, ___) => Icon(Icons.broken_image, color: AppColors.of(context).textSecondary),
                   ),
                 ),
               )
-            else if (message.fileUrl != null && message.fileType == 'audio')
-              _AudioMessagePlayer(fileUrl: message.fileUrl!, isMe: isMe)
-            else if (message.fileUrl != null && message.fileType == 'document')
+            else if (widget.message.fileUrl != null && widget.message.fileType == 'audio')
+              _AudioMessagePlayer(fileUrl: widget.message.fileUrl!, isMe: widget.isMe)
+            else if (widget.message.fileUrl != null && widget.message.fileType == 'document')
               GestureDetector(
                 onTap: () async {
-                  final uri = Uri.parse(message.fileUrl!);
+                  final uri = Uri.parse(widget.message.fileUrl!);
                   if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
                 },
                 child: Row(
@@ -725,7 +765,7 @@ class _MessageBubble extends StatelessWidget {
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        message.fileName ?? message.content,
+                        widget.message.fileName ?? widget.message.content,
                         style: TextStyle(
                           color: AppColors.of(context).primary,
                           fontSize: 13,
@@ -739,7 +779,7 @@ class _MessageBubble extends StatelessWidget {
               )
             else
               _LinkifiedText(
-                text: message.content,
+                text: widget.message.content,
                 style: TextStyle(
                   color: AppColors.of(context).textPrimary,
                   fontSize: 14,
@@ -755,22 +795,22 @@ class _MessageBubble extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  DateFormat('HH:mm').format(message.sentAt.toLocal()),
+                  DateFormat('HH:mm').format(widget.message.sentAt.toLocal()),
                   style: TextStyle(
                     color: AppColors.of(context).textSecondary,
                     fontSize: 11,
                   ),
                 ),
-                if (isMe) ...[
+                if (widget.isMe) ...[
                   const SizedBox(width: 4),
                   Icon(
-                    message.isRead
+                    widget.message.isRead
                         ? Icons.done_all_rounded
-                        : message.isDelivered
+                        : widget.message.isDelivered
                             ? Icons.done_all_rounded
                             : Icons.done_rounded,
                     size: 14,
-                    color: message.isRead
+                    color: widget.message.isRead
                         ? AppColors.of(context).primary
                         : AppColors.of(context).textSecondary,
                   ),
@@ -780,6 +820,9 @@ class _MessageBubble extends StatelessWidget {
           ],
         ),
       ),
+          ),
+          ),
+        ],
       ),
     );
   }
@@ -805,22 +848,22 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            if (onReply != null)
+            if (widget.onReply != null)
               ListTile(
                 leading: Icon(Icons.reply_rounded, color: colors.primary),
                 title: Text('Ответить', style: TextStyle(color: colors.textPrimary)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  onReply!();
+                  widget.onReply!();
                 },
               ),
-            if (message.fileUrl == null && message.content.isNotEmpty)
+            if (widget.message.fileUrl == null && widget.message.content.isNotEmpty)
               ListTile(
                 leading: Icon(Icons.copy_rounded, color: colors.textSecondary),
                 title: Text('Копировать', style: TextStyle(color: colors.textPrimary)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  Clipboard.setData(ClipboardData(text: message.content));
+                  Clipboard.setData(ClipboardData(text: widget.message.content));
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Скопировано'), duration: Duration(seconds: 2)),
                   );
@@ -836,7 +879,7 @@ class _MessageBubble extends StatelessWidget {
   Widget _buildSystemMessage(BuildContext context) {
     String text;
     try {
-      final data = jsonDecode(message.content) as Map<String, dynamic>;
+      final data = jsonDecode(widget.message.content) as Map<String, dynamic>;
       final action = data['action'] as String?;
       final actor = data['actor'] as String? ?? '';
       final target = data['target'] as String? ?? '';
@@ -848,10 +891,10 @@ class _MessageBubble extends StatelessWidget {
         case 'member_left': text = l10n.memberLeftGroup(actor); break;
         case 'member_removed': text = l10n.memberWasRemoved(target); break;
         case 'role_changed': text = l10n.roleChangedTo(target, role); break;
-        default: text = message.content;
+        default: text = widget.message.content;
       }
     } catch (_) {
-      text = message.content;
+      text = widget.message.content;
     }
 
     return Center(
