@@ -55,6 +55,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<UnmuteConversation>(_onUnmuteConversation);
     on<GroupCallStarted>(_onGroupCallStarted);
     on<GroupCallEnded>(_onGroupCallEnded);
+    on<ForwardMessage>(_onForwardMessage);
   }
 
   Future<void> _onConnect(
@@ -468,5 +469,11 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     final updated = Map<String, String>.from(state.activeGroupCalls);
     updated.remove(event.conversationId);
     emit(state.copyWith(activeGroupCalls: updated));
+  }
+
+  Future<void> _onForwardMessage(ForwardMessage event, Emitter<MessengerState> emit) async {
+    try {
+      _repo.sendMessage(event.targetConversationId, event.message.content);
+    } catch (_) {}
   }
 }
