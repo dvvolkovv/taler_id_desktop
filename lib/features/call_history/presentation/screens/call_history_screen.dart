@@ -1170,8 +1170,10 @@ class _MeetingRecordingsScreenState extends State<MeetingRecordingsScreen> {
                   ),
                   onPressed: recordingUrl.isNotEmpty ? () async {
                     final uri = Uri.parse(recordingUrl);
-                    if (await canLaunchUrl(uri)) {
+                    try {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } catch (_) {
+                      await launchUrl(uri, mode: LaunchMode.platformDefault);
                     }
                   } : null,
                 ),
