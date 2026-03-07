@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/dio_client.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/call_state_service.dart';
@@ -244,6 +245,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
             const SizedBox(height: 12),
             // ── Meeting summaries button ──
             _buildMeetingSummariesButton(colors),
+            const SizedBox(height: 8),
+            // ── Meeting recordings button ──
+            _buildMeetingRecordingsButton(colors),
             const SizedBox(height: 24),
             // ── Call history ──
             Text(
@@ -413,6 +417,40 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
             Expanded(
               child: Text(
                 'Резюме встреч',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: colors.textSecondary, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeetingRecordingsButton(AppColorsExtension colors) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const MeetingRecordingsScreen()),
+      ),
+      child: AppCard(
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.fiber_manual_record_rounded, color: Colors.red, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Записи встреч',
                 style: TextStyle(
                   color: colors.textPrimary,
                   fontSize: 15,
@@ -990,6 +1028,175 @@ class _MeetingSummaryDetailScreenState extends State<MeetingSummaryDetailScreen>
         const SizedBox(width: 8),
         Text(title, style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
       ],
+    );
+  }
+}
+
+// ─── Meeting Recordings Screen ───
+
+class MeetingRecordingsScreen extends StatefulWidget {
+  const MeetingRecordingsScreen({super.key});
+  @override
+  State<MeetingRecordingsScreen> createState() => _MeetingRecordingsScreenState();
+}
+
+class _MeetingRecordingsScreenState extends State<MeetingRecordingsScreen> {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  Future<List<Map<String, dynamic>>> _load() async {
+    final data = await sl<DioClient>().get<dynamic>('/voice/recordings');
+    final items = data as List? ?? [];
+    return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(local);
+    final time = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    if (diff.inDays == 0 && local.day == now.day) return 'Сегодня, $time';
+    if (diff.inDays <= 1 && now.day - local.day == 1) return 'Вчера, $time';
+    return '${local.day.toString().padLeft(2, '0')}.${local.month.toString().padLeft(2, '0')}.${local.year}, $time';
+  }
+
+  String _formatDuration(int sec) {
+    final m = sec ~/ 60;
+    final s = sec % 60;
+    if (m < 60) return '${m}м ${s.toString().padLeft(2, '0')}с';
+    final h = m ~/ 60;
+    final mm = m % 60;
+    return '${h}ч ${mm.toString().padLeft(2, '0')}м';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(title: const Text('Записи встреч')),
+      body: RefreshIndicator(
+        color: colors.primary,
+        onRefresh: () async { setState(() => _future = _load()); },
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _future,
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary));
+            }
+            if (snap.hasError) {
+              return Center(child: Text('Ошибка загрузки', style: TextStyle(color: colors.error)));
+            }
+            final items = snap.data ?? [];
+            if (items.isEmpty) {
+              return ListView(
+                children: [
+                  const SizedBox(height: 80),
+                  Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.fiber_manual_record_rounded, size: 48, color: colors.textSecondary),
+                        const SizedBox(height: 12),
+                        Text('Нет записей', style: TextStyle(color: colors.textSecondary, fontSize: 15)),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Нажмите "AI Запись" во время звонка',
+                          style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (ctx, i) => _buildRecordingCard(items[i], colors),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecordingCard(Map<String, dynamic> item, AppColorsExtension colors) {
+    final participants = (item['participants'] as List?)?.join(', ') ?? '';
+    final durationSec = item['durationSec'] as int?;
+    final createdAt = (DateTime.tryParse(item['createdAt'] as String? ?? '') ?? DateTime.now()).toLocal();
+    final recordingUrl = item['recordingUrl'] as String? ?? '';
+    final durationStr = durationSec != null ? _formatDuration(durationSec) : '';
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.fiber_manual_record_rounded, size: 18, color: Colors.red),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Запись ${_formatDate(createdAt)}',
+                  style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (durationStr.isNotEmpty)
+                Text(durationStr, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+            ],
+          ),
+          if (participants.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(participants, style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                  label: const Text('Воспроизвести'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.primary,
+                    side: BorderSide(color: colors.primary.withValues(alpha: 0.5)),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: recordingUrl.isNotEmpty ? () async {
+                    final uri = Uri.parse(recordingUrl);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  } : null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.share_rounded, size: 18),
+                label: const Text('Поделиться'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colors.textSecondary,
+                  side: BorderSide(color: colors.border),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: recordingUrl.isNotEmpty ? () {
+                  Share.share(
+                    'Запись встречи от ${_formatDate(createdAt)}\nУчастники: $participants\n\n$recordingUrl',
+                    subject: 'Запись встречи',
+                  );
+                } : null,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
