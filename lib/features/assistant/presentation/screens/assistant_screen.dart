@@ -86,6 +86,7 @@ class _AssistantScreenState extends State<AssistantScreen>
     setState(() {
       _state = _CallState.connecting;
       _errorMessage = null;
+      _aiSpeaking = false;
     });
     try {
       // 1. Get JWT token (API key stays on server)
@@ -120,11 +121,11 @@ class _AssistantScreenState extends State<AssistantScreen>
       // 4. Configure session
       _onChannelOpen();
 
-      // 5. Start recording microphone and streaming to OpenAI
-      await _startRecording();
-
-      // 6. Enable speaker
+      // 5. Enable speaker BEFORE recording so AudioSession is stable
       await _setSpeaker(true);
+
+      // 6. Start recording microphone and streaming to OpenAI
+      await _startRecording();
 
       setState(() => _state = _CallState.connected);
     } catch (e) {
@@ -241,7 +242,28 @@ class _AssistantScreenState extends State<AssistantScreen>
     final pcm = Uint8List.fromList(_audioBuffer);
     _audioBuffer.clear();
     final wav = _buildWav(pcm, sampleRate: 24000, channels: 1);
-    await _player.play(BytesSource(wav));
+    try {
+      // Set audio context to use voice communication stream for proper routing
+      await _player.setAudioContext(AudioContext(
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: _speakerOn,
+          stayAwake: false,
+          contentType: AndroidContentType.speech,
+          usageType: AndroidUsageType.voiceCommunication,
+          audioFocus: AndroidAudioFocus.gainTransientExclusive,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playAndRecord,
+          options: {
+            AVAudioSessionOptions.allowBluetooth,
+            AVAudioSessionOptions.defaultToSpeaker,
+          },
+        ),
+      ));
+      await _player.play(BytesSource(wav));
+    } catch (e) {
+      debugPrint('[Assistant] playback error: $e');
+    }
     if (mounted) setState(() => _aiSpeaking = true);
   }
 
