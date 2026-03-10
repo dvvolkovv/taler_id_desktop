@@ -21,20 +21,30 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "tirol.taler.taler_id_mobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationId = "tirol.taler.taler_id_mobile.dev"
+            versionNameSuffix = "-dev"
+            resValue("string", "app_name", "Taler ID Dev")
+        }
+        create("prod") {
+            dimension = "environment"
+            applicationId = "tirol.taler.taler_id_mobile"
+            resValue("string", "app_name", "Taler ID")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

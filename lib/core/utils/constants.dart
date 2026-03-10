@@ -1,5 +1,7 @@
+import '../config/app_config.dart';
+
 class ApiConstants {
-  static const baseUrl = 'https://id.taler.tirol';
+  static const baseUrl = AppConfig.baseUrl;
   static const accessTokenKey = 'access_token';
   static const refreshTokenKey = 'refresh_token';
   static const biometricEnabledKey = 'biometric_enabled';
