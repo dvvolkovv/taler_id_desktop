@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -736,6 +737,7 @@ class MeetingSummariesScreen extends StatefulWidget {
 
 class _MeetingSummariesScreenState extends State<MeetingSummariesScreen> {
   late Future<List<Map<String, dynamic>>> _future;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -743,10 +745,25 @@ class _MeetingSummariesScreenState extends State<MeetingSummariesScreen> {
     _future = _load();
   }
 
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
   Future<List<Map<String, dynamic>>> _load() async {
     final data = await sl<DioClient>().get<dynamic>('/voice/meetings');
     final items = data as List? ?? [];
-    return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    final list = items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    // Auto-refresh while there are processing meetings
+    final hasProcessing = list.any((e) => e['status'] == 'processing');
+    _refreshTimer?.cancel();
+    if (hasProcessing && mounted) {
+      _refreshTimer = Timer(const Duration(seconds: 15), () {
+        if (mounted) setState(() => _future = _load());
+      });
+    }
+    return list;
   }
 
   @override
@@ -809,9 +826,10 @@ class _MeetingSummariesScreenState extends State<MeetingSummariesScreen> {
     final createdAt = (DateTime.tryParse(item['createdAt'] as String? ?? '') ?? DateTime.now()).toLocal();
     final timeStr = '${createdAt.day}.${createdAt.month.toString().padLeft(2, '0')} ${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
     final durationStr = durationSec != null ? '${durationSec ~/ 60} мин' : '';
+    final isProcessing = item['status'] == 'processing';
 
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
+      onTap: isProcessing ? null : () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => MeetingSummaryDetailScreen(id: item['id'] as String)),
       ),
       child: AppCard(
@@ -828,6 +846,16 @@ class _MeetingSummariesScreenState extends State<MeetingSummariesScreen> {
                     style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
+                if (isProcessing) ...[
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
+                  ),
+                  const SizedBox(width: 6),
+                  Text('Обрабатывается', style: TextStyle(color: colors.primary, fontSize: 12)),
+                ],
               ],
             ),
             if (participants.isNotEmpty) ...[
@@ -841,11 +869,13 @@ class _MeetingSummariesScreenState extends State<MeetingSummariesScreen> {
                   Text(durationStr, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                   const SizedBox(width: 12),
                 ],
-                if (actionItemsCount > 0)
+                if (!isProcessing && actionItemsCount > 0)
                   Text('$actionItemsCount задач', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w500)),
+                if (isProcessing)
+                  Text('Транскрибация и суммаризация...', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
               ],
             ),
-            if (summary.isNotEmpty) ...[
+            if (!isProcessing && summary.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
                 summary.length > 120 ? '${summary.substring(0, 120)}...' : summary,
