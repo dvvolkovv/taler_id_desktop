@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -1072,11 +1073,54 @@ class MeetingRecordingsScreen extends StatefulWidget {
 
 class _MeetingRecordingsScreenState extends State<MeetingRecordingsScreen> {
   late Future<List<Map<String, dynamic>>> _future;
+  final _player = AudioPlayer();
+  String? _playingId;
+  PlayerState _playerState = PlayerState.stopped;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  final List<StreamSubscription> _subs = [];
 
   @override
   void initState() {
     super.initState();
     _future = _load();
+    _subs.add(_player.onPlayerStateChanged.listen((s) {
+      if (mounted) setState(() => _playerState = s);
+    }));
+    _subs.add(_player.onPositionChanged.listen((p) {
+      if (mounted) setState(() => _position = p);
+    }));
+    _subs.add(_player.onDurationChanged.listen((d) {
+      if (mounted) setState(() => _duration = d);
+    }));
+    _subs.add(_player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() { _playingId = null; _position = Duration.zero; });
+    }));
+  }
+
+  @override
+  void dispose() {
+    for (final s in _subs) s.cancel();
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlay(String id, String url) async {
+    if (_playingId == id && _playerState == PlayerState.playing) {
+      await _player.pause();
+    } else if (_playingId == id && _playerState == PlayerState.paused) {
+      await _player.resume();
+    } else {
+      await _player.stop();
+      setState(() { _playingId = id; _position = Duration.zero; });
+      await _player.play(UrlSource(url));
+    }
+  }
+
+  String _formatPos(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   Future<List<Map<String, dynamic>>> _load() async {
@@ -1157,11 +1201,14 @@ class _MeetingRecordingsScreenState extends State<MeetingRecordingsScreen> {
   }
 
   Widget _buildRecordingCard(Map<String, dynamic> item, AppColorsExtension colors) {
+    final id = item['id'] as String? ?? '';
     final participants = (item['participants'] as List?)?.join(', ') ?? '';
     final durationSec = item['durationSec'] as int?;
     final createdAt = (DateTime.tryParse(item['createdAt'] as String? ?? '') ?? DateTime.now()).toLocal();
     final recordingUrl = item['recordingUrl'] as String? ?? '';
     final durationStr = durationSec != null ? _formatDuration(durationSec) : '';
+    final isThis = _playingId == id;
+    final isPlaying = isThis && _playerState == PlayerState.playing;
 
     return AppCard(
       child: Column(
@@ -1186,47 +1233,76 @@ class _MeetingRecordingsScreenState extends State<MeetingRecordingsScreen> {
             Text(participants, style: TextStyle(color: colors.textSecondary, fontSize: 13)),
           ],
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                  label: const Text('Воспроизвести'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colors.primary,
-                    side: BorderSide(color: colors.primary.withValues(alpha: 0.5)),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          // Inline audio player
+          if (recordingUrl.isNotEmpty) ...[
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
+                    size: 40,
+                    color: colors.primary,
                   ),
-                  onPressed: recordingUrl.isNotEmpty ? () async {
-                    final uri = Uri.parse(recordingUrl);
-                    try {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } catch (_) {
-                      await launchUrl(uri, mode: LaunchMode.platformDefault);
-                    }
-                  } : null,
+                  onPressed: () => _togglePlay(id, recordingUrl),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.share_rounded, size: 18),
-                label: const Text('Поделиться'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colors.textSecondary,
-                  side: BorderSide(color: colors.border),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                          activeTrackColor: colors.primary,
+                          inactiveTrackColor: colors.border,
+                          thumbColor: colors.primary,
+                          overlayColor: colors.primary.withValues(alpha: 0.2),
+                        ),
+                        child: Slider(
+                          value: isThis && _duration.inMilliseconds > 0
+                              ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+                              : 0.0,
+                          onChanged: isThis && _duration.inMilliseconds > 0
+                              ? (v) => _player.seek(Duration(milliseconds: (v * _duration.inMilliseconds).round()))
+                              : null,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              isThis ? _formatPos(_position) : '00:00',
+                              style: TextStyle(color: colors.textSecondary, fontSize: 11),
+                            ),
+                            Text(
+                              isThis && _duration > Duration.zero ? _formatPos(_duration) : '',
+                              style: TextStyle(color: colors.textSecondary, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                onPressed: recordingUrl.isNotEmpty ? () {
-                  Share.share(
+                IconButton(
+                  icon: Icon(Icons.share_rounded, size: 20, color: colors.textSecondary),
+                  onPressed: () => Share.share(
                     'Запись встречи от ${_formatDate(createdAt)}\nУчастники: $participants\n\n$recordingUrl',
                     subject: 'Запись встречи',
-                  );
-                } : null,
-              ),
-            ],
-          ),
+                  ),
+                  tooltip: 'Поделиться',
+                ),
+              ],
+            ),
+          ] else ...[
+            Text('Запись недоступна', style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+          ],
         ],
       ),
     );
