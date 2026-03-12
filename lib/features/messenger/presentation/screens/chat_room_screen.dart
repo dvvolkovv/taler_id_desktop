@@ -14,7 +14,6 @@ import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -41,10 +40,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   late final TextEditingController _ctrl;
   late final ScrollController _scrollCtrl;
   final _recorder = AudioRecorder();
-  final _speech = SpeechToText();
-  bool _speechInitialized = false;
   bool _isRecording = false;
-  bool _isTranscribing = false;
   String? _recordingPath;
   double _prevKeyboardHeight = 0;
   MessageEntity? _replyTo;
@@ -429,37 +425,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Future<void> _startTranscription() async {
-    if (!_speechInitialized) {
-      _speechInitialized = await _speech.initialize();
-    }
-    if (!_speechInitialized || !mounted) return;
-    setState(() => _isTranscribing = true);
-    await _speech.listen(
-      onResult: (result) {
-        if (!mounted) return;
-        if (result.finalResult && result.recognizedWords.isNotEmpty) {
-          final words = result.recognizedWords;
-          final current = _ctrl.text;
-          final newText = current.isEmpty ? words : '$current $words';
-          _ctrl.text = newText;
-          _ctrl.selection = TextSelection.fromPosition(TextPosition(offset: newText.length));
-        }
-      },
-    );
-  }
-
-  Future<void> _stopAndTranscribe() async {
-    await _speech.stop();
-    if (mounted) setState(() => _isTranscribing = false);
-  }
-
   @override
   void dispose() {
     _ctrl.dispose();
     _scrollCtrl.dispose();
     _recorder.dispose();
-    _speech.cancel();
     _disconnectSub?.cancel();
     _reconnectSub?.cancel();
     super.dispose();
@@ -660,9 +630,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 isRecording: _isRecording,
                 onRecordStart: _startRecording,
                 onRecordStop: _stopRecordingAndSend,
-                isTranscribing: _isTranscribing,
-                onTranscribeStart: _startTranscription,
-                onTranscribeStop: _stopAndTranscribe,
               ),
             ],
           );
@@ -1406,9 +1373,6 @@ class _InputBar extends StatelessWidget {
   final bool isRecording;
   final VoidCallback onRecordStart;
   final VoidCallback onRecordStop;
-  final bool isTranscribing;
-  final VoidCallback onTranscribeStart;
-  final VoidCallback onTranscribeStop;
 
   const _InputBar({
     required this.controller,
@@ -1417,9 +1381,6 @@ class _InputBar extends StatelessWidget {
     required this.isRecording,
     required this.onRecordStart,
     required this.onRecordStop,
-    required this.isTranscribing,
-    required this.onTranscribeStart,
-    required this.onTranscribeStop,
   });
 
   @override
@@ -1447,14 +1408,6 @@ class _InputBar extends StatelessWidget {
                       Text('Запись...', style: TextStyle(color: AppColors.of(context).error, fontSize: 14)),
                     ],
                   )
-                : isTranscribing
-                ? Row(
-                    children: [
-                      Icon(Icons.circle, color: Colors.orange, size: 12),
-                      SizedBox(width: 8),
-                      Text('Говорите...', style: TextStyle(color: Colors.orange, fontSize: 14)),
-                    ],
-                  )
                 : TextField(
                     controller: controller,
                     style: TextStyle(color: AppColors.of(context).textPrimary),
@@ -1475,22 +1428,8 @@ class _InputBar extends StatelessWidget {
             icon: Icon(Icons.keyboard_hide_rounded, color: AppColors.of(context).textSecondary),
             tooltip: 'Скрыть клавиатуру',
           ),
-          // Transcribe button: hold to dictate → text
-          if (!isRecording)
-            GestureDetector(
-              onLongPressStart: (_) => onTranscribeStart(),
-              onLongPressEnd: (_) => onTranscribeStop(),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  isTranscribing ? Icons.stop_circle_rounded : Icons.record_voice_over_rounded,
-                  color: isTranscribing ? Colors.orange : AppColors.of(context).textSecondary,
-                ),
-              ),
-            ),
           // Voice button: hold to record voice message
-          if (!isTranscribing)
-            GestureDetector(
+          GestureDetector(
               onLongPressStart: (_) => onRecordStart(),
               onLongPressEnd: (_) => onRecordStop(),
               child: Container(
@@ -1501,7 +1440,7 @@ class _InputBar extends StatelessWidget {
                 ),
               ),
             ),
-          if (!isRecording && !isTranscribing)
+          if (!isRecording)
             IconButton(
               onPressed: onSend,
               icon: Icon(Icons.send_rounded, color: AppColors.of(context).primary),
