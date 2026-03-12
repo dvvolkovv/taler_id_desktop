@@ -281,6 +281,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           defaultAudioPublishOptions: const lk.AudioPublishOptions(
             audioBitrate: 32000,
           ),
+          autoSubscribe: false,
         ),
       );
       debugPrint('[VoiceCall] LiveKit connected, state=${_room!.connectionState}');
@@ -304,6 +305,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       setState(() {
         _participants.addAll(_room!.remoteParticipants.values);
       });
+
+      // With autoSubscribe:false, manually subscribe to existing tracks
+      for (final p in _room!.remoteParticipants.values) {
+        if (p.identity == 'voice-translator') continue;
+        for (final pub in [...p.audioTrackPublications, ...p.videoTrackPublications]) {
+          try { pub.subscribe(); } catch (_) {}
+        }
+      }
 
       // Sync translation subscription for any translator already in the room
       _updateTranslationSubscription();
@@ -435,9 +444,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         }
       })
       ..on<lk.TrackPublishedEvent>((event) {
-        // When voice-translator publishes a new track, subscribe if translation is enabled
         if (event.participant.identity == 'voice-translator') {
+          // Translator track: subscribe only to preferred language if enabled
           _updateTranslationSubscription();
+        } else {
+          // Human participant: always subscribe to their audio/video
+          try { event.publication.subscribe(); } catch (_) {}
         }
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
@@ -529,6 +541,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           roomOptions: lk.RoomOptions(
             e2eeOptions: reconnectE2eeOptions,
             defaultAudioPublishOptions: const lk.AudioPublishOptions(audioBitrate: 32000),
+            autoSubscribe: false,
           ),
         );
 
