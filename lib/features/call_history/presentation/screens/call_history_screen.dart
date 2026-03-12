@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/dio_client.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/call_state_service.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -918,7 +919,7 @@ class _MeetingSummaryDetailScreenState extends State<MeetingSummaryDetailScreen>
   }
 
   void _share() {
-    final url = 'https://id.taler.tirol/meeting/${widget.id}';
+    final url = '${AppConfig.baseUrl}/meeting/${widget.id}';
     final summary = _data?['summary'] as String? ?? '';
     final text = summary.isNotEmpty
         ? 'Резюме встречи:\n${summary.length > 200 ? '${summary.substring(0, 200)}...' : summary}\n\n$url'

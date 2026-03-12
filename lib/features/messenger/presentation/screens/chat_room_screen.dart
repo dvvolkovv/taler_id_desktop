@@ -15,6 +15,7 @@ import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/api/dio_client.dart';
@@ -990,7 +991,7 @@ class _LinkifiedText extends StatelessWidget {
             final uri = Uri.tryParse(url);
             if (uri == null) return;
             // Open room links inside the app instead of the browser
-            if (uri.host == 'id.taler.tirol' && uri.path.startsWith('/room/')) {
+            if (uri.host == Uri.parse(AppConfig.baseUrl).host && uri.path.startsWith('/room/')) {
               final code = uri.pathSegments.last;
               if (code.isNotEmpty) {
                 GoRouter.of(context).go('/dashboard/voice?publicCode=$code');

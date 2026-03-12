@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/service_locator.dart';
 import 'package:dio/dio.dart' as dio_pkg;
@@ -260,7 +261,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       }
 
       await _room!.connect(
-        'wss://id.taler.tirol/livekit/',
+        '${AppConfig.baseUrl.replaceFirst('https://', 'wss://')}/livekit/',
         token,
         roomOptions: lk.RoomOptions(
           e2eeOptions: e2eeOptions,
@@ -479,7 +480,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         }
 
         await newRoom.connect(
-          'wss://id.taler.tirol/livekit/',
+          '${AppConfig.baseUrl.replaceFirst('https://', 'wss://')}/livekit/',
           token,
           roomOptions: lk.RoomOptions(
             e2eeOptions: reconnectE2eeOptions,

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../api/auth_interceptor.dart';
 import '../api/dio_client.dart';
+import '../config/app_config.dart';
 import '../storage/secure_storage_service.dart';
 import '../storage/cache_service.dart';
 
@@ -61,7 +62,7 @@ Future<void> setupDependencies() async {
   // Dio (raw, for auth interceptor use)
   final rawDio = Dio(
     BaseOptions(
-      baseUrl: 'https://id.taler.tirol',
+      baseUrl: AppConfig.baseUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
       headers: {'Content-Type': 'application/json'},

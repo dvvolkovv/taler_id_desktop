@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import '../api/dio_client.dart';
+import '../config/app_config.dart';
 import '../di/service_locator.dart';
 
 class CallStateService {
@@ -74,7 +75,7 @@ class CallStateService {
       }
 
       await r.connect(
-        'wss://id.taler.tirol/livekit/',
+        '${AppConfig.baseUrl.replaceFirst('https://', 'wss://')}/livekit/',
         token,
         roomOptions: lk.RoomOptions(
           e2eeOptions: e2eeOptions,

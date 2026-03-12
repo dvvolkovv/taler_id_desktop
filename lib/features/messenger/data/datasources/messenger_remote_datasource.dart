@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../../../../core/api/dio_client.dart';
+import '../../../../core/config/app_config.dart';
 import '../../domain/entities/conversation_entity.dart';
 import '../../domain/entities/message_entity.dart';
 import '../../domain/entities/user_search_entity.dart';
@@ -33,7 +34,7 @@ class MessengerRemoteDataSource {
   Future<void> connect(String accessToken) async {
     _socket?.dispose();
     _socket = io.io(
-      'https://id.taler.tirol/messenger',
+      '${AppConfig.baseUrl}/messenger',
       io.OptionBuilder()
           .setTransports(['websocket'])
           .setAuth({'token': accessToken})
