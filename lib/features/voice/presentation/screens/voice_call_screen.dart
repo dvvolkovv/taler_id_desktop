@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:collection/collection.dart';
@@ -84,6 +85,18 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   final List<lk.RemoteParticipant> _participants = [];
   lk.EventsListener<lk.RoomEvent>? _eventsListener;
   StreamSubscription? _callEndedSub;
+
+  // Translation state
+  String _preferredLang = 'ru';
+  bool _translationEnabled = false;
+  bool _translationActive = false; // currently playing TTS (for UI indicator)
+
+  static const _translationLangs = {
+    'ru': 'Русский',
+    'en': 'English',
+    'de': 'Deutsch',
+    'it': 'Italiano',
+  };
 
   // Video state
   bool _cameraOn = false;
@@ -311,6 +324,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       setState(() => _connecting = false);
       WakelockPlus.enable();
 
+      // Publish language preference into LiveKit participant metadata
+      _publishLangMetadata(_preferredLang);
+
       // Force earpiece mode — LiveKit may override speakerphone asynchronously on Android.
       // Call twice: once early, once after LiveKit audio stack fully initialises.
       _forceEarpiece();
@@ -386,6 +402,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       ..on<lk.TrackUnmutedEvent>((_) {
         if (mounted) setState(() {});
       })
+      ..on<lk.DataReceivedEvent>((event) {
+        try {
+          final msg = jsonDecode(utf8.decode(event.data)) as Map<String, dynamic>;
+          final type = msg['type'] as String?;
+          if (type == 'translation_start') {
+            if (mounted) setState(() => _translationActive = true);
+          } else if (type == 'translation_end') {
+            if (mounted) setState(() => _translationActive = false);
+          }
+        } catch (_) {}
+      })
       ..on<lk.ParticipantConnectedEvent>((event) async {
         // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
         if (event.participant.identity != 'ai-assistant') {
@@ -394,6 +421,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         // Auto-detect meeting recorder joining
         if (event.participant.identity == 'meeting-recorder') {
           if (mounted) setState(() => _aiRecording = true);
+        }
+        // When translator joins, subscribe to our preferred language track
+        if (event.participant.identity == 'voice-translator') {
+          _updateTranslationSubscription();
         }
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
@@ -1042,6 +1073,130 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     if (_audioOutputType == 'earpiece') _forceEarpiece();
   }
 
+  // ─── Translation ───────────────────────────────────────
+
+  void _publishLangMetadata(String lang) {
+    try {
+      _room?.localParticipant?.setMetadata(jsonEncode({'lang': lang}));
+    } catch (_) {}
+  }
+
+  void _updateTranslationSubscription() {
+    for (final p in _participants) {
+      if (p.identity != 'voice-translator') continue;
+      for (final pub in p.audioTrackPublications) {
+        final want = _translationEnabled && pub.name == 'translation-$_preferredLang';
+        try {
+          if (want && !pub.subscribed) {
+            pub.subscribe();
+          } else if (!want && pub.subscribed) {
+            pub.unsubscribe();
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> _toggleTranslation(bool enabled) async {
+    final roomName = _roomName;
+    if (roomName == null) return;
+    setState(() => _translationEnabled = enabled);
+    if (enabled) {
+      // Start translator agent
+      try {
+        await sl<DioClient>().dio.post('/voice/rooms/$roomName/translator/start');
+      } catch (_) {}
+    }
+    _updateTranslationSubscription();
+  }
+
+  Future<void> _setPreferredLang(String lang) async {
+    setState(() => _preferredLang = lang);
+    _publishLangMetadata(lang);
+    // Notify agent about updated lang
+    final roomName = _roomName;
+    if (roomName != null) {
+      try {
+        await sl<DioClient>().dio.post(
+          '/voice/rooms/$roomName/set-lang',
+          data: {'lang': lang},
+        );
+      } catch (_) {}
+    }
+    _updateTranslationSubscription();
+  }
+
+  Future<void> _showLangPicker() async {
+    final colors = AppColors.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setModalState) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: colors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Язык перевода',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._translationLangs.entries.map((e) => ListTile(
+                leading: Icon(
+                  Icons.language_rounded,
+                  color: _preferredLang == e.key ? colors.primary : colors.textSecondary,
+                ),
+                title: Text(
+                  e.value,
+                  style: TextStyle(
+                    color: _preferredLang == e.key ? colors.primary : colors.textPrimary,
+                    fontWeight: _preferredLang == e.key ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                trailing: _preferredLang == e.key
+                    ? Icon(Icons.check_rounded, color: colors.primary)
+                    : null,
+                onTap: () {
+                  Navigator.pop(context);
+                  _setPreferredLang(e.key);
+                },
+              )),
+              SwitchListTile(
+                title: Text(
+                  'Включить перевод',
+                  style: TextStyle(color: colors.textPrimary),
+                ),
+                value: _translationEnabled,
+                activeColor: colors.primary,
+                onChanged: (v) {
+                  Navigator.pop(context);
+                  _toggleTranslation(v);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -1328,7 +1483,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Secondary row: Record, AI Record, Audio Output, [Flip Camera]
+              // Secondary row: Record, AI Record, Translate, Audio Output, [Flip Camera]
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -1349,6 +1504,37 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                         : AppColors.of(context).card,
                     iconColor: _aiRecording ? Colors.red : null,
                     onTap: (_isRecording) ? null : _toggleAiRecorder,
+                  ),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _ControlButton(
+                        icon: Icons.translate_rounded,
+                        label: _translationEnabled
+                            ? _preferredLang.toUpperCase()
+                            : 'Перевод',
+                        color: _translationEnabled
+                            ? AppColors.of(context).primary.withValues(alpha: 0.2)
+                            : AppColors.of(context).card,
+                        iconColor: _translationEnabled
+                            ? AppColors.of(context).primary
+                            : null,
+                        onTap: _showLangPicker,
+                      ),
+                      if (_translationActive)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   _ControlButton(
                     icon: _outputIcons[_audioOutputType] ?? Icons.volume_up_rounded,
@@ -1426,6 +1612,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             itemCount: _participants.length,
             itemBuilder: (_, i) {
               final p = _participants[i];
+              if (p.identity == 'voice-translator') return const SizedBox.shrink();
               final isAI = p.identity == 'ai-assistant';
               final isRecorder = p.identity == 'meeting-recorder';
               final hasMic = _participantHasMic(p);
@@ -1495,6 +1682,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
     // Add remote participants
     for (final p in _participants) {
+      if (p.identity == 'voice-translator') continue;
       final track = p.videoTrackPublications
           .firstWhereOrNull((pub) => pub.subscribed && pub.track != null)
           ?.track as lk.VideoTrack?;
