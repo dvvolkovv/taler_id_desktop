@@ -33,6 +33,7 @@ mixin _$MessageEntity {
   bool get isDelivered => throw _privateConstructorUsedError;
   bool get isRead => throw _privateConstructorUsedError;
   bool get isSystem => throw _privateConstructorUsedError;
+  bool get isEdited => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -59,7 +60,8 @@ abstract class $MessageEntityCopyWith<$Res> {
       String? fileType,
       bool isDelivered,
       bool isRead,
-      bool isSystem});
+      bool isSystem,
+      bool isEdited});
 }
 
 /// @nodoc
@@ -88,6 +90,7 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
     Object? isDelivered = null,
     Object? isRead = null,
     Object? isSystem = null,
+    Object? isEdited = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -142,6 +145,10 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
           ? _value.isSystem
           : isSystem // ignore: cast_nullable_to_non_nullable
               as bool,
+      isEdited: null == isEdited
+          ? _value.isEdited
+          : isEdited // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -167,7 +174,8 @@ abstract class _$$MessageEntityImplCopyWith<$Res>
       String? fileType,
       bool isDelivered,
       bool isRead,
-      bool isSystem});
+      bool isSystem,
+      bool isEdited});
 }
 
 /// @nodoc
@@ -194,6 +202,7 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
     Object? isDelivered = null,
     Object? isRead = null,
     Object? isSystem = null,
+    Object? isEdited = null,
   }) {
     return _then(_$MessageEntityImpl(
       id: null == id
@@ -248,6 +257,10 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
           ? _value.isSystem
           : isSystem // ignore: cast_nullable_to_non_nullable
               as bool,
+      isEdited: null == isEdited
+          ? _value.isEdited
+          : isEdited // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -268,7 +281,8 @@ class _$MessageEntityImpl implements _MessageEntity {
       this.fileType,
       this.isDelivered = false,
       this.isRead = false,
-      this.isSystem = false});
+      this.isSystem = false,
+      this.isEdited = false});
 
   factory _$MessageEntityImpl.fromJson(Map<String, dynamic> json) =>
       _$$MessageEntityImplFromJson(json);
@@ -302,10 +316,13 @@ class _$MessageEntityImpl implements _MessageEntity {
   @override
   @JsonKey()
   final bool isSystem;
+  @override
+  @JsonKey()
+  final bool isEdited;
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType, isDelivered: $isDelivered, isRead: $isRead, isSystem: $isSystem)';
+    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType, isDelivered: $isDelivered, isRead: $isRead, isSystem: $isSystem, isEdited: $isEdited)';
   }
 
   @override
@@ -333,7 +350,9 @@ class _$MessageEntityImpl implements _MessageEntity {
                 other.isDelivered == isDelivered) &&
             (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.isSystem, isSystem) ||
-                other.isSystem == isSystem));
+                other.isSystem == isSystem) &&
+            (identical(other.isEdited, isEdited) ||
+                other.isEdited == isEdited));
   }
 
   @JsonKey(ignore: true)
@@ -352,7 +371,8 @@ class _$MessageEntityImpl implements _MessageEntity {
       fileType,
       isDelivered,
       isRead,
-      isSystem);
+      isSystem,
+      isEdited);
 
   @JsonKey(ignore: true)
   @override
@@ -382,7 +402,8 @@ abstract class _MessageEntity implements MessageEntity {
       final String? fileType,
       final bool isDelivered,
       final bool isRead,
-      final bool isSystem}) = _$MessageEntityImpl;
+      final bool isSystem,
+      final bool isEdited}) = _$MessageEntityImpl;
 
   factory _MessageEntity.fromJson(Map<String, dynamic> json) =
       _$MessageEntityImpl.fromJson;
@@ -413,6 +434,8 @@ abstract class _MessageEntity implements MessageEntity {
   bool get isRead;
   @override
   bool get isSystem;
+  @override
+  bool get isEdited;
   @override
   @JsonKey(ignore: true)
   _$$MessageEntityImplCopyWith<_$MessageEntityImpl> get copyWith =>

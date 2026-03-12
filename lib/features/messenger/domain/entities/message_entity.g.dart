@@ -21,6 +21,7 @@ _$MessageEntityImpl _$$MessageEntityImplFromJson(Map<String, dynamic> json) =>
       isDelivered: json['isDelivered'] as bool? ?? false,
       isRead: json['isRead'] as bool? ?? false,
       isSystem: json['isSystem'] as bool? ?? false,
+      isEdited: json['isEdited'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$MessageEntityImplToJson(_$MessageEntityImpl instance) =>
@@ -38,4 +39,5 @@ Map<String, dynamic> _$$MessageEntityImplToJson(_$MessageEntityImpl instance) =>
       'isDelivered': instance.isDelivered,
       'isRead': instance.isRead,
       'isSystem': instance.isSystem,
+      'isEdited': instance.isEdited,
     };

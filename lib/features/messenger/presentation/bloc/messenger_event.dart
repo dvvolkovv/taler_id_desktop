@@ -86,9 +86,20 @@ class MessageUpdated extends MessengerEvent {
   final String messageId;
   final bool? isDelivered;
   final bool? isRead;
-  const MessageUpdated(this.messageId, {this.isDelivered, this.isRead});
+  final String? content;
+  final bool? isEdited;
+  const MessageUpdated(this.messageId, {this.isDelivered, this.isRead, this.content, this.isEdited});
   @override
-  List<Object?> get props => [messageId, isDelivered, isRead];
+  List<Object?> get props => [messageId, isDelivered, isRead, content, isEdited];
+}
+
+class EditMessage extends MessengerEvent {
+  final String conversationId;
+  final String messageId;
+  final String newContent;
+  const EditMessage({required this.conversationId, required this.messageId, required this.newContent});
+  @override
+  List<Object?> get props => [conversationId, messageId, newContent];
 }
 
 class MessagesRead extends MessengerEvent {

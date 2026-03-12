@@ -19,6 +19,7 @@ class MessageEntity with _$MessageEntity {
     @Default(false) bool isDelivered,
     @Default(false) bool isRead,
     @Default(false) bool isSystem,
+    @Default(false) bool isEdited,
   }) = _MessageEntity;
 
   factory MessageEntity.fromJson(Map<String, dynamic> json) =>

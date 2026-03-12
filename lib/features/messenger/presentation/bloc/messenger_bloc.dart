@@ -56,6 +56,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<GroupCallStarted>(_onGroupCallStarted);
     on<GroupCallEnded>(_onGroupCallEnded);
     on<ForwardMessage>(_onForwardMessage);
+    on<EditMessage>(_onEditMessage);
   }
 
   Future<void> _onConnect(
@@ -72,6 +73,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         add(MessageUpdated(id,
           isDelivered: data['isDelivered'] as bool?,
           isRead: data['isRead'] as bool?,
+          content: data['content'] as String?,
+          isEdited: data['isEdited'] as bool?,
         ));
       }
     });
@@ -303,6 +306,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         msgs[idx] = msgs[idx].copyWith(
           isDelivered: event.isDelivered ?? msgs[idx].isDelivered,
           isRead: event.isRead ?? msgs[idx].isRead,
+          content: event.content ?? msgs[idx].content,
+          isEdited: event.isEdited ?? msgs[idx].isEdited,
         );
         allMessages[convId] = msgs;
         emit(state.copyWith(messages: allMessages));
@@ -475,5 +480,17 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     try {
       _repo.sendMessage(event.targetConversationId, event.message.content);
     } catch (_) {}
+  }
+
+  void _onEditMessage(EditMessage event, Emitter<MessengerState> emit) {
+    final allMessages = Map<String, List<MessageEntity>>.from(state.messages);
+    final msgs = List<MessageEntity>.from(allMessages[event.conversationId] ?? []);
+    final idx = msgs.indexWhere((m) => m.id == event.messageId);
+    if (idx != -1) {
+      msgs[idx] = msgs[idx].copyWith(content: event.newContent, isEdited: true);
+      allMessages[event.conversationId] = msgs;
+      emit(state.copyWith(messages: allMessages));
+    }
+    _repo.editMessage(event.conversationId, event.messageId, event.newContent);
   }
 }

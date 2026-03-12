@@ -11,6 +11,7 @@ abstract class IMessengerRepository {
   Future<List<UserSearchEntity>> searchUsers(String query);
   void joinConversation(String id);
   void sendMessage(String conversationId, String content, {String? fileUrl, String? fileName, int? fileSize, String? fileType});
+  void editMessage(String conversationId, String messageId, String newContent);
   void sendTyping(String conversationId, bool isTyping);
   void sendCallInvite(String conversationId, String roomName);
   Stream<MessageEntity> get messageStream;

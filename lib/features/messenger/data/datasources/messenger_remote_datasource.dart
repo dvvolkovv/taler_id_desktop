@@ -152,6 +152,14 @@ class MessengerRemoteDataSource {
     _socket?.emit('message', payload);
   }
 
+  void editMessage(String conversationId, String messageId, String newContent) {
+    _socket?.emit('edit_message', {
+      'conversationId': conversationId,
+      'messageId': messageId,
+      'content': newContent,
+    });
+  }
+
   void sendTyping(String id, bool isTyping) =>
       _socket?.emit('typing', {'conversationId': id, 'isTyping': isTyping});
 

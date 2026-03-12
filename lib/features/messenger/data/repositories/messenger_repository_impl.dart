@@ -35,6 +35,10 @@ class MessengerRepositoryImpl implements IMessengerRepository {
       _remote.sendMessage(conversationId, content, fileUrl: fileUrl, fileName: fileName, fileSize: fileSize, fileType: fileType);
 
   @override
+  void editMessage(String conversationId, String messageId, String newContent) =>
+      _remote.editMessage(conversationId, messageId, newContent);
+
+  @override
   void sendTyping(String conversationId, bool isTyping) =>
       _remote.sendTyping(conversationId, isTyping);
 

@@ -45,6 +45,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   double _prevKeyboardHeight = 0;
   MessageEntity? _replyTo;
   String? _replyToSenderName;
+  MessageEntity? _editingMessage;
 
   @override
   void initState() {
@@ -87,6 +88,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       _replyTo = null;
       _replyToSenderName = null;
     });
+  }
+
+  void _startEditing(MessageEntity message) {
+    setState(() {
+      _editingMessage = message;
+      _replyTo = null;
+      _replyToSenderName = null;
+    });
+    _ctrl.text = message.content;
+    _ctrl.selection = TextSelection.fromPosition(TextPosition(offset: _ctrl.text.length));
+  }
+
+  void _cancelEditing() {
+    setState(() => _editingMessage = null);
+    _ctrl.clear();
   }
 
   void _handleMenuAction(String action, bool isMuted) {
@@ -321,6 +337,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _sendMessage() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
+    if (_editingMessage != null) {
+      final msg = _editingMessage!;
+      context.read<MessengerBloc>().add(EditMessage(
+        conversationId: msg.conversationId,
+        messageId: msg.id,
+        newContent: text,
+      ));
+      _ctrl.clear();
+      _cancelEditing();
+      return;
+    }
     String content = text;
     if (_replyTo != null) {
       final quoted = _replyTo!.fileUrl != null
@@ -564,10 +591,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             isGroup: isGroup,
                             senderName: sName,
                             onReply: msg.isSystem ? null : () => _setReply(msg, isMe ? 'Вы' : sName),
+                            onEdit: (isMe && !msg.isSystem && msg.fileUrl == null) ? () => _startEditing(msg) : null,
                           );
                         },
                       ),
               ),
+              if (_editingMessage != null)
+                _EditPreviewBar(
+                  message: _editingMessage!,
+                  onCancel: _cancelEditing,
+                ),
               if (_replyTo != null)
                 _ReplyPreviewBar(
                   message: _replyTo!,
@@ -642,12 +675,14 @@ class _MessageBubble extends StatefulWidget {
   final String? senderName;
   final bool isGroup;
   final VoidCallback? onReply;
+  final VoidCallback? onEdit;
   const _MessageBubble({
     required this.message,
     required this.isMe,
     this.senderName,
     this.isGroup = false,
     this.onReply,
+    this.onEdit,
   });
 
   @override
@@ -796,6 +831,17 @@ class _MessageBubbleState extends State<_MessageBubble> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (widget.message.isEdited) ...[
+                  Text(
+                    'Отредактировано',
+                    style: TextStyle(
+                      color: AppColors.of(context).textSecondary,
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
                 Text(
                   DateFormat('HH:mm').format(widget.message.sentAt.toLocal()),
                   style: TextStyle(
@@ -857,6 +903,15 @@ class _MessageBubbleState extends State<_MessageBubble> {
                 onTap: () {
                   Navigator.pop(ctx);
                   widget.onReply!();
+                },
+              ),
+            if (widget.isMe && widget.message.fileUrl == null && widget.message.content.isNotEmpty && widget.onEdit != null)
+              ListTile(
+                leading: Icon(Icons.edit_rounded, color: colors.primary),
+                title: Text('Редактировать', style: TextStyle(color: colors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.onEdit!();
                 },
               ),
             if (widget.message.fileUrl == null && widget.message.content.isNotEmpty)
@@ -1318,6 +1373,59 @@ class _ReplyPreviewBar extends StatelessWidget {
               children: [
                 Text(
                   senderName ?? '',
+                  style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  previewText,
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: onCancel,
+            icon: Icon(Icons.close_rounded, color: colors.textSecondary, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditPreviewBar extends StatelessWidget {
+  final MessageEntity message;
+  final VoidCallback onCancel;
+  const _EditPreviewBar({required this.message, required this.onCancel});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final preview = message.content;
+    final previewText = preview.length > 60 ? '${preview.substring(0, 60)}...' : preview;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.card,
+        border: Border(
+          top: BorderSide(color: colors.border),
+          left: BorderSide(color: colors.primary, width: 3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.edit_rounded, color: colors.primary, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Редактирование',
                   style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 2),
