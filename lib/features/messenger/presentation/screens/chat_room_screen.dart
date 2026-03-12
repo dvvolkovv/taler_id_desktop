@@ -41,6 +41,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   late final ScrollController _scrollCtrl;
   final _recorder = AudioRecorder();
   bool _isRecording = false;
+  bool _isTranscribing = false;
   String? _recordingPath;
   double _prevKeyboardHeight = 0;
   MessageEntity? _replyTo;
@@ -425,6 +426,46 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  Future<void> _startTranscription() async {
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission || !mounted) return;
+    final dir = await getTemporaryDirectory();
+    final path = '${dir.path}/transcribe_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+    setState(() { _isTranscribing = true; _recordingPath = path; });
+  }
+
+  Future<void> _stopAndTranscribe() async {
+    final path = await _recorder.stop();
+    setState(() { _isTranscribing = false; });
+    if (path == null || !mounted) return;
+    try {
+      final client = sl<DioClient>();
+      final formData = FormData.fromMap({
+        'audio': await MultipartFile.fromFile(path, filename: 'audio.m4a'),
+      });
+      final res = await client.post(
+        '/voice/transcribe',
+        data: formData,
+        fromJson: (d) => Map<String, dynamic>.from(d as Map),
+      );
+      if (!mounted) return;
+      final text = res['text'] as String? ?? '';
+      if (text.isNotEmpty) {
+        final current = _ctrl.text;
+        final newText = current.isEmpty ? text : '$current $text';
+        _ctrl.text = newText;
+        _ctrl.selection = TextSelection.fromPosition(TextPosition(offset: newText.length));
+      }
+      try { File(path).deleteSync(); } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка транскрипции: $e'), backgroundColor: AppColors.of(context).error),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _ctrl.dispose();
@@ -630,6 +671,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 isRecording: _isRecording,
                 onRecordStart: _startRecording,
                 onRecordStop: _stopRecordingAndSend,
+                isTranscribing: _isTranscribing,
+                onTranscribeStart: _startTranscription,
+                onTranscribeStop: _stopAndTranscribe,
               ),
             ],
           );
@@ -1373,6 +1417,9 @@ class _InputBar extends StatelessWidget {
   final bool isRecording;
   final VoidCallback onRecordStart;
   final VoidCallback onRecordStop;
+  final bool isTranscribing;
+  final VoidCallback onTranscribeStart;
+  final VoidCallback onTranscribeStop;
 
   const _InputBar({
     required this.controller,
@@ -1381,6 +1428,9 @@ class _InputBar extends StatelessWidget {
     required this.isRecording,
     required this.onRecordStart,
     required this.onRecordStop,
+    required this.isTranscribing,
+    required this.onTranscribeStart,
+    required this.onTranscribeStop,
   });
 
   @override
@@ -1408,6 +1458,14 @@ class _InputBar extends StatelessWidget {
                       Text('Запись...', style: TextStyle(color: AppColors.of(context).error, fontSize: 14)),
                     ],
                   )
+                : isTranscribing
+                ? Row(
+                    children: [
+                      Icon(Icons.circle, color: Colors.orange, size: 12),
+                      SizedBox(width: 8),
+                      Text('Говорите...', style: TextStyle(color: Colors.orange, fontSize: 14)),
+                    ],
+                  )
                 : TextField(
                     controller: controller,
                     style: TextStyle(color: AppColors.of(context).textPrimary),
@@ -1428,19 +1486,33 @@ class _InputBar extends StatelessWidget {
             icon: Icon(Icons.keyboard_hide_rounded, color: AppColors.of(context).textSecondary),
             tooltip: 'Скрыть клавиатуру',
           ),
-          // Voice button: hold to record
-          GestureDetector(
-            onLongPressStart: (_) => onRecordStart(),
-            onLongPressEnd: (_) => onRecordStop(),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: Icon(
-                isRecording ? Icons.stop_circle_rounded : Icons.mic_rounded,
-                color: isRecording ? AppColors.of(context).error : AppColors.of(context).textSecondary,
+          // Transcribe button: hold to dictate → text
+          if (!isRecording)
+            GestureDetector(
+              onLongPressStart: (_) => onTranscribeStart(),
+              onLongPressEnd: (_) => onTranscribeStop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  isTranscribing ? Icons.stop_circle_rounded : Icons.record_voice_over_rounded,
+                  color: isTranscribing ? Colors.orange : AppColors.of(context).textSecondary,
+                ),
               ),
             ),
-          ),
-          if (!isRecording)
+          // Voice button: hold to record voice message
+          if (!isTranscribing)
+            GestureDetector(
+              onLongPressStart: (_) => onRecordStart(),
+              onLongPressEnd: (_) => onRecordStop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  isRecording ? Icons.stop_circle_rounded : Icons.mic_rounded,
+                  color: isRecording ? AppColors.of(context).error : AppColors.of(context).textSecondary,
+                ),
+              ),
+            ),
+          if (!isRecording && !isTranscribing)
             IconButton(
               onPressed: onSend,
               icon: Icon(Icons.send_rounded, color: AppColors.of(context).primary),
