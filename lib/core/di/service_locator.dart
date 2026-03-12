@@ -5,6 +5,7 @@ import '../api/dio_client.dart';
 import '../config/app_config.dart';
 import '../storage/secure_storage_service.dart';
 import '../storage/cache_service.dart';
+import '../services/update_check_service.dart';
 
 // Auth
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
@@ -124,6 +125,9 @@ Future<void> setupDependencies() async {
   sl.registerLazySingleton<IMessengerRepository>(
     () => MessengerRepositoryImpl(sl<MessengerRemoteDataSource>()),
   );
+
+  // Update check
+  sl.registerLazySingleton(() => UpdateCheckService());
 
   // BLoCs
   sl.registerFactory(() => AuthBloc(authRepository: sl<IAuthRepository>()));

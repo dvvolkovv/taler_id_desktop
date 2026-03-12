@@ -16,6 +16,8 @@ import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 // in main.dart. Use NotificationService.callEvents (the shared broadcast proxy) instead.
 import '../../../core/notifications/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/services/update_check_service.dart';
 import '../../messenger/data/datasources/messenger_remote_datasource.dart';
 import '../../messenger/presentation/bloc/messenger_bloc.dart';
 import '../../messenger/presentation/bloc/messenger_event.dart';
@@ -45,6 +47,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   String? _pendingCallRoute; // queued when accept fires while phone is locked
   bool _waitingForCallAccept = false; // blocks in-app dialog after CallKit accept
   Timer? _callAcceptTimer;
+  UpdateInfo? _updateInfo;
+  bool _updateDismissed = false;
 
   @override
   void initState() {
@@ -135,6 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       _listenForDisconnect();
       _listenForCallEnded();
       _listenForCallAnswered();
+      _checkForUpdate();
     });
   }
 
@@ -325,6 +330,16 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     _callkitSub?.cancel();
     _callAcceptTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _checkForUpdate() async {
+    final info = await sl<UpdateCheckService>().checkForUpdate();
+    if (info != null && info.isAvailable && mounted) {
+      setState(() {
+        _updateInfo = info;
+        _updateDismissed = false;
+      });
+    }
   }
 
   Future<void> _connectMessenger() async {
@@ -519,6 +534,13 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 );
               },
             ),
+            // Update available banner
+            if (_updateInfo != null && _updateInfo!.isAvailable && !_updateDismissed)
+              _UpdateBanner(
+                version: _updateInfo!.latestVersion,
+                downloadUrl: _updateInfo!.downloadUrl,
+                onDismiss: () => setState(() => _updateDismissed = true),
+              ),
             Expanded(child: widget.child),
           ],
         ),
@@ -592,6 +614,72 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UpdateBanner extends StatelessWidget {
+  final String version;
+  final String downloadUrl;
+  final VoidCallback onDismiss;
+
+  const _UpdateBanner({
+    required this.version,
+    required this.downloadUrl,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFE65100),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              const Icon(Icons.system_update_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Доступно обновление $version',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final uri = Uri.parse(downloadUrl);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  minimumSize: Size.zero,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Обновить', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+              const SizedBox(width: 4),
+              GestureDetector(
+                onTap: onDismiss,
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.close, color: Colors.white, size: 18),
+                ),
+              ),
+            ],
           ),
         ),
       ),
