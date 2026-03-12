@@ -344,5 +344,6 @@
   "joinCall": "Присоединиться",
   "createCallLink": "Ссылка на звонок",
   "callLinkCopied": "Ссылка скопирована",
-  "callLinkTitle": "Ссылка на комнату"
+  "callLinkTitle": "Ссылка на комнату",
+  "connectionUnstable": "Соединение нестабильно — проверьте интернет"
 }

@@ -976,4 +976,8 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get callLinkTitle => 'Ссылка на комнату';
+
+  @override
+  String get connectionUnstable =>
+      'Соединение нестабильно — проверьте интернет';
 }

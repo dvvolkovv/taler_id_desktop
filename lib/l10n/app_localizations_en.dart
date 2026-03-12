@@ -974,4 +974,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get callLinkTitle => 'Room link';
+
+  @override
+  String get connectionUnstable => 'Connection unstable — check your internet';
 }

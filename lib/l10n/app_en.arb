@@ -344,5 +344,6 @@
   "joinCall": "Join",
   "createCallLink": "Call link",
   "callLinkCopied": "Link copied",
-  "callLinkTitle": "Room link"
+  "callLinkTitle": "Room link",
+  "connectionUnstable": "Connection unstable — check your internet"
 }

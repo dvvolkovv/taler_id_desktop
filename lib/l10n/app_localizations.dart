@@ -1921,6 +1921,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Room link'**
   String get callLinkTitle;
+
+  /// No description provided for @connectionUnstable.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection unstable — check your internet'**
+  String get connectionUnstable;
 }
 
 class _AppLocalizationsDelegate

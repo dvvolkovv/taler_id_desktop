@@ -653,14 +653,14 @@ class _ConnectivityBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: const Color(0xFFB71C1C),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
-          SizedBox(width: 8),
+          const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Соединение нестабильно — проверьте интернет',
-              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+              AppLocalizations.of(context)!.connectionUnstable,
+              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
         ],
