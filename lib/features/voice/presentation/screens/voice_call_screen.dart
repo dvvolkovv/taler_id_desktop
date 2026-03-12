@@ -259,11 +259,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       final token = res['token'] as String;
       _roomName = (res['roomName'] as String?) ?? widget.roomName ?? 'room-${DateTime.now().millisecondsSinceEpoch}';
       debugPrint('[VoiceCall] API join OK, roomName=$_roomName, e2ee=${widget.e2eeKey != null}');
-      _room = lk.Room();
-
-      _room!.addListener(_onRoomChanged);
-      _subscribeRoomEvents();
-
       // Configure E2EE for human-to-human calls
       lk.E2EEOptions? e2eeOptions;
       final e2eeKey = widget.e2eeKey ?? CallStateService.instance.e2eeKey;
@@ -273,16 +268,22 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         e2eeOptions = lk.E2EEOptions(keyProvider: keyProvider);
       }
 
-      await _room!.connect(
-        '${AppConfig.baseUrl.replaceFirst('https://', 'wss://')}/livekit/',
-        token,
+      _room = lk.Room(
         roomOptions: lk.RoomOptions(
           e2eeOptions: e2eeOptions,
           defaultAudioPublishOptions: const lk.AudioPublishOptions(
             audioBitrate: 32000,
           ),
-          autoSubscribe: false,
         ),
+      );
+
+      _room!.addListener(_onRoomChanged);
+      _subscribeRoomEvents();
+
+      await _room!.connect(
+        '${AppConfig.baseUrl.replaceFirst('https://', 'wss://')}/livekit/',
+        token,
+        connectOptions: const lk.ConnectOptions(autoSubscribe: false),
       );
       debugPrint('[VoiceCall] LiveKit connected, state=${_room!.connectionState}');
 
@@ -520,12 +521,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         _eventsListener = null;
         _room?.removeListener(_onRoomChanged);
 
-        // Fresh room instance
-        final newRoom = lk.Room();
-        _room = newRoom;
-        newRoom.addListener(_onRoomChanged);
-        _subscribeRoomEvents();
-
         // Re-apply E2EE on reconnect
         lk.E2EEOptions? reconnectE2eeOptions;
         final reconnectKey = widget.e2eeKey ?? CallStateService.instance.e2eeKey;
@@ -535,14 +530,21 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           reconnectE2eeOptions = lk.E2EEOptions(keyProvider: kp);
         }
 
-        await newRoom.connect(
-          '${AppConfig.baseUrl.replaceFirst('https://', 'wss://')}/livekit/',
-          token,
+        // Fresh room instance
+        final newRoom = lk.Room(
           roomOptions: lk.RoomOptions(
             e2eeOptions: reconnectE2eeOptions,
             defaultAudioPublishOptions: const lk.AudioPublishOptions(audioBitrate: 32000),
-            autoSubscribe: false,
           ),
+        );
+        _room = newRoom;
+        newRoom.addListener(_onRoomChanged);
+        _subscribeRoomEvents();
+
+        await newRoom.connect(
+          '${AppConfig.baseUrl.replaceFirst('https://', 'wss://')}/livekit/',
+          token,
+          connectOptions: const lk.ConnectOptions(autoSubscribe: false),
         );
 
         CallStateService.instance.setRoom(newRoom, roomName, widget.conversationId, e2eeKeyValue: reconnectKey);
