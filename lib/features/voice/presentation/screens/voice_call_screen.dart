@@ -1115,20 +1115,29 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       ..._participants,
       ...?_room?.remoteParticipants.values,
     };
+    bool foundTranslator = false;
     for (final p in allParticipants) {
       if (p.identity != 'voice-translator') continue;
-      for (final pub in p.audioTrackPublications) {
+      foundTranslator = true;
+      final tracks = p.audioTrackPublications;
+      debugPrint('[Trans] translator found, tracks=${tracks.length}, enabled=$_translationEnabled, lang=$_preferredLang');
+      for (final pub in tracks) {
         final want = _translationEnabled && pub.name == 'translation-$_preferredLang';
+        debugPrint('[Trans] track="${pub.name}" subscribed=${pub.subscribed} want=$want');
         try {
           if (want) {
             pub.subscribe();
+            debugPrint('[Trans] subscribe() called for ${pub.name}');
           } else {
-            // Always unsubscribe unwanted tracks — don't rely on pub.subscribed
-            // because autoSubscribe:true races with our check on TrackSubscribed
             pub.unsubscribe();
           }
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[Trans] subscribe/unsubscribe error: $e');
+        }
       }
+    }
+    if (!foundTranslator) {
+      debugPrint('[Trans] voice-translator NOT found in participants (${allParticipants.length} total)');
     }
   }
 
@@ -1210,6 +1219,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                 onTap: () {
                   Navigator.pop(context);
                   _setPreferredLang(e.key);
+                  // Selecting a language implicitly enables translation
+                  if (!_translationEnabled) _toggleTranslation(true);
                 },
               )),
               SwitchListTile(
