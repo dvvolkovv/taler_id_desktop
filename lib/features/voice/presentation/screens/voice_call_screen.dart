@@ -305,6 +305,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         _participants.addAll(_room!.remoteParticipants.values);
       });
 
+      // Sync translation subscription for any translator already in the room
+      _updateTranslationSubscription();
+
       // If there are already human participants in the room, stop ringback immediately
       if (_participants.any((p) => p.identity != 'ai-assistant')) {
         _stopRingback();
@@ -390,8 +393,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       ..on<lk.LocalTrackUnpublishedEvent>((_) {
         if (mounted) setState(() {});
       })
-      ..on<lk.TrackSubscribedEvent>((_) {
+      ..on<lk.TrackSubscribedEvent>((event) {
         if (mounted) setState(() {});
+        // Immediately unsubscribe translation tracks we don't want
+        if (event.participant.identity == 'voice-translator') {
+          _updateTranslationSubscription();
+        }
       })
       ..on<lk.TrackUnsubscribedEvent>((_) {
         if (mounted) setState(() {});
@@ -422,7 +429,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         if (event.participant.identity == 'meeting-recorder') {
           if (mounted) setState(() => _aiRecording = true);
         }
-        // When translator joins, subscribe to our preferred language track
+        // When translator joins, try subscribing (tracks may not be ready yet — handled in RemoteTrackPublishedEvent too)
+        if (event.participant.identity == 'voice-translator') {
+          _updateTranslationSubscription();
+        }
+      })
+      ..on<lk.TrackPublishedEvent>((event) {
+        // When voice-translator publishes a new track, subscribe if translation is enabled
         if (event.participant.identity == 'voice-translator') {
           _updateTranslationSubscription();
         }
@@ -1082,7 +1095,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   }
 
   void _updateTranslationSubscription() {
-    for (final p in _participants) {
+    // Check both the state list and room.remoteParticipants directly (handles timing edge cases)
+    final allParticipants = <lk.RemoteParticipant>{
+      ..._participants,
+      ...?_room?.remoteParticipants.values,
+    };
+    for (final p in allParticipants) {
       if (p.identity != 'voice-translator') continue;
       for (final pub in p.audioTrackPublications) {
         final want = _translationEnabled && pub.name == 'translation-$_preferredLang';
