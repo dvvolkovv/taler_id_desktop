@@ -29,6 +29,7 @@ class MessengerRemoteDataSource {
   final _groupCallStartedCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _groupCallEndedCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _messageDeletedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _reconnectCtrl = StreamController<void>.broadcast();
 
   MessengerRemoteDataSource(this._http);
 
@@ -104,6 +105,7 @@ class MessengerRemoteDataSource {
     });
     // Re-join all conversation rooms after reconnect
     _socket!.on('connect', (_) {
+      _reconnectCtrl.add(null);
       for (final id in _joinedConversations) {
         _socket?.emit('join', {'conversationId': id});
       }
@@ -119,6 +121,7 @@ class MessengerRemoteDataSource {
   Stream<String> get callEndedStream => _callEndedCtrl.stream;
   Stream<String> get callAnsweredStream => _callAnsweredCtrl.stream;
   Stream<String> get disconnectStream => _disconnectCtrl.stream;
+  Stream<void> get reconnectStream => _reconnectCtrl.stream;
   Stream<Map<String, dynamic>> get messageUpdatedStream => _messageUpdatedCtrl.stream;
   Stream<Map<String, dynamic>> get messagesReadStream => _messagesReadCtrl.stream;
   // Group streams

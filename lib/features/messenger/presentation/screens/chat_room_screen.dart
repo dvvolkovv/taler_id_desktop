@@ -46,6 +46,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   MessageEntity? _replyTo;
   String? _replyToSenderName;
   MessageEntity? _editingMessage;
+  bool _socketDisconnected = false;
+  StreamSubscription? _disconnectSub;
+  StreamSubscription? _reconnectSub;
 
   @override
   void initState() {
@@ -55,6 +58,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     context.read<MessengerBloc>().add(OpenConversation(widget.conversationId));
     // Mark messages as read when opening conversation
     context.read<MessengerBloc>().add(MarkConversationRead(widget.conversationId));
+    // Listen for socket connectivity changes
+    final ds = sl<MessengerRemoteDataSource>();
+    _disconnectSub = ds.disconnectStream.listen((_) {
+      if (mounted) setState(() => _socketDisconnected = true);
+    });
+    _reconnectSub = ds.reconnectStream.listen((_) {
+      if (mounted) setState(() => _socketDisconnected = false);
+    });
   }
 
   @override
@@ -419,6 +430,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _ctrl.dispose();
     _scrollCtrl.dispose();
     _recorder.dispose();
+    _disconnectSub?.cancel();
+    _reconnectSub?.cancel();
     super.dispose();
   }
 
@@ -561,6 +574,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           final activeRoomName = state.activeGroupCalls[widget.conversationId];
           return Column(
             children: [
+              // Connectivity warning banner — shown at TOP when socket disconnected
+              if (_socketDisconnected)
+                _ConnectivityBanner(),
               // Active call banner for group conversations
               if (isGroup && activeRoomName != null)
                 _ActiveCallBanner(
@@ -627,6 +643,29 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final uid = state.currentUserId;
     if (uid == null) return msg.id.startsWith('temp_');
     return msg.senderId == uid;
+  }
+}
+
+class _ConnectivityBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: const Color(0xFFB71C1C),
+      child: const Row(
+        children: [
+          Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Соединение нестабильно — проверьте интернет',
+              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
