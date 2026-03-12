@@ -1115,29 +1115,22 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       ..._participants,
       ...?_room?.remoteParticipants.values,
     };
-    bool foundTranslator = false;
     for (final p in allParticipants) {
       if (p.identity != 'voice-translator') continue;
-      foundTranslator = true;
-      final tracks = p.audioTrackPublications;
-      debugPrint('[Trans] translator found, tracks=${tracks.length}, enabled=$_translationEnabled, lang=$_preferredLang');
-      for (final pub in tracks) {
-        final want = _translationEnabled && pub.name == 'translation-$_preferredLang';
-        debugPrint('[Trans] track="${pub.name}" subscribed=${pub.subscribed} want=$want');
+      for (final pub in p.audioTrackPublications) {
+        // Subscribe to preferred language track regardless of _translationEnabled
+        // (_translationEnabled controls server-side TTS generation, not client reception).
+        // This avoids missing TTS that plays during the brief re-subscription window.
+        // Unsubscribe from all other language tracks to prevent echo.
+        final want = pub.name == 'translation-$_preferredLang';
         try {
           if (want) {
             pub.subscribe();
-            debugPrint('[Trans] subscribe() called for ${pub.name}');
           } else {
             pub.unsubscribe();
           }
-        } catch (e) {
-          debugPrint('[Trans] subscribe/unsubscribe error: $e');
-        }
+        } catch (_) {}
       }
-    }
-    if (!foundTranslator) {
-      debugPrint('[Trans] voice-translator NOT found in participants (${allParticipants.length} total)');
     }
   }
 
