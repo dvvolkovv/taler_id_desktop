@@ -1105,9 +1105,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       for (final pub in p.audioTrackPublications) {
         final want = _translationEnabled && pub.name == 'translation-$_preferredLang';
         try {
-          if (want && !pub.subscribed) {
+          if (want) {
             pub.subscribe();
-          } else if (!want && pub.subscribed) {
+          } else {
+            // Always unsubscribe unwanted tracks — don't rely on pub.subscribed
+            // because autoSubscribe:true races with our check on TrackSubscribed
             pub.unsubscribe();
           }
         } catch (_) {}
