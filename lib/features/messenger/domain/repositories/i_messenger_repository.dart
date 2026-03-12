@@ -12,11 +12,13 @@ abstract class IMessengerRepository {
   void joinConversation(String id);
   void sendMessage(String conversationId, String content, {String? fileUrl, String? fileName, int? fileSize, String? fileType});
   void editMessage(String conversationId, String messageId, String newContent);
+  void deleteMessage(String conversationId, String messageId, String scope);
   void sendTyping(String conversationId, bool isTyping);
   void sendCallInvite(String conversationId, String roomName);
   Stream<MessageEntity> get messageStream;
   Stream<Map<String, dynamic>> get callInviteStream;
   Stream<Map<String, dynamic>> get messageUpdatedStream;
+  Stream<Map<String, dynamic>> get messageDeletedStream;
   Stream<Map<String, dynamic>> get messagesReadStream;
   void markRead(String conversationId);
   // Group methods

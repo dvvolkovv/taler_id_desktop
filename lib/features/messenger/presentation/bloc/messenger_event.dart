@@ -102,6 +102,23 @@ class EditMessage extends MessengerEvent {
   List<Object?> get props => [conversationId, messageId, newContent];
 }
 
+class DeleteMessage extends MessengerEvent {
+  final String conversationId;
+  final String messageId;
+  final bool forEveryone;
+  const DeleteMessage({required this.conversationId, required this.messageId, required this.forEveryone});
+  @override
+  List<Object?> get props => [conversationId, messageId, forEveryone];
+}
+
+class MessageDeleted extends MessengerEvent {
+  final String messageId;
+  final String conversationId;
+  const MessageDeleted({required this.messageId, required this.conversationId});
+  @override
+  List<Object?> get props => [messageId, conversationId];
+}
+
 class MessagesRead extends MessengerEvent {
   final String conversationId;
   final List<String> messageIds;

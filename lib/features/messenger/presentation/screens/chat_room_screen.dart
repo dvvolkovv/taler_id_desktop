@@ -934,6 +934,76 @@ class _MessageBubbleState extends State<_MessageBubble> {
                 _showForwardPicker(context);
               },
             ),
+            ListTile(
+              leading: Icon(Icons.delete_outline_rounded, color: Colors.red.shade400),
+              title: Text('Удалить', style: TextStyle(color: Colors.red.shade400)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showDeleteConfirm(context);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(BuildContext context) {
+    final bloc = context.read<MessengerBloc>();
+    final colors = AppColors.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: colors.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Удалить сообщение',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.textPrimary),
+              ),
+            ),
+            const SizedBox(height: 4),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+              title: const Text('Удалить у меня', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(ctx);
+                bloc.add(DeleteMessage(
+                  conversationId: widget.message.conversationId,
+                  messageId: widget.message.id,
+                  forEveryone: false,
+                ));
+              },
+            ),
+            if (widget.isMe)
+              ListTile(
+                leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+                title: const Text('Удалить у всех', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  bloc.add(DeleteMessage(
+                    conversationId: widget.message.conversationId,
+                    messageId: widget.message.id,
+                    forEveryone: true,
+                  ));
+                },
+              ),
             const SizedBox(height: 8),
           ],
         ),

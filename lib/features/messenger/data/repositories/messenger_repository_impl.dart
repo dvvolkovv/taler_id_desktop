@@ -39,6 +39,10 @@ class MessengerRepositoryImpl implements IMessengerRepository {
       _remote.editMessage(conversationId, messageId, newContent);
 
   @override
+  void deleteMessage(String conversationId, String messageId, String scope) =>
+      _remote.deleteMessage(conversationId, messageId, scope);
+
+  @override
   void sendTyping(String conversationId, bool isTyping) =>
       _remote.sendTyping(conversationId, isTyping);
 
@@ -54,6 +58,9 @@ class MessengerRepositoryImpl implements IMessengerRepository {
 
   @override
   Stream<Map<String, dynamic>> get messageUpdatedStream => _remote.messageUpdatedStream;
+
+  @override
+  Stream<Map<String, dynamic>> get messageDeletedStream => _remote.messageDeletedStream;
 
   @override
   Stream<Map<String, dynamic>> get messagesReadStream => _remote.messagesReadStream;

@@ -28,6 +28,7 @@ class MessengerRemoteDataSource {
   // Group call events
   final _groupCallStartedCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _groupCallEndedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _messageDeletedCtrl = StreamController<Map<String, dynamic>>.broadcast();
 
   MessengerRemoteDataSource(this._http);
 
@@ -98,6 +99,9 @@ class MessengerRemoteDataSource {
     _socket!.on('group_call_ended', (d) {
       try { _groupCallEndedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
     });
+    _socket!.on('message_deleted', (d) {
+      try { _messageDeletedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
     // Re-join all conversation rooms after reconnect
     _socket!.on('connect', (_) {
       for (final id in _joinedConversations) {
@@ -127,6 +131,7 @@ class MessengerRemoteDataSource {
   // Group call streams
   Stream<Map<String, dynamic>> get groupCallStartedStream => _groupCallStartedCtrl.stream;
   Stream<Map<String, dynamic>> get groupCallEndedStream => _groupCallEndedCtrl.stream;
+  Stream<Map<String, dynamic>> get messageDeletedStream => _messageDeletedCtrl.stream;
   bool get isSocketConnected => _socket?.connected ?? false;
 
   void joinConversation(String id) {
@@ -157,6 +162,14 @@ class MessengerRemoteDataSource {
       'conversationId': conversationId,
       'messageId': messageId,
       'content': newContent,
+    });
+  }
+
+  void deleteMessage(String conversationId, String messageId, String scope) {
+    _socket?.emit('delete_message', {
+      'conversationId': conversationId,
+      'messageId': messageId,
+      'scope': scope,
     });
   }
 
@@ -311,5 +324,6 @@ class MessengerRemoteDataSource {
     _groupDeletedCtrl.close();
     _groupCallStartedCtrl.close();
     _groupCallEndedCtrl.close();
+    _messageDeletedCtrl.close();
   }
 }

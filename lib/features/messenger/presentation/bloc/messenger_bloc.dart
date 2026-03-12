@@ -20,6 +20,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   StreamSubscription? _groupDeletedSub;
   StreamSubscription? _groupCallStartedSub;
   StreamSubscription? _groupCallEndedSub;
+  StreamSubscription? _msgDeletedSub;
 
   MessengerBloc({required IMessengerRepository repo})
       : _repo = repo,
@@ -57,6 +58,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<GroupCallEnded>(_onGroupCallEnded);
     on<ForwardMessage>(_onForwardMessage);
     on<EditMessage>(_onEditMessage);
+    on<DeleteMessage>(_onDeleteMessage);
+    on<MessageDeleted>(_onMessageDeleted);
   }
 
   Future<void> _onConnect(
@@ -124,6 +127,14 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
       final convId = data['conversationId'] as String?;
       if (convId != null) {
         add(GroupCallEnded(convId));
+      }
+    });
+    _msgDeletedSub?.cancel();
+    _msgDeletedSub = _repo.messageDeletedStream.listen((data) {
+      final msgId = data['messageId'] as String?;
+      final convId = data['conversationId'] as String?;
+      if (msgId != null && convId != null) {
+        add(MessageDeleted(messageId: msgId, conversationId: convId));
       }
     });
     emit(state.copyWith(
@@ -429,6 +440,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _groupDeletedSub?.cancel();
     _groupCallStartedSub?.cancel();
     _groupCallEndedSub?.cancel();
+    _msgDeletedSub?.cancel();
     _repo.dispose();
     return super.close();
   }
@@ -492,5 +504,26 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
       emit(state.copyWith(messages: allMessages));
     }
     _repo.editMessage(event.conversationId, event.messageId, event.newContent);
+  }
+
+  void _onDeleteMessage(DeleteMessage event, Emitter<MessengerState> emit) {
+    // Optimistic: remove from local state immediately
+    final allMessages = Map<String, List<MessageEntity>>.from(state.messages);
+    final msgs = List<MessageEntity>.from(allMessages[event.conversationId] ?? []);
+    msgs.removeWhere((m) => m.id == event.messageId);
+    allMessages[event.conversationId] = msgs;
+    emit(state.copyWith(messages: allMessages));
+    _repo.deleteMessage(event.conversationId, event.messageId, event.forEveryone ? 'all' : 'self');
+    // Refresh conversation list to update last message preview
+    add(LoadConversations());
+  }
+
+  void _onMessageDeleted(MessageDeleted event, Emitter<MessengerState> emit) {
+    final allMessages = Map<String, List<MessageEntity>>.from(state.messages);
+    final msgs = List<MessageEntity>.from(allMessages[event.conversationId] ?? []);
+    msgs.removeWhere((m) => m.id == event.messageId);
+    allMessages[event.conversationId] = msgs;
+    emit(state.copyWith(messages: allMessages));
+    add(LoadConversations());
   }
 }
