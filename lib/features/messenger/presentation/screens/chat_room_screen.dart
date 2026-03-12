@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -40,6 +41,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   late final TextEditingController _ctrl;
   late final ScrollController _scrollCtrl;
   final _recorder = AudioRecorder();
+  final _speech = SpeechToText();
+  bool _speechInitialized = false;
   bool _isRecording = false;
   bool _isTranscribing = false;
   String? _recordingPath;
@@ -427,43 +430,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _startTranscription() async {
-    final hasPermission = await _recorder.hasPermission();
-    if (!hasPermission || !mounted) return;
-    final dir = await getTemporaryDirectory();
-    final path = '${dir.path}/transcribe_${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
-    setState(() { _isTranscribing = true; _recordingPath = path; });
+    if (!_speechInitialized) {
+      _speechInitialized = await _speech.initialize();
+    }
+    if (!_speechInitialized || !mounted) return;
+    setState(() => _isTranscribing = true);
+    await _speech.listen(
+      onResult: (result) {
+        if (!mounted) return;
+        if (result.finalResult && result.recognizedWords.isNotEmpty) {
+          final words = result.recognizedWords;
+          final current = _ctrl.text;
+          final newText = current.isEmpty ? words : '$current $words';
+          _ctrl.text = newText;
+          _ctrl.selection = TextSelection.fromPosition(TextPosition(offset: newText.length));
+        }
+      },
+    );
   }
 
   Future<void> _stopAndTranscribe() async {
-    final path = await _recorder.stop();
-    setState(() { _isTranscribing = false; });
-    if (path == null || !mounted) return;
-    try {
-      final client = sl<DioClient>();
-      final formData = FormData.fromMap({
-        'audio': await MultipartFile.fromFile(path, filename: 'audio.m4a'),
-      });
-      final res = await client.post(
-        '/voice/transcribe',
-        data: formData,
-        fromJson: (d) => Map<String, dynamic>.from(d as Map),
-      );
-      if (!mounted) return;
-      final text = res['text'] as String? ?? '';
-      if (text.isNotEmpty) {
-        final current = _ctrl.text;
-        final newText = current.isEmpty ? text : '$current $text';
-        _ctrl.text = newText;
-        _ctrl.selection = TextSelection.fromPosition(TextPosition(offset: newText.length));
-      }
-      try { File(path).deleteSync(); } catch (_) {}
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка транскрипции: $e'), backgroundColor: AppColors.of(context).error),
-      );
-    }
+    await _speech.stop();
+    if (mounted) setState(() => _isTranscribing = false);
   }
 
   @override
@@ -471,6 +459,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _ctrl.dispose();
     _scrollCtrl.dispose();
     _recorder.dispose();
+    _speech.cancel();
     _disconnectSub?.cancel();
     _reconnectSub?.cancel();
     super.dispose();
