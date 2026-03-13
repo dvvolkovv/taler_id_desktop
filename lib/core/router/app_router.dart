@@ -29,6 +29,8 @@ import '../../features/messenger/presentation/screens/group_settings_screen.dart
 import '../../features/messenger/presentation/screens/add_group_members_screen.dart';
 import '../../features/voice/presentation/screens/voice_call_screen.dart';
 import '../../features/call_history/presentation/screens/call_history_screen.dart';
+import '../../features/translator/presentation/screens/translator_screen.dart';
+import '../../features/translator/presentation/bloc/translator_bloc.dart';
 import '../storage/secure_storage_service.dart';
 import '../di/service_locator.dart';
 import '../utils/constants.dart';
@@ -151,6 +153,13 @@ final appRouter = GoRouter(
         GoRoute(
           path: RouteConstants.callHistory,
           builder: (_, __) => const CallHistoryScreen(),
+        ),
+        GoRoute(
+          path: RouteConstants.translator,
+          builder: (_, __) => BlocProvider(
+            create: (_) => sl<TranslatorBloc>(),
+            child: const TranslatorScreen(),
+          ),
         ),
         GoRoute(
           path: RouteConstants.sessions,

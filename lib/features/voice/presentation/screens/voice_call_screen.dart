@@ -339,8 +339,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       setState(() => _connecting = false);
       WakelockPlus.enable();
 
-      // Publish language preference into LiveKit participant metadata
+      // Publish language preference into LiveKit participant metadata + notify backend
       _publishLangMetadata(_preferredLang);
+      if (_roomName != null) {
+        try {
+          await sl<DioClient>().dio.post(
+            '/voice/rooms/$_roomName/set-lang',
+            data: {'lang': _preferredLang},
+          );
+        } catch (_) {}
+      }
 
       // Force earpiece mode — LiveKit may override speakerphone asynchronously on Android.
       // Call twice: once early, once after LiveKit audio stack fully initialises.

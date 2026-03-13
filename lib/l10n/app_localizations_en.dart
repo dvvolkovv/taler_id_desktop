@@ -961,6 +961,76 @@ class AppLocalizationsEn extends AppLocalizations {
   String get muted => 'Muted';
 
   @override
+  String get tabTranslator => 'Translate';
+
+  @override
+  String get translatorTitle => 'Translator';
+
+  @override
+  String get translatorSelectLanguage => 'Select language';
+
+  @override
+  String get translatorDownloading => 'Downloading language models...';
+
+  @override
+  String get translatorDownloadingHint =>
+      'Internet is needed only for the first download';
+
+  @override
+  String get translatorTypeHint => 'Type text or tap the microphone';
+
+  @override
+  String get translatorListening => 'Listening...';
+
+  @override
+  String get translatorTapToSpeak => 'Tap to speak';
+
+  @override
+  String get translatorTapToStop => 'Tap to stop';
+
+  @override
+  String get translatorAutoSpeak => 'Auto-speak';
+
+  @override
+  String get translatorCopied => 'Copied';
+
+  @override
+  String get translatorLangRu => 'Russian';
+
+  @override
+  String get translatorLangEn => 'English';
+
+  @override
+  String get translatorLangDe => 'German';
+
+  @override
+  String get translatorLangFr => 'French';
+
+  @override
+  String get translatorLangEs => 'Spanish';
+
+  @override
+  String get translatorLangIt => 'Italian';
+
+  @override
+  String get translatorLangPt => 'Portuguese';
+
+  @override
+  String get translatorLangTr => 'Turkish';
+
+  @override
+  String get translatorLangZh => 'Chinese';
+
+  @override
+  String get translatorLangJa => 'Japanese';
+
+  @override
+  String get translatorLangKo => 'Korean';
+
+  @override
+  String get translatorLangAr => 'Arabic';
+
+  @override
   String get callInProgress => 'Call in progress';
 
   @override

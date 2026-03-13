@@ -39,4 +39,5 @@ class RouteConstants {
   static const callHistory = '/dashboard/call-history';
   static const onboarding = '/onboarding';
   static const forgotPassword = '/auth/forgot-password';
+  static const translator = '/dashboard/translator';
 }

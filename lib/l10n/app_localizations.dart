@@ -1892,6 +1892,144 @@ abstract class AppLocalizations {
   /// **'Muted'**
   String get muted;
 
+  /// No description provided for @tabTranslator.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get tabTranslator;
+
+  /// No description provided for @translatorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Translator'**
+  String get translatorTitle;
+
+  /// No description provided for @translatorSelectLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select language'**
+  String get translatorSelectLanguage;
+
+  /// No description provided for @translatorDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading language models...'**
+  String get translatorDownloading;
+
+  /// No description provided for @translatorDownloadingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Internet is needed only for the first download'**
+  String get translatorDownloadingHint;
+
+  /// No description provided for @translatorTypeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type text or tap the microphone'**
+  String get translatorTypeHint;
+
+  /// No description provided for @translatorListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get translatorListening;
+
+  /// No description provided for @translatorTapToSpeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to speak'**
+  String get translatorTapToSpeak;
+
+  /// No description provided for @translatorTapToStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to stop'**
+  String get translatorTapToStop;
+
+  /// No description provided for @translatorAutoSpeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-speak'**
+  String get translatorAutoSpeak;
+
+  /// No description provided for @translatorCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get translatorCopied;
+
+  /// No description provided for @translatorLangRu.
+  ///
+  /// In en, this message translates to:
+  /// **'Russian'**
+  String get translatorLangRu;
+
+  /// No description provided for @translatorLangEn.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get translatorLangEn;
+
+  /// No description provided for @translatorLangDe.
+  ///
+  /// In en, this message translates to:
+  /// **'German'**
+  String get translatorLangDe;
+
+  /// No description provided for @translatorLangFr.
+  ///
+  /// In en, this message translates to:
+  /// **'French'**
+  String get translatorLangFr;
+
+  /// No description provided for @translatorLangEs.
+  ///
+  /// In en, this message translates to:
+  /// **'Spanish'**
+  String get translatorLangEs;
+
+  /// No description provided for @translatorLangIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Italian'**
+  String get translatorLangIt;
+
+  /// No description provided for @translatorLangPt.
+  ///
+  /// In en, this message translates to:
+  /// **'Portuguese'**
+  String get translatorLangPt;
+
+  /// No description provided for @translatorLangTr.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish'**
+  String get translatorLangTr;
+
+  /// No description provided for @translatorLangZh.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese'**
+  String get translatorLangZh;
+
+  /// No description provided for @translatorLangJa.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese'**
+  String get translatorLangJa;
+
+  /// No description provided for @translatorLangKo.
+  ///
+  /// In en, this message translates to:
+  /// **'Korean'**
+  String get translatorLangKo;
+
+  /// No description provided for @translatorLangAr.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic'**
+  String get translatorLangAr;
+
   /// No description provided for @callInProgress.
   ///
   /// In en, this message translates to:

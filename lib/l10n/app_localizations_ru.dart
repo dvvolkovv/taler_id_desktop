@@ -963,6 +963,76 @@ class AppLocalizationsRu extends AppLocalizations {
   String get muted => 'Без звука';
 
   @override
+  String get tabTranslator => 'Перевод';
+
+  @override
+  String get translatorTitle => 'Переводчик';
+
+  @override
+  String get translatorSelectLanguage => 'Выберите язык';
+
+  @override
+  String get translatorDownloading => 'Загрузка языковых моделей...';
+
+  @override
+  String get translatorDownloadingHint =>
+      'Требуется интернет только при первой загрузке';
+
+  @override
+  String get translatorTypeHint => 'Введите текст или нажмите микрофон';
+
+  @override
+  String get translatorListening => 'Слушаю...';
+
+  @override
+  String get translatorTapToSpeak => 'Нажмите для записи';
+
+  @override
+  String get translatorTapToStop => 'Нажмите для остановки';
+
+  @override
+  String get translatorAutoSpeak => 'Автоозвучка';
+
+  @override
+  String get translatorCopied => 'Скопировано';
+
+  @override
+  String get translatorLangRu => 'Русский';
+
+  @override
+  String get translatorLangEn => 'Английский';
+
+  @override
+  String get translatorLangDe => 'Немецкий';
+
+  @override
+  String get translatorLangFr => 'Французский';
+
+  @override
+  String get translatorLangEs => 'Испанский';
+
+  @override
+  String get translatorLangIt => 'Итальянский';
+
+  @override
+  String get translatorLangPt => 'Португальский';
+
+  @override
+  String get translatorLangTr => 'Турецкий';
+
+  @override
+  String get translatorLangZh => 'Китайский';
+
+  @override
+  String get translatorLangJa => 'Японский';
+
+  @override
+  String get translatorLangKo => 'Корейский';
+
+  @override
+  String get translatorLangAr => 'Арабский';
+
+  @override
   String get callInProgress => 'Идёт звонок';
 
   @override

@@ -63,6 +63,9 @@ dependencies:
   flutter_tts: ^4.2.0
   flutter_markdown: ^0.7.7
 
+  # On-device translation (ML Kit)
+  google_mlkit_translation: ^0.13.0
+
   # WebRTC for realtime assistant
   flutter_webrtc: ^0.12.6
 
