@@ -1184,72 +1184,114 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   Future<void> _showLangPicker() async {
     final colors = AppColors.of(context);
+    var searchQuery = '';
     showModalBottomSheet(
       context: context,
       backgroundColor: colors.card,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => StatefulBuilder(
-        builder: (ctx, setModalState) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: colors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Язык перевода',
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ..._translationLangs.entries.map((e) => ListTile(
-                leading: Icon(
-                  Icons.language_rounded,
-                  color: _preferredLang == e.key ? colors.primary : colors.textSecondary,
-                ),
-                title: Text(
-                  e.value,
-                  style: TextStyle(
-                    color: _preferredLang == e.key ? colors.primary : colors.textPrimary,
-                    fontWeight: _preferredLang == e.key ? FontWeight.w600 : FontWeight.normal,
+        builder: (ctx, setModalState) {
+          final filtered = _translationLangs.entries.where((e) =>
+            searchQuery.isEmpty ||
+            e.value.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            e.key.toLowerCase().contains(searchQuery.toLowerCase()),
+          ).toList();
+          return SafeArea(
+            child: DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              maxChildSize: 0.9,
+              minChildSize: 0.4,
+              expand: false,
+              builder: (_, scrollController) => Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: colors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                trailing: _preferredLang == e.key
-                    ? Icon(Icons.check_rounded, color: colors.primary)
-                    : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  _setPreferredLang(e.key);
-                  if (!_translationEnabled) _toggleTranslation(true);
-                },
-              )),
-              SwitchListTile(
-                title: Text(
-                  'Включить перевод',
-                  style: TextStyle(color: colors.textPrimary),
-                ),
-                value: _translationEnabled,
-                activeColor: colors.primary,
-                onChanged: (v) {
-                  Navigator.pop(context);
-                  _toggleTranslation(v);
-                },
+                  const SizedBox(height: 16),
+                  Text(
+                    'Язык перевода',
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      autofocus: false,
+                      style: TextStyle(color: colors.textPrimary, fontSize: 15),
+                      decoration: InputDecoration(
+                        hintText: 'Поиск языка...',
+                        hintStyle: TextStyle(color: colors.textSecondary),
+                        prefixIcon: Icon(Icons.search, color: colors.textSecondary),
+                        filled: true,
+                        fillColor: colors.surface,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (v) => setModalState(() => searchQuery = v),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        ...filtered.map((e) => ListTile(
+                          leading: Icon(
+                            Icons.language_rounded,
+                            color: _preferredLang == e.key ? colors.primary : colors.textSecondary,
+                          ),
+                          title: Text(
+                            e.value,
+                            style: TextStyle(
+                              color: _preferredLang == e.key ? colors.primary : colors.textPrimary,
+                              fontWeight: _preferredLang == e.key ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: _preferredLang == e.key
+                              ? Icon(Icons.check_rounded, color: colors.primary)
+                              : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _setPreferredLang(e.key);
+                            if (!_translationEnabled) _toggleTranslation(true);
+                          },
+                        )),
+                        SwitchListTile(
+                          title: Text(
+                            'Включить перевод',
+                            style: TextStyle(color: colors.textPrimary),
+                          ),
+                          value: _translationEnabled,
+                          activeColor: colors.primary,
+                          onChanged: (v) {
+                            Navigator.pop(context);
+                            _toggleTranslation(v);
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
