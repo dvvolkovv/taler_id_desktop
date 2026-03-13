@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:collection/collection.dart';
@@ -8,8 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -86,17 +87,38 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   lk.EventsListener<lk.RoomEvent>? _eventsListener;
   StreamSubscription? _callEndedSub;
 
-  // Translation state
+  // On-device translation state
   String _preferredLang = 'ru';
   bool _translationEnabled = false;
-  bool _translationActive = false; // currently playing TTS (for UI indicator)
+  bool _translationActive = false; // STT is actively listening
+  String _translatedText = ''; // current translated subtitle
+  String _partialStt = ''; // partial STT result
+  Timer? _subtitleTimer; // auto-hide subtitles
 
-  // Loaded from server; fallback hardcoded
-  Map<String, String> _translationLangs = {
+  final SpeechToText _stt = SpeechToText();
+  bool _sttInitialized = false;
+  final _modelManager = OnDeviceTranslatorModelManager();
+  final Map<String, OnDeviceTranslator> _translatorCache = {};
+  bool _modelsReady = false;
+  bool _downloadingModels = false;
+
+  // Source language = language being spoken by remote participant
+  TranslateLanguage _sourceTranslateLang = TranslateLanguage.english;
+  TranslateLanguage _targetTranslateLang = TranslateLanguage.russian;
+
+  static const Map<String, String> _translationLangs = {
     'ru': 'Русский',
     'en': 'English',
     'de': 'Deutsch',
+    'fr': 'Français',
+    'es': 'Español',
     'it': 'Italiano',
+    'pt': 'Português',
+    'tr': 'Türkçe',
+    'zh': '中文',
+    'ja': '日本語',
+    'ko': '한국어',
+    'ar': 'العربية',
   };
 
   // Video state
@@ -109,7 +131,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadTranslatorLanguages();
     // Listen for audio interruptions from native (parallel call from phone/other app)
     _audioChannel.setMethodCallHandler(_onNativeAudioEvent);
     // Listen for call_ended socket event — the other party hung up
@@ -317,9 +338,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         }
       }
 
-      // Sync translation subscription for any translator already in the room
-      _updateTranslationSubscription();
-
       // If there are already human participants in the room, stop ringback immediately
       if (_participants.any((p) => p.identity != 'ai-assistant')) {
         _stopRingback();
@@ -338,17 +356,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
       setState(() => _connecting = false);
       WakelockPlus.enable();
-
-      // Publish language preference into LiveKit participant metadata + notify backend
-      _publishLangMetadata(_preferredLang);
-      if (_roomName != null) {
-        try {
-          await sl<DioClient>().dio.post(
-            '/voice/rooms/$_roomName/set-lang',
-            data: {'lang': _preferredLang},
-          );
-        } catch (_) {}
-      }
 
       // Force earpiece mode — LiveKit may override speakerphone asynchronously on Android.
       // Call twice: once early, once after LiveKit audio stack fully initialises.
@@ -415,10 +422,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       })
       ..on<lk.TrackSubscribedEvent>((event) {
         if (mounted) setState(() {});
-        // Immediately unsubscribe translation tracks we don't want
-        if (event.participant.identity == 'voice-translator') {
-          _updateTranslationSubscription();
-        }
       })
       ..on<lk.TrackUnsubscribedEvent>((_) {
         if (mounted) setState(() {});
@@ -429,17 +432,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       ..on<lk.TrackUnmutedEvent>((_) {
         if (mounted) setState(() {});
       })
-      ..on<lk.DataReceivedEvent>((event) {
-        try {
-          final msg = jsonDecode(utf8.decode(event.data)) as Map<String, dynamic>;
-          final type = msg['type'] as String?;
-          if (type == 'translation_start') {
-            if (mounted) setState(() => _translationActive = true);
-          } else if (type == 'translation_end') {
-            if (mounted) setState(() => _translationActive = false);
-          }
-        } catch (_) {}
-      })
+      ..on<lk.DataReceivedEvent>((_) {})
       ..on<lk.ParticipantConnectedEvent>((event) async {
         // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
         if (event.participant.identity != 'ai-assistant') {
@@ -449,19 +442,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         if (event.participant.identity == 'meeting-recorder') {
           if (mounted) setState(() => _aiRecording = true);
         }
-        // When translator joins, try subscribing (tracks may not be ready yet — handled in RemoteTrackPublishedEvent too)
-        if (event.participant.identity == 'voice-translator') {
-          _updateTranslationSubscription();
-        }
       })
       ..on<lk.TrackPublishedEvent>((event) {
-        if (event.participant.identity == 'voice-translator') {
-          // Translator track: subscribe only to preferred language if enabled
-          _updateTranslationSubscription();
-        } else {
-          // Human participant: always subscribe to their audio/video
-          try { event.publication.subscribe(); } catch (_) {}
-        }
+        if (event.participant.identity == 'voice-translator') return;
+        try { event.publication.subscribe(); } catch (_) {}
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
         if (!mounted || _navigatedAway) return;
@@ -1113,81 +1097,143 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   // ─── Translation ───────────────────────────────────────
 
-  void _publishLangMetadata(String lang) {
-    try {
-      _room?.localParticipant?.setMetadata(jsonEncode({'lang': lang}));
-    } catch (_) {}
+  // ── On-device translation helpers ──
+
+  TranslateLanguage _bcpToTranslateLang(String code) {
+    for (final lang in TranslateLanguage.values) {
+      if (lang.bcpCode == code) return lang;
+    }
+    return TranslateLanguage.english;
   }
 
-  void _updateTranslationSubscription() {
-    // Check both the state list and room.remoteParticipants directly (handles timing edge cases)
-    final allParticipants = <lk.RemoteParticipant>{
-      ..._participants,
-      ...?_room?.remoteParticipants.values,
+  String _sttLocaleId(TranslateLanguage lang) {
+    const map = {
+      'ru': 'ru_RU', 'en': 'en_US', 'de': 'de_DE', 'fr': 'fr_FR',
+      'es': 'es_ES', 'it': 'it_IT', 'pt': 'pt_PT', 'tr': 'tr_TR',
+      'zh': 'zh_CN', 'ja': 'ja_JP', 'ko': 'ko_KR', 'ar': 'ar_SA',
     };
-    for (final p in allParticipants) {
-      if (p.identity != 'voice-translator') continue;
-      for (final pub in p.audioTrackPublications) {
-        // Subscribe to preferred language track regardless of _translationEnabled
-        // (_translationEnabled controls server-side TTS generation, not client reception).
-        // This avoids missing TTS that plays during the brief re-subscription window.
-        // Unsubscribe from all other language tracks to prevent echo.
-        final want = pub.name == 'translation-$_preferredLang';
-        try {
-          if (want) {
-            pub.subscribe();
-          } else {
-            pub.unsubscribe();
-          }
-        } catch (_) {}
-      }
+    return map[lang.bcpCode] ?? lang.bcpCode;
+  }
+
+  OnDeviceTranslator _getTranslator(TranslateLanguage src, TranslateLanguage tgt) {
+    final key = '${src.bcpCode}_${tgt.bcpCode}';
+    return _translatorCache.putIfAbsent(key, () => OnDeviceTranslator(
+      sourceLanguage: src,
+      targetLanguage: tgt,
+    ));
+  }
+
+  Future<void> _ensureModelsDownloaded() async {
+    if (_modelsReady) return;
+    setState(() => _downloadingModels = true);
+    final src = _sourceTranslateLang;
+    final tgt = _targetTranslateLang;
+    if (!await _modelManager.isModelDownloaded(src.bcpCode)) {
+      await _modelManager.downloadModel(src.bcpCode);
     }
+    if (!await _modelManager.isModelDownloaded(tgt.bcpCode)) {
+      await _modelManager.downloadModel(tgt.bcpCode);
+    }
+    _modelsReady = true;
+    if (mounted) setState(() => _downloadingModels = false);
   }
 
   Future<void> _toggleTranslation(bool enabled) async {
-    final roomName = _roomName;
-    if (roomName == null) return;
-    setState(() => _translationEnabled = enabled);
     if (enabled) {
-      // Start translator agent
-      try {
-        await sl<DioClient>().dio.post('/voice/rooms/$roomName/translator/start');
-      } catch (_) {}
+      await _ensureModelsDownloaded();
+      if (!_sttInitialized) {
+        _sttInitialized = await _stt.initialize();
+      }
+      if (!_sttInitialized) return;
+      _startSttListening();
+    } else {
+      _stt.stop();
+      _subtitleTimer?.cancel();
     }
-    _updateTranslationSubscription();
+    if (mounted) {
+      setState(() {
+        _translationEnabled = enabled;
+        _translationActive = enabled;
+        if (!enabled) {
+          _translatedText = '';
+          _partialStt = '';
+        }
+      });
+    }
   }
 
-  Future<void> _loadTranslatorLanguages() async {
+  void _startSttListening() {
+    if (!_sttInitialized || !_translationEnabled) return;
+    final localeId = _sttLocaleId(_sourceTranslateLang);
+    _stt.listen(
+      onResult: (result) {
+        if (!mounted || !_translationEnabled) return;
+        if (result.finalResult) {
+          _translateAndShow(result.recognizedWords);
+          // Restart listening for continuous translation
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted && _translationEnabled) _startSttListening();
+          });
+        } else {
+          setState(() => _partialStt = result.recognizedWords);
+        }
+      },
+      localeId: localeId,
+      listenOptions: SpeechListenOptions(
+        listenMode: ListenMode.dictation,
+        cancelOnError: false,
+        partialResults: true,
+        autoPunctuation: true,
+      ),
+    );
+  }
+
+  Future<void> _translateAndShow(String text) async {
+    if (text.trim().isEmpty) return;
     try {
-      final res = await sl<DioClient>().dio.get('/voice/translator/languages');
-      final list = res.data as List;
-      if (list.isNotEmpty && mounted) {
-        setState(() {
-          _translationLangs = {
-            for (final item in list)
-              (item['code'] as String): (item['name'] as String),
-          };
-        });
-      }
-    } catch (_) {
-      // Keep fallback
+      final translator = _getTranslator(_sourceTranslateLang, _targetTranslateLang);
+      final result = await translator.translateText(text);
+      if (!mounted) return;
+      setState(() {
+        _translatedText = result;
+        _partialStt = '';
+      });
+      // Auto-hide subtitle after 8 seconds
+      _subtitleTimer?.cancel();
+      _subtitleTimer = Timer(const Duration(seconds: 8), () {
+        if (mounted) setState(() => _translatedText = '');
+      });
+    } catch (e) {
+      debugPrint('[Translation] error: $e');
     }
   }
 
   Future<void> _setPreferredLang(String lang) async {
-    setState(() => _preferredLang = lang);
-    _publishLangMetadata(lang);
-    // Notify agent about updated lang
-    final roomName = _roomName;
-    if (roomName != null) {
-      try {
-        await sl<DioClient>().dio.post(
-          '/voice/rooms/$roomName/set-lang',
-          data: {'lang': lang},
-        );
-      } catch (_) {}
+    final newTarget = _bcpToTranslateLang(lang);
+    // Determine source: if target is ru, source is en; if target is en, source is ru
+    // But better: let user pick source lang too. For simplicity: source = opposite of target.
+    TranslateLanguage newSource;
+    if (lang == 'ru') {
+      newSource = TranslateLanguage.english;
+    } else {
+      newSource = TranslateLanguage.russian;
     }
-    _updateTranslationSubscription();
+    final wasEnabled = _translationEnabled;
+    if (wasEnabled) {
+      await _stt.stop();
+    }
+    setState(() {
+      _preferredLang = lang;
+      _sourceTranslateLang = newSource;
+      _targetTranslateLang = newTarget;
+      _modelsReady = false;
+      _translatedText = '';
+      _partialStt = '';
+    });
+    if (wasEnabled) {
+      await _ensureModelsDownloaded();
+      _startSttListening();
+    }
   }
 
   Future<void> _showLangPicker() async {
@@ -1225,13 +1271,21 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Язык перевода',
+                    'Переводить на',
                     style: TextStyle(
                       color: colors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (_downloadingModels)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Загрузка моделей...',
+                        style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                      ),
+                    ),
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1309,12 +1363,18 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     WidgetsBinding.instance.removeObserver(this);
     _callEndedSub?.cancel();
     _ringbackTimer?.cancel();
+    _subtitleTimer?.cancel();
     _ringbackActive = false;
     _audioChannel.setMethodCallHandler(null);
     WakelockPlus.disable();
     _eventsListener?.dispose();
     _room?.removeListener(_onRoomChanged);
     _ringPlayer.dispose();
+    _stt.stop();
+    for (final t in _translatorCache.values) {
+      t.close();
+    }
+    _translatorCache.clear();
     // Do NOT disconnect room — call continues in background via CallStateService
     super.dispose();
   }
@@ -1352,6 +1412,47 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       body: Stack(
         children: [
           _buildBody(),
+          // Translation subtitle overlay
+          if (_translationEnabled && (_translatedText.isNotEmpty || _partialStt.isNotEmpty))
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 220,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_partialStt.isNotEmpty)
+                      Text(
+                        _partialStt,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    if (_translatedText.isNotEmpty) ...[
+                      if (_partialStt.isNotEmpty) const SizedBox(height: 4),
+                      Text(
+                        _translatedText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           if (_reconnecting)
             Container(
               color: Colors.black54,

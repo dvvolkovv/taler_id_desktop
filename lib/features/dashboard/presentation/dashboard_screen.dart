@@ -35,7 +35,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   static const _tabs = [
     RouteConstants.messenger,
     RouteConstants.callHistory,
-    RouteConstants.translator,
     RouteConstants.assistant,
     RouteConstants.settings,
   ];
@@ -601,11 +600,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                     icon: Icon(Icons.call_outlined),
                     activeIcon: Icon(Icons.call),
                     label: 'Звонки',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.translate_rounded),
-                    activeIcon: const Icon(Icons.translate_rounded),
-                    label: l10n.tabTranslator,
                   ),
                   BottomNavigationBarItem(
                     icon: const Icon(Icons.headset_mic_outlined),
