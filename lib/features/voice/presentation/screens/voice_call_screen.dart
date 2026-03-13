@@ -91,7 +91,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   bool _translationEnabled = false;
   bool _translationActive = false; // currently playing TTS (for UI indicator)
 
-  static const _translationLangs = {
+  // Loaded from server; fallback hardcoded
+  Map<String, String> _translationLangs = {
     'ru': 'Русский',
     'en': 'English',
     'de': 'Deutsch',
@@ -108,6 +109,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _loadTranslatorLanguages();
     // Listen for audio interruptions from native (parallel call from phone/other app)
     _audioChannel.setMethodCallHandler(_onNativeAudioEvent);
     // Listen for call_ended socket event — the other party hung up
@@ -1145,6 +1147,23 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       } catch (_) {}
     }
     _updateTranslationSubscription();
+  }
+
+  Future<void> _loadTranslatorLanguages() async {
+    try {
+      final res = await sl<DioClient>().dio.get('/voice/translator/languages');
+      final list = res.data as List;
+      if (list.isNotEmpty && mounted) {
+        setState(() {
+          _translationLangs = {
+            for (final item in list)
+              (item['code'] as String): (item['name'] as String),
+          };
+        });
+      }
+    } catch (_) {
+      // Keep fallback
+    }
   }
 
   Future<void> _setPreferredLang(String lang) async {
