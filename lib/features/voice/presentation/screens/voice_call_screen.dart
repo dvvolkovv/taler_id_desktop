@@ -1212,7 +1212,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                 onTap: () {
                   Navigator.pop(context);
                   _setPreferredLang(e.key);
-                  // Selecting a language implicitly enables translation
                   if (!_translationEnabled) _toggleTranslation(true);
                 },
               )),

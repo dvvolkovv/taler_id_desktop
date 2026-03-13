@@ -23,6 +23,7 @@ class _ChatInputState extends State<ChatInput> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   bool _speechAvailable = false;
+  String _accumulated = '';
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _ChatInputState extends State<ChatInput> {
     if (text.isEmpty || !widget.enabled) return;
     widget.onSend(text);
     _controller.clear();
+    _accumulated = '';
   }
 
   Future<void> _toggleListening() async {
@@ -57,18 +59,22 @@ class _ChatInputState extends State<ChatInput> {
       setState(() => _isListening = false);
     } else {
       setState(() => _isListening = true);
+      _accumulated = _controller.text.trim();
       await _speech.listen(
         onResult: (result) {
-          _controller.text = result.recognizedWords;
+          final words = result.recognizedWords;
+          final newText = _accumulated.isEmpty ? words : '$_accumulated $words';
+          _controller.text = newText;
           _controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: _controller.text.length),
+            TextPosition(offset: newText.length),
           );
           if (result.finalResult) {
+            _accumulated = newText.trim();
             setState(() => _isListening = false);
           }
         },
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 3),
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(seconds: 4),
         localeId: 'ru_RU',
       );
     }
