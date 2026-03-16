@@ -67,12 +67,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
       if (event.event == Event.actionCallAccept) {
         // Navigation is handled by _navigateWhenResumed in main.dart.
-        // Here we only set the waiting flag to suppress in-app dialog.
+        // Here we set the waiting flag to suppress in-app dialog and
+        // dismiss any currently showing in-app call dialog for this room.
         _waitingForCallAccept = true;
         _callAcceptTimer?.cancel();
         _callAcceptTimer = Timer(const Duration(seconds: 15), () {
           _waitingForCallAccept = false;
         });
+        // Dismiss in-app incoming call dialog if it's showing
+        if (mounted && _showingCallDialogRoom != null &&
+            (_showingCallDialogRoom == roomName || roomName == null)) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
       } else if (event.event == Event.actionCallDecline ||
                  event.event == Event.actionCallTimeout) {
         // User declined from native CallKit UI — notify caller via socket.
