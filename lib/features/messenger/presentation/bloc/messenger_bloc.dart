@@ -435,7 +435,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
 
   Future<void> _onUpdateGroupInfo(UpdateGroupInfo event, Emitter<MessengerState> emit) async {
     try {
-      await _repo.updateGroupInfo(event.conversationId, name: event.name, avatarUrl: event.avatarUrl);
+      await _repo.updateGroupInfo(event.conversationId, name: event.name, avatarUrl: event.avatarUrl, description: event.description);
       add(LoadConversations());
     } catch (_) {}
   }

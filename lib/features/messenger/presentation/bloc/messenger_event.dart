@@ -180,9 +180,10 @@ class UpdateGroupInfo extends MessengerEvent {
   final String conversationId;
   final String? name;
   final String? avatarUrl;
-  const UpdateGroupInfo({required this.conversationId, this.name, this.avatarUrl});
+  final String? description;
+  const UpdateGroupInfo({required this.conversationId, this.name, this.avatarUrl, this.description});
   @override
-  List<Object?> get props => [conversationId, name, avatarUrl];
+  List<Object?> get props => [conversationId, name, avatarUrl, description];
 }
 
 class LeaveGroup extends MessengerEvent {

@@ -286,12 +286,13 @@ class MessengerRemoteDataSource {
     );
   }
 
-  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl}) async {
+  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl, String? description}) async {
     await _http.patch(
       '/messenger/conversations/$conversationId',
       data: {
         if (name != null) 'name': name,
         if (avatarUrl != null) 'avatarUrl': avatarUrl,
+        if (description != null) 'description': description,
       },
     );
   }

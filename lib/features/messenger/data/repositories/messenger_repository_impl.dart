@@ -90,8 +90,8 @@ class MessengerRepositoryImpl implements IMessengerRepository {
       _remote.changeGroupMemberRole(conversationId, userId, role);
 
   @override
-  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl}) =>
-      _remote.updateGroupInfo(conversationId, name: name, avatarUrl: avatarUrl);
+  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl, String? description}) =>
+      _remote.updateGroupInfo(conversationId, name: name, avatarUrl: avatarUrl, description: description);
 
   @override
   Future<void> leaveGroup(String conversationId) => _remote.leaveGroup(conversationId);

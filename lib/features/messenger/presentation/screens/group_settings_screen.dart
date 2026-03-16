@@ -1,7 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../bloc/messenger_bloc.dart';
@@ -18,6 +22,8 @@ class GroupSettingsScreen extends StatefulWidget {
 }
 
 class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
+  bool _uploadingAvatar = false;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +43,156 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
       case 'MEMBER': return l10n.groupRoleMember;
       default: return role;
     }
+  }
+
+  Future<void> _uploadAvatar() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.of(context).card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.of(context).textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Icon(Icons.camera_alt_rounded, color: AppColors.of(context).primary),
+              title: Text('Камера', style: TextStyle(color: AppColors.of(context).textPrimary)),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library_rounded, color: AppColors.of(context).primary),
+              title: Text('Галерея', style: TextStyle(color: AppColors.of(context).textPrimary)),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+    if (picked == null || !mounted) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final client = sl<DioClient>();
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(picked.path, filename: 'group_avatar.jpg'),
+      });
+      final res = await client.post(
+        '/messenger/files',
+        data: formData,
+        fromJson: (d) => Map<String, dynamic>.from(d as Map),
+      );
+      if (!mounted) return;
+      final fileUrl = res['fileUrl'] as String;
+      context.read<MessengerBloc>().add(UpdateGroupInfo(
+        conversationId: widget.conversationId,
+        avatarUrl: fileUrl,
+      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Аватар группы обновлён'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.of(context).error),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
+
+  void _editGroupName(String currentName) {
+    final controller = TextEditingController(text: currentName);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.of(context).card,
+        title: Text('Название группы', style: TextStyle(color: AppColors.of(context).textPrimary)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: TextStyle(color: AppColors.of(context).textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Введите название',
+            hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty && name != currentName) {
+                context.read<MessengerBloc>().add(UpdateGroupInfo(
+                  conversationId: widget.conversationId,
+                  name: name,
+                ));
+              }
+              Navigator.pop(ctx);
+            },
+            child: Text('Сохранить'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose;
+  }
+
+  void _editDescription(String? currentDescription) {
+    final controller = TextEditingController(text: currentDescription ?? '');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.of(context).card,
+        title: Text('Описание группы', style: TextStyle(color: AppColors.of(context).textPrimary)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 4,
+          style: TextStyle(color: AppColors.of(context).textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Введите описание группы',
+            hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () {
+              final desc = controller.text.trim();
+              context.read<MessengerBloc>().add(UpdateGroupInfo(
+                conversationId: widget.conversationId,
+                description: desc,
+              ));
+              Navigator.pop(ctx);
+            },
+            child: Text('Сохранить'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showChangeRoleSheet(GroupMemberEntity member, String myRole) {
@@ -201,40 +357,128 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
 
           return ListView(
             children: [
-              // Group header
+              // Group header with avatar
               Padding(
                 padding: const EdgeInsets.all(24),
-                child: Row(
+                child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 36,
-                      backgroundColor: AppColors.of(context).primary.withValues(alpha: 0.3),
-                      child: conv?.avatarUrl != null
-                          ? ClipOval(
-                              child: CachedNetworkImage(
-                                imageUrl: conv!.avatarUrl!,
-                                width: 72, height: 72, fit: BoxFit.cover,
-                                errorWidget: (_, __, ___) => Icon(Icons.group_rounded, size: 36, color: AppColors.of(context).primary),
-                              ),
-                            )
-                          : Icon(Icons.group_rounded, size: 36, color: AppColors.of(context).primary),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // Avatar
+                    GestureDetector(
+                      onTap: canManage ? _uploadAvatar : null,
+                      child: Stack(
                         children: [
-                          Text(conv?.name ?? '',
-                              style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 20, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Text(l10n.participantsCount(members.length),
-                              style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14)),
+                          CircleAvatar(
+                            radius: 48,
+                            backgroundColor: AppColors.of(context).primary.withValues(alpha: 0.3),
+                            child: _uploadingAvatar
+                                ? SizedBox(
+                                    width: 32, height: 32,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.of(context).primary,
+                                    ),
+                                  )
+                                : conv?.avatarUrl != null
+                                    ? ClipOval(
+                                        child: CachedNetworkImage(
+                                          imageUrl: conv!.avatarUrl!,
+                                          width: 96, height: 96, fit: BoxFit.cover,
+                                          errorWidget: (_, __, ___) => Icon(Icons.group_rounded, size: 48, color: AppColors.of(context).primary),
+                                        ),
+                                      )
+                                    : Icon(Icons.group_rounded, size: 48, color: AppColors.of(context).primary),
+                          ),
+                          if (canManage)
+                            Positioned(
+                              right: 0, bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.of(context).primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColors.of(context).background, width: 2),
+                                ),
+                                child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                              ),
+                            ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    // Group name (tappable for OWNER/ADMIN)
+                    GestureDetector(
+                      onTap: canManage ? () => _editGroupName(conv?.name ?? '') : null,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              conv?.name ?? '',
+                              style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 22, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          if (canManage) ...[
+                            const SizedBox(width: 6),
+                            Icon(Icons.edit_rounded, size: 18, color: AppColors.of(context).textSecondary),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(l10n.participantsCount(members.length),
+                        style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14)),
                   ],
                 ),
               ),
+              // Description section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GestureDetector(
+                  onTap: canManage ? () => _editDescription(conv?.description) : null,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.of(context).card,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: conv?.description != null && conv!.description!.isNotEmpty
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text('Описание',
+                                      style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                  const Spacer(),
+                                  if (canManage)
+                                    Icon(Icons.edit_rounded, size: 16, color: AppColors.of(context).textSecondary),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(conv.description!,
+                                  style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 15)),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded, size: 20, color: AppColors.of(context).textSecondary),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  canManage ? 'Добавить описание группы' : 'Нет описания',
+                                  style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 15),
+                                ),
+                              ),
+                              if (canManage)
+                                Icon(Icons.add_rounded, size: 20, color: AppColors.of(context).primary),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               const Divider(height: 1),
               // Members header
               Padding(

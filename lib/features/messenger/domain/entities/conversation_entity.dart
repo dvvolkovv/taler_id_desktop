@@ -11,6 +11,7 @@ class ConversationEntity with _$ConversationEntity {
     @Default('DIRECT') String type,
     String? name,
     String? avatarUrl,
+    String? description,
     @Default(0) int participantCount,
     String? myRole,
     String? lastMessageContent,
