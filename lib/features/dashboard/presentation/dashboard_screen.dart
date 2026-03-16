@@ -46,6 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   String? _showingCallDialogRoom;
   String? _pendingCallRoute; // queued when accept fires while phone is locked
   bool _waitingForCallAccept = false; // blocks in-app dialog after CallKit accept
+  bool _acceptingInApp = false; // suppresses actionCallDecline after in-app accept
   Timer? _callAcceptTimer;
   UpdateInfo? _updateInfo;
   bool _updateDismissed = false;
@@ -82,6 +83,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         if (roomName != null && convId != null) {
           try {
             bool skipNotify = _pendingCallRoute != null; // navigating to voice screen
+            if (!skipNotify && _acceptingInApp) skipNotify = true; // in-app accept triggered endAllCalls
+            if (!skipNotify && _waitingForCallAccept) skipNotify = true; // CallKit accept in progress
             if (!skipNotify) {
               try {
                 final loc = GoRouter.of(context)
@@ -365,6 +368,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
   void _showIncomingCall(BuildContext context, Map<String, dynamic> data) {
     final fromName = data['fromUserName'] as String? ?? 'Пользователь';
+    final fromAvatar = data['fromUserAvatar'] as String?;
     final roomName = data['roomName'] as String? ?? '';
     final convId = data['conversationId'] as String? ?? '';
     final e2eeKey = data['e2eeKey'] as String?;
@@ -389,7 +393,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
     if (isForegrounded) {
       // App is visible: show in-app dialog
-      _showIncomingCallDialog(context, fromName: fromName, roomName: roomName, convId: convId, e2eeKey: e2eeKey);
+      _showIncomingCallDialog(context, fromName: fromName, fromAvatar: fromAvatar, roomName: roomName, convId: convId, e2eeKey: e2eeKey);
     } else {
       // App is backgrounded/paused: use native CallKit UI
       showCallkitIncoming(
@@ -404,6 +408,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void _showIncomingCallDialog(
     BuildContext context, {
     required String fromName,
+    String? fromAvatar,
     required String roomName,
     required String convId,
     String? e2eeKey,
@@ -421,22 +426,53 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.call_rounded, size: 56, color: AppColors.of(context).primary),
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: AppColors.of(context).primary,
+              backgroundImage: fromAvatar != null && fromAvatar.isNotEmpty
+                  ? NetworkImage(fromAvatar)
+                  : null,
+              child: fromAvatar == null || fromAvatar.isEmpty
+                  ? Text(
+                      fromName.isNotEmpty ? fromName[0].toUpperCase() : '?',
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
+                    )
+                  : null,
+            ),
             const SizedBox(height: 16),
-            Text('Входящий звонок',
-                style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              fromName,
+              style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 4),
-            Text('от $fromName',
+            Text('Входящий звонок',
                 style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14)),
           ],
         ),
         actionsAlignment: MainAxisAlignment.spaceEvenly,
         actions: [
           ElevatedButton.icon(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context, rootNavigator: true).pop();
+              // Suppress actionCallDecline → sendCallEnded when we dismiss CallKit
+              _acceptingInApp = true;
               // Dismiss native CallKit ringing (may have started from FCM background handler)
-              FlutterCallkitIncoming.endAllCalls();
+              try {
+                await FlutterCallkitIncoming.endCall(toCallkitId(roomName));
+              } catch (_) {}
+              try {
+                await FlutterCallkitIncoming.endAllCalls();
+              } catch (_) {}
+              // VoIP push may arrive AFTER in-app accept — schedule repeated
+              // endAllCalls to catch late-arriving CallKit UI
+              for (final delay in [500, 1500, 3000]) {
+                Future.delayed(Duration(milliseconds: delay), () {
+                  try { FlutterCallkitIncoming.endAllCalls(); } catch (_) {}
+                });
+              }
+              // Reset flag after CallKit has had time to arrive and be dismissed
+              Future.delayed(const Duration(seconds: 5), () => _acceptingInApp = false);
               final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
               final uri = '/dashboard/voice?room=$roomName'
                   '${convId.isNotEmpty ? '&convId=$convId' : ''}$e2eeParam';
