@@ -42,14 +42,25 @@ class SecureStorageService {
     if (kIsWeb) {
       return _webBox?.get(ApiConstants.accessTokenKey) as String?;
     }
-    return _storage.read(key: ApiConstants.accessTokenKey);
+    try {
+      return await _storage.read(key: ApiConstants.accessTokenKey);
+    } catch (_) {
+      // Corrupted keystore after reinstall — wipe all and return null
+      try { await _storage.deleteAll(); } catch (_) {}
+      return null;
+    }
   }
 
   Future<String?> getRefreshToken() async {
     if (kIsWeb) {
       return _webBox?.get(ApiConstants.refreshTokenKey) as String?;
     }
-    return _storage.read(key: ApiConstants.refreshTokenKey);
+    try {
+      return await _storage.read(key: ApiConstants.refreshTokenKey);
+    } catch (_) {
+      try { await _storage.deleteAll(); } catch (_) {}
+      return null;
+    }
   }
 
   Future<void> clearTokens() async {
