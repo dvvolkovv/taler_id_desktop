@@ -11,12 +11,26 @@ class CacheService {
 
   static Future<void> init() async {
     await Hive.initFlutter();
-    await Future.wait([
-      Hive.openBox(_profileBox),
-      Hive.openBox(_kycBox),
-      Hive.openBox(_tenantBox),
-      Hive.openBox(_sumsubBox),
-    ]);
+    try {
+      await Future.wait([
+        Hive.openBox(_profileBox),
+        Hive.openBox(_kycBox),
+        Hive.openBox(_tenantBox),
+        Hive.openBox(_sumsubBox),
+      ]);
+    } catch (_) {
+      // Corrupted Hive boxes after reinstall — delete and recreate
+      await Hive.deleteBoxFromDisk(_profileBox);
+      await Hive.deleteBoxFromDisk(_kycBox);
+      await Hive.deleteBoxFromDisk(_tenantBox);
+      await Hive.deleteBoxFromDisk(_sumsubBox);
+      await Future.wait([
+        Hive.openBox(_profileBox),
+        Hive.openBox(_kycBox),
+        Hive.openBox(_tenantBox),
+        Hive.openBox(_sumsubBox),
+      ]);
+    }
   }
 
   // Profile cache

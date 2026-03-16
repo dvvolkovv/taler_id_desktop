@@ -184,13 +184,19 @@ Future<void> main() async {
 
   // Load saved language & theme
   final storage = sl<SecureStorageService>();
-  final savedLang = await storage.getLanguage();
-  final savedTheme = await storage.getThemeMode();
-  final themeMode = switch (savedTheme) {
-    'dark' => ThemeMode.dark,
-    'system' => ThemeMode.system,
-    _ => ThemeMode.light, // default = light
-  };
+  String? savedLang;
+  ThemeMode themeMode = ThemeMode.light;
+  try {
+    savedLang = await storage.getLanguage();
+    final savedTheme = await storage.getThemeMode();
+    themeMode = switch (savedTheme) {
+      'dark' => ThemeMode.dark,
+      'system' => ThemeMode.system,
+      _ => ThemeMode.light,
+    };
+  } catch (_) {
+    // Corrupted storage — use defaults
+  }
 
   runApp(TalerIdApp(initialLocale: savedLang, initialThemeMode: themeMode));
 }
