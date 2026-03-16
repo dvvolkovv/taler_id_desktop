@@ -29,7 +29,9 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   void _onChanged(String value) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      context.read<MessengerBloc>().add(SearchUsers(value));
+      // Strip leading @ for nickname searches
+      final query = value.startsWith('@') ? value.substring(1) : value;
+      context.read<MessengerBloc>().add(SearchUsers(query));
     });
   }
 
@@ -74,7 +76,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Введите @никнейм или +43... для поиска по телефону',
+                  'Введите @никнейм, email или имя для поиска',
                   style: TextStyle(
                       color: AppColors.of(context).textSecondary, fontSize: 12),
                 ),
@@ -196,9 +198,44 @@ class _UserTile extends StatelessWidget {
               fontWeight: FontWeight.bold),
         ),
       ),
-      onTap: () => context
-          .read<MessengerBloc>()
-          .add(StartConversationWith(user.id)),
+      onTap: () => _onUserTap(context),
+    );
+  }
+
+  void _onUserTap(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.of(context).card,
+        title: Text('Запрос на общение', style: TextStyle(color: AppColors.of(context).textPrimary)),
+        content: Text(
+          'Отправить запрос на общение пользователю $displayName?',
+          style: TextStyle(color: AppColors.of(context).textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Отмена', style: TextStyle(color: AppColors.of(context).textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.of(context).primary,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<MessengerBloc>().add(SendContactRequest(user.id));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Запрос отправлен'),
+                  backgroundColor: AppColors.of(context).primary,
+                ),
+              );
+            },
+            child: const Text('Отправить'),
+          ),
+        ],
+      ),
     );
   }
 }

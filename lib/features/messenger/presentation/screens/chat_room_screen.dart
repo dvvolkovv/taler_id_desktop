@@ -49,11 +49,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _socketDisconnected = false;
   StreamSubscription? _disconnectSub;
   StreamSubscription? _reconnectSub;
+  Timer? _typingTimer;
+  bool _isTypingSent = false;
 
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController();
+    _ctrl.addListener(_onTextChanged);
     _scrollCtrl = ScrollController();
     context.read<MessengerBloc>().add(OpenConversation(widget.conversationId));
     // Mark messages as read when opening conversation
@@ -369,6 +372,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       content = '↩ $who«$q»\n$text';
     }
     context.read<MessengerBloc>().add(SendMessage(widget.conversationId, content));
+    // Stop typing indicator on send
+    if (_isTypingSent) {
+      _isTypingSent = false;
+      _typingTimer?.cancel();
+      context.read<MessengerBloc>().add(SendTyping(conversationId: widget.conversationId, isTyping: false));
+    }
     _ctrl.clear();
     _cancelReply();
     // With reverse:true, new messages appear at offset 0
@@ -425,8 +434,29 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  void _onTextChanged() {
+    final bloc = context.read<MessengerBloc>();
+    if (_ctrl.text.isNotEmpty && !_isTypingSent) {
+      _isTypingSent = true;
+      bloc.add(SendTyping(conversationId: widget.conversationId, isTyping: true));
+    }
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(seconds: 3), () {
+      if (_isTypingSent) {
+        _isTypingSent = false;
+        bloc.add(SendTyping(conversationId: widget.conversationId, isTyping: false));
+      }
+    });
+  }
+
   @override
   void dispose() {
+    // Send typing stop on exit
+    if (_isTypingSent) {
+      context.read<MessengerBloc>().add(SendTyping(conversationId: widget.conversationId, isTyping: false));
+    }
+    _typingTimer?.cancel();
+    _ctrl.removeListener(_onTextChanged);
     _ctrl.dispose();
     _scrollCtrl.dispose();
     _recorder.dispose();
@@ -623,6 +653,51 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   senderName: _replyToSenderName,
                   onCancel: _cancelReply,
                 ),
+              // Typing indicator
+              BlocBuilder<MessengerBloc, MessengerState>(
+                buildWhen: (prev, curr) =>
+                    prev.typingUsers[widget.conversationId] != curr.typingUsers[widget.conversationId],
+                builder: (context, state) {
+                  final typers = state.typingUsers[widget.conversationId];
+                  if (typers == null || typers.isEmpty) return const SizedBox.shrink();
+                  final names = typers.values.where((n) => n.isNotEmpty).toList();
+                  final text = names.isEmpty
+                      ? 'печатает...'
+                      : names.length == 1
+                          ? '${names.first} печатает...'
+                          : '${names.join(", ")} печатают...';
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.of(context).card,
+                      border: Border(
+                        top: BorderSide(color: AppColors.of(context).border, width: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          height: 16,
+                          child: _TypingDots(color: AppColors.of(context).primary),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            text,
+                            style: TextStyle(
+                              color: AppColors.of(context).textSecondary,
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               _InputBar(
                 controller: _ctrl,
                 onSend: _sendMessage,
@@ -818,11 +893,16 @@ class _MessageBubbleState extends State<_MessageBubble> {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: CachedNetworkImage(
-                    imageUrl: widget.message.fileUrl!,
-                    width: 220,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => Icon(Icons.broken_image, color: AppColors.of(context).textSecondary),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 220,
+                      maxHeight: 260,
+                    ),
+                    child: CachedNetworkImage(
+                      imageUrl: widget.message.fileUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Icon(Icons.broken_image, color: AppColors.of(context).textSecondary),
+                    ),
                   ),
                 ),
               )
@@ -1611,6 +1691,62 @@ class _AudioMessagePlayerState extends State<_AudioMessagePlayer> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TypingDots extends StatefulWidget {
+  final Color color;
+  const _TypingDots({required this.color});
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(3, (i) {
+          final delay = i * 0.2;
+          final t = ((_ctrl.value - delay) % 1.0).clamp(0.0, 1.0);
+          final scale = t < 0.5 ? 0.5 + t : 1.5 - t;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1.5),
+            child: Transform.scale(
+              scale: scale,
+              child: Container(
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: 0.4 + 0.6 * scale.clamp(0.0, 1.0)),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }

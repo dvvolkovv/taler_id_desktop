@@ -21,6 +21,10 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   StreamSubscription? _groupCallStartedSub;
   StreamSubscription? _groupCallEndedSub;
   StreamSubscription? _msgDeletedSub;
+  StreamSubscription? _typingSub;
+  StreamSubscription? _contactReqSub;
+  StreamSubscription? _contactAccSub;
+  final Map<String, Timer> _typingTimers = {}; // auto-clear typing after timeout
 
   MessengerBloc({required IMessengerRepository repo})
       : _repo = repo,
@@ -60,6 +64,14 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<EditMessage>(_onEditMessage);
     on<DeleteMessage>(_onDeleteMessage);
     on<MessageDeleted>(_onMessageDeleted);
+    on<TypingReceived>(_onTypingReceived);
+    on<SendTyping>(_onSendTyping);
+    on<SendContactRequest>(_onSendContactRequest);
+    on<LoadContactRequests>(_onLoadContactRequests);
+    on<AcceptContactRequest>(_onAcceptContactRequest);
+    on<RejectContactRequest>(_onRejectContactRequest);
+    on<ContactRequestReceived>(_onContactRequestReceived);
+    on<ContactRequestAccepted>(_onContactRequestAccepted);
   }
 
   Future<void> _onConnect(
@@ -137,11 +149,35 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         add(MessageDeleted(messageId: msgId, conversationId: convId));
       }
     });
+    _typingSub?.cancel();
+    _typingSub = _repo.typingStream.listen((data) {
+      final convId = data['conversationId'] as String?;
+      final userId = data['userId'] as String?;
+      final userName = data['userName'] as String?;
+      final isTyping = data['isTyping'] as bool? ?? false;
+      if (convId != null && userId != null) {
+        add(TypingReceived(
+          conversationId: convId,
+          userId: userId,
+          userName: userName,
+          isTyping: isTyping,
+        ));
+      }
+    });
+    _contactReqSub?.cancel();
+    _contactReqSub = _repo.contactRequestStream.listen((data) {
+      add(ContactRequestReceived(data));
+    });
+    _contactAccSub?.cancel();
+    _contactAccSub = _repo.contactAcceptedStream.listen((data) {
+      add(ContactRequestAccepted(data));
+    });
     emit(state.copyWith(
       isConnected: true,
       currentUserId: event.userId ?? state.currentUserId,
     ));
     add(LoadConversations());
+    add(LoadContactRequests());
   }
 
   Future<void> _onLoadConversations(
@@ -426,6 +462,99 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     }
   }
 
+  void _onTypingReceived(TypingReceived event, Emitter<MessengerState> emit) {
+    // Don't show own typing
+    if (event.userId == state.currentUserId) return;
+    final updated = Map<String, Map<String, String>>.from(
+      state.typingUsers.map((k, v) => MapEntry(k, Map<String, String>.from(v))),
+    );
+    if (event.isTyping) {
+      updated.putIfAbsent(event.conversationId, () => {});
+      updated[event.conversationId]![event.userId] = event.userName ?? '';
+      // Auto-clear after 5 seconds
+      final timerKey = '${event.conversationId}_${event.userId}';
+      _typingTimers[timerKey]?.cancel();
+      _typingTimers[timerKey] = Timer(const Duration(seconds: 5), () {
+        add(TypingReceived(
+          conversationId: event.conversationId,
+          userId: event.userId,
+          isTyping: false,
+        ));
+      });
+    } else {
+      updated[event.conversationId]?.remove(event.userId);
+      if (updated[event.conversationId]?.isEmpty ?? false) {
+        updated.remove(event.conversationId);
+      }
+      final timerKey = '${event.conversationId}_${event.userId}';
+      _typingTimers[timerKey]?.cancel();
+      _typingTimers.remove(timerKey);
+    }
+    emit(state.copyWith(typingUsers: updated));
+  }
+
+  void _onSendTyping(SendTyping event, Emitter<MessengerState> emit) {
+    _repo.sendTyping(event.conversationId, event.isTyping);
+  }
+
+  // ─── Contact request handlers ───
+
+  Future<void> _onSendContactRequest(SendContactRequest event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.sendContactRequest(event.receiverId);
+      emit(state.copyWith(contactRequestSent: event.receiverId));
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('Already contacts') || msg.contains('already sent')) {
+        // Auto-accept / already contacts — try creating conversation directly
+        add(StartConversationWith(event.receiverId));
+      } else {
+        emit(state.copyWith(error: msg));
+      }
+    }
+  }
+
+  Future<void> _onLoadContactRequests(LoadContactRequests event, Emitter<MessengerState> emit) async {
+    try {
+      final requests = await _repo.getContactRequests();
+      emit(state.copyWith(contactRequests: requests));
+    } catch (_) {}
+  }
+
+  Future<void> _onAcceptContactRequest(AcceptContactRequest event, Emitter<MessengerState> emit) async {
+    try {
+      final result = await _repo.acceptContactRequest(event.requestId);
+      // Remove from pending list
+      final updated = state.contactRequests.where((r) => r['id'] != event.requestId).toList();
+      emit(state.copyWith(contactRequests: updated));
+      // Navigate to the new conversation
+      final convId = result['conversationId'] as String?;
+      if (convId != null) {
+        emit(state.copyWith(newConversationId: convId));
+        add(LoadConversations());
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _onRejectContactRequest(RejectContactRequest event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.rejectContactRequest(event.requestId);
+      final updated = state.contactRequests.where((r) => r['id'] != event.requestId).toList();
+      emit(state.copyWith(contactRequests: updated));
+    } catch (_) {}
+  }
+
+  void _onContactRequestReceived(ContactRequestReceived event, Emitter<MessengerState> emit) {
+    final updated = [event.data, ...state.contactRequests];
+    emit(state.copyWith(contactRequests: updated));
+  }
+
+  void _onContactRequestAccepted(ContactRequestAccepted event, Emitter<MessengerState> emit) {
+    // Refresh conversations to show the new chat
+    add(LoadConversations());
+    emit(state.copyWith(clearContactRequestSent: true));
+  }
+
   @override
   Future<void> close() {
     _msgSub?.cancel();
@@ -441,6 +570,10 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _groupCallStartedSub?.cancel();
     _groupCallEndedSub?.cancel();
     _msgDeletedSub?.cancel();
+    _typingSub?.cancel();
+    _contactReqSub?.cancel();
+    _contactAccSub?.cancel();
+    for (final timer in _typingTimers.values) { timer.cancel(); }
     _repo.dispose();
     return super.close();
   }

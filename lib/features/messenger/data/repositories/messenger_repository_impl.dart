@@ -119,6 +119,24 @@ class MessengerRepositoryImpl implements IMessengerRepository {
   @override
   Stream<Map<String, dynamic>> get groupCallEndedStream => _remote.groupCallEndedStream;
 
+  // Typing stream
+  @override
+  Stream<Map<String, dynamic>> get typingStream => _remote.typingStream;
+
+  // Contact requests
+  @override
+  Future<Map<String, dynamic>> sendContactRequest(String receiverId) => _remote.sendContactRequest(receiverId);
+  @override
+  Future<List<Map<String, dynamic>>> getContactRequests() => _remote.getContactRequests();
+  @override
+  Future<Map<String, dynamic>> acceptContactRequest(String requestId) => _remote.acceptContactRequest(requestId);
+  @override
+  Future<void> rejectContactRequest(String requestId) => _remote.rejectContactRequest(requestId);
+  @override
+  Stream<Map<String, dynamic>> get contactRequestStream => _remote.contactRequestStream;
+  @override
+  Stream<Map<String, dynamic>> get contactAcceptedStream => _remote.contactAcceptedStream;
+
   // Mute methods
   @override
   Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes}) =>

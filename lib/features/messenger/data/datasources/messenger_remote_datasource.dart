@@ -29,6 +29,9 @@ class MessengerRemoteDataSource {
   final _groupCallStartedCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _groupCallEndedCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _messageDeletedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _typingCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _contactRequestCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _contactAcceptedCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _reconnectCtrl = StreamController<void>.broadcast();
 
   MessengerRemoteDataSource(this._http);
@@ -103,6 +106,15 @@ class MessengerRemoteDataSource {
     _socket!.on('message_deleted', (d) {
       try { _messageDeletedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
     });
+    _socket!.on('typing', (d) {
+      try { _typingCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
+    _socket!.on('contact_request', (d) {
+      try { _contactRequestCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
+    _socket!.on('contact_request_accepted', (d) {
+      try { _contactAcceptedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
     // Re-join all conversation rooms after reconnect
     _socket!.on('connect', (_) {
       _reconnectCtrl.add(null);
@@ -135,6 +147,9 @@ class MessengerRemoteDataSource {
   Stream<Map<String, dynamic>> get groupCallStartedStream => _groupCallStartedCtrl.stream;
   Stream<Map<String, dynamic>> get groupCallEndedStream => _groupCallEndedCtrl.stream;
   Stream<Map<String, dynamic>> get messageDeletedStream => _messageDeletedCtrl.stream;
+  Stream<Map<String, dynamic>> get typingStream => _typingCtrl.stream;
+  Stream<Map<String, dynamic>> get contactRequestStream => _contactRequestCtrl.stream;
+  Stream<Map<String, dynamic>> get contactAcceptedStream => _contactAcceptedCtrl.stream;
   bool get isSocketConnected => _socket?.connected ?? false;
 
   void joinConversation(String id) {
@@ -293,6 +308,40 @@ class MessengerRemoteDataSource {
     await _http.delete('/messenger/conversations/$conversationId');
   }
 
+  // ─── REST: Contact Requests ───
+
+  Future<Map<String, dynamic>> sendContactRequest(String receiverId) async {
+    return _http.post(
+      '/messenger/contacts/request',
+      data: {'receiverId': receiverId},
+      fromJson: (d) => Map<String, dynamic>.from(d as Map),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getContactRequests() async {
+    final data = await _http.get(
+      '/messenger/contacts/requests',
+      fromJson: (d) => d as List,
+    );
+    return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<Map<String, dynamic>> acceptContactRequest(String requestId) async {
+    return _http.patch(
+      '/messenger/contacts/requests/$requestId/accept',
+      data: {},
+      fromJson: (d) => Map<String, dynamic>.from(d as Map),
+    );
+  }
+
+  Future<void> rejectContactRequest(String requestId) async {
+    await _http.patch(
+      '/messenger/contacts/requests/$requestId/reject',
+      data: {},
+      fromJson: (d) => d,
+    );
+  }
+
   // ─── REST: Mute ───
 
   Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes}) async {
@@ -328,5 +377,8 @@ class MessengerRemoteDataSource {
     _groupCallStartedCtrl.close();
     _groupCallEndedCtrl.close();
     _messageDeletedCtrl.close();
+    _typingCtrl.close();
+    _contactRequestCtrl.close();
+    _contactAcceptedCtrl.close();
   }
 }

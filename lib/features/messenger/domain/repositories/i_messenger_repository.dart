@@ -40,6 +40,15 @@ abstract class IMessengerRepository {
   // Group call streams
   Stream<Map<String, dynamic>> get groupCallStartedStream;
   Stream<Map<String, dynamic>> get groupCallEndedStream;
+  // Typing stream
+  Stream<Map<String, dynamic>> get typingStream;
+  // Contact request methods
+  Future<Map<String, dynamic>> sendContactRequest(String receiverId);
+  Future<List<Map<String, dynamic>>> getContactRequests();
+  Future<Map<String, dynamic>> acceptContactRequest(String requestId);
+  Future<void> rejectContactRequest(String requestId);
+  Stream<Map<String, dynamic>> get contactRequestStream;
+  Stream<Map<String, dynamic>> get contactAcceptedStream;
   // Mute methods
   Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes});
   Future<void> unmuteConversation(String conversationId);

@@ -17,6 +17,9 @@ class MessengerState extends Equatable {
   final Map<String, dynamic>? pendingCallInvite;
   final Map<String, List<GroupMemberEntity>> groupMembers;
   final Map<String, String> activeGroupCalls; // conversationId → roomName
+  final Map<String, Map<String, String>> typingUsers; // conversationId → {userId: userName}
+  final List<Map<String, dynamic>> contactRequests;
+  final String? contactRequestSent; // receiverId if request just sent
 
   const MessengerState({
     this.conversations = const [],
@@ -31,6 +34,9 @@ class MessengerState extends Equatable {
     this.pendingCallInvite,
     this.groupMembers = const {},
     this.activeGroupCalls = const {},
+    this.typingUsers = const {},
+    this.contactRequests = const [],
+    this.contactRequestSent,
   });
 
   MessengerState copyWith({
@@ -46,9 +52,13 @@ class MessengerState extends Equatable {
     Map<String, dynamic>? pendingCallInvite,
     Map<String, List<GroupMemberEntity>>? groupMembers,
     Map<String, String>? activeGroupCalls,
+    Map<String, Map<String, String>>? typingUsers,
+    List<Map<String, dynamic>>? contactRequests,
+    String? contactRequestSent,
     bool clearError = false,
     bool clearNewConversation = false,
     bool clearCallInvite = false,
+    bool clearContactRequestSent = false,
   }) {
     return MessengerState(
       conversations: conversations ?? this.conversations,
@@ -66,6 +76,9 @@ class MessengerState extends Equatable {
           clearCallInvite ? null : (pendingCallInvite ?? this.pendingCallInvite),
       groupMembers: groupMembers ?? this.groupMembers,
       activeGroupCalls: activeGroupCalls ?? this.activeGroupCalls,
+      typingUsers: typingUsers ?? this.typingUsers,
+      contactRequests: contactRequests ?? this.contactRequests,
+      contactRequestSent: clearContactRequestSent ? null : (contactRequestSent ?? this.contactRequestSent),
     );
   }
 
@@ -83,5 +96,8 @@ class MessengerState extends Equatable {
         pendingCallInvite,
         groupMembers,
         activeGroupCalls,
+        typingUsers,
+        contactRequests,
+        contactRequestSent,
       ];
 }

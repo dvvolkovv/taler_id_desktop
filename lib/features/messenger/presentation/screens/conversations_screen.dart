@@ -164,6 +164,109 @@ class _ConversationsView extends StatelessWidget {
   final String? myUsername;
   const _ConversationsView({this.myUsername});
 
+  void _showContactRequests(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.of(context).card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (ctx, scrollCtrl) => Column(
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.of(context).textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Запросы на общение',
+                style: TextStyle(
+                  color: AppColors.of(context).textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Expanded(
+              child: BlocBuilder<MessengerBloc, MessengerState>(
+                builder: (context, state) {
+                  if (state.contactRequests.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'Нет новых запросов',
+                        style: TextStyle(color: AppColors.of(context).textSecondary),
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    controller: scrollCtrl,
+                    itemCount: state.contactRequests.length,
+                    itemBuilder: (context, i) {
+                      final req = state.contactRequests[i];
+                      final name = req['senderName'] as String? ?? '';
+                      final username = req['senderUsername'] as String?;
+                      final email = req['senderEmail'] as String? ?? '';
+                      final avatar = req['senderAvatar'] as String?;
+                      final id = req['id'] as String;
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: AppColors.of(context).primary,
+                          backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+                          child: avatar == null
+                              ? Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                                )
+                              : null,
+                        ),
+                        title: Text(
+                          name.isNotEmpty ? name : (username != null ? '@$username' : email),
+                          style: TextStyle(color: AppColors.of(context).textPrimary, fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: username != null
+                            ? Text('@$username', style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12))
+                            : null,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.close_rounded, color: AppColors.of(context).error),
+                              onPressed: () {
+                                context.read<MessengerBloc>().add(RejectContactRequest(id));
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.check_rounded, color: Colors.green),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                context.read<MessengerBloc>().add(AcceptContactRequest(id));
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showNewChatSheet(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
@@ -237,6 +340,39 @@ class _ConversationsView extends StatelessWidget {
           ],
         ),
         actions: [
+          // Contact requests badge
+          BlocBuilder<MessengerBloc, MessengerState>(
+            buildWhen: (prev, curr) => prev.contactRequests.length != curr.contactRequests.length,
+            builder: (context, state) {
+              final count = state.contactRequests.length;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    onPressed: () => _showContactRequests(context),
+                  ),
+                  if (count > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.of(context).error,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.person_search_rounded),
             onPressed: () => context.push('/dashboard/messenger/search'),

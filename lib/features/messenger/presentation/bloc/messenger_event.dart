@@ -248,3 +248,67 @@ class GroupEventReceived extends MessengerEvent {
   @override
   List<Object?> get props => [eventType, data];
 }
+
+// ─── Typing events ───
+
+class TypingReceived extends MessengerEvent {
+  final String conversationId;
+  final String userId;
+  final String? userName;
+  final bool isTyping;
+  const TypingReceived({
+    required this.conversationId,
+    required this.userId,
+    this.userName,
+    required this.isTyping,
+  });
+  @override
+  List<Object?> get props => [conversationId, userId, isTyping];
+}
+
+class SendTyping extends MessengerEvent {
+  final String conversationId;
+  final bool isTyping;
+  const SendTyping({required this.conversationId, required this.isTyping});
+  @override
+  List<Object?> get props => [conversationId, isTyping];
+}
+
+// ─── Contact request events ───
+
+class SendContactRequest extends MessengerEvent {
+  final String receiverId;
+  const SendContactRequest(this.receiverId);
+  @override
+  List<Object?> get props => [receiverId];
+}
+
+class LoadContactRequests extends MessengerEvent {}
+
+class AcceptContactRequest extends MessengerEvent {
+  final String requestId;
+  const AcceptContactRequest(this.requestId);
+  @override
+  List<Object?> get props => [requestId];
+}
+
+class RejectContactRequest extends MessengerEvent {
+  final String requestId;
+  const RejectContactRequest(this.requestId);
+  @override
+  List<Object?> get props => [requestId];
+}
+
+class ContactRequestReceived extends MessengerEvent {
+  final Map<String, dynamic> data;
+  const ContactRequestReceived(this.data);
+  @override
+  List<Object?> get props => [data];
+}
+
+class ContactRequestAccepted extends MessengerEvent {
+  final Map<String, dynamic> data;
+  const ContactRequestAccepted(this.data);
+  @override
+  List<Object?> get props => [data];
+}

@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:convert';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -90,9 +89,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   String _preferredLang = 'ru';
   bool _translationEnabled = false;
   bool _translationActive = false; // translator agent is running
-  String _translatedText = ''; // current translated subtitle
-  String _originalSttText = ''; // original speech text from server
-  Timer? _subtitleTimer; // auto-hide subtitles
 
   static const Map<String, String> _translationLangs = {
     'ru': 'Русский',
@@ -142,9 +138,26 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       _aiRecording = _participants.any((p) => p.identity == 'meeting-recorder');
       _room!.addListener(_onRoomChanged);
       _subscribeRoomEvents();
+      // Manually subscribe to tracks — background connect may have missed subscriptions
+      for (final p in _room!.remoteParticipants.values) {
+        for (final pub in [...p.audioTrackPublications, ...p.videoTrackPublications]) {
+          if (!pub.subscribed) {
+            try { pub.subscribe(); } catch (_) {}
+          }
+        }
+      }
       // End CallKit now that the voice screen is visible — release native UI
       if (widget.isIncoming) {
         FlutterCallkitIncoming.endAllCalls();
+        // Re-activate audio session after CallKit releases it —
+        // without this LiveKit loses audio when accepting from lock screen.
+        try {
+          _audioChannel.invokeMethod('requestAudioFocus');
+        } catch (_) {}
+        // Re-enable microphone — CallKit deactivation may have muted it
+        try {
+          _room!.localParticipant?.setMicrophoneEnabled(true);
+        } catch (_) {}
       }
       // Notify other devices this device answered (dismiss their CallKit)
       if (widget.isIncoming && widget.conversationId != null && _roomName != null) {
@@ -320,7 +333,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
       // With autoSubscribe:false, manually subscribe to existing tracks
       for (final p in _room!.remoteParticipants.values) {
-        if (p.identity == 'voice-translator') continue;
+        if (p.identity == 'voice-translator') {
+          // Subscribe only to the translation track matching user's preferred language
+          if (_translationEnabled) {
+            for (final pub in p.audioTrackPublications) {
+              if (pub.name == 'translation-$_preferredLang') {
+                try { pub.subscribe(); } catch (_) {}
+              }
+            }
+          }
+          continue;
+        }
         for (final pub in [...p.audioTrackPublications, ...p.videoTrackPublications]) {
           try { pub.subscribe(); } catch (_) {}
         }
@@ -420,9 +443,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       ..on<lk.TrackUnmutedEvent>((_) {
         if (mounted) setState(() {});
       })
-      ..on<lk.DataReceivedEvent>((event) {
-        _handleDataReceived(event);
-      })
       ..on<lk.ParticipantConnectedEvent>((event) async {
         // Only stop ringback when a HUMAN answers — AI agent joins first for withAi rooms
         if (event.participant.identity != 'ai-assistant') {
@@ -434,7 +454,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         }
       })
       ..on<lk.TrackPublishedEvent>((event) {
-        if (event.participant.identity == 'voice-translator') return;
+        if (event.participant.identity == 'voice-translator') {
+          final wantedName = 'translation-$_preferredLang';
+          if (_translationEnabled && event.publication.name == wantedName) {
+            try { event.publication.subscribe(); } catch (_) {}
+          }
+          return;
+        }
         try { event.publication.subscribe(); } catch (_) {}
       })
       ..on<lk.ParticipantDisconnectedEvent>((event) {
@@ -817,8 +843,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       final status = await Permission.camera.request();
       debugPrint('[VoiceCall] Camera permission: $status');
       if (!status.isGranted) {
-        // iOS: after first denial the system never shows the dialog again.
-        // Direct the user to Settings so they can enable camera manually.
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -837,12 +861,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     final newCameraOn = !_cameraOn;
     debugPrint('[VoiceCall] setCameraEnabled($newCameraOn) start, localParticipant=${_room?.localParticipant?.identity}');
     try {
-      // iOS: switch AVAudioSession to videoChat mode before enabling camera.
+      // iOS: switch AVAudioSession before camera toggle.
       // Default voiceChat mode blocks RTCCameraVideoCapturer initialization.
       if (Platform.isIOS) {
         if (newCameraOn) {
           await _audioChannel.invokeMethod('setAudioSessionForVideo');
           debugPrint('[VoiceCall] setAudioSessionForVideo called');
+          // Give iOS audio session time to settle before starting camera capture
+          await Future.delayed(const Duration(milliseconds: 300));
         } else {
           await _audioChannel.invokeMethod('requestAudioFocus');
         }
@@ -850,8 +876,38 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       await _room?.localParticipant?.setCameraEnabled(newCameraOn);
       debugPrint('[VoiceCall] setCameraEnabled($newCameraOn) done, pubs=${_room?.localParticipant?.videoTrackPublications.length}');
       if (mounted) setState(() => _cameraOn = newCameraOn);
+
+      // Verify local video track appeared after enabling camera
+      if (newCameraOn && mounted) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        final pubs = _room?.localParticipant?.videoTrackPublications ?? [];
+        final hasTrack = pubs.any((p) => p.track != null);
+        debugPrint('[VoiceCall] Post-enable track check: hasTrack=$hasTrack, pubs=${pubs.length}');
+        if (!hasTrack && mounted) {
+          // Track did not appear — retry once
+          debugPrint('[VoiceCall] No video track found, retrying setCameraEnabled');
+          try {
+            await _room?.localParticipant?.setCameraEnabled(false);
+            await Future.delayed(const Duration(milliseconds: 200));
+            await _room?.localParticipant?.setCameraEnabled(true);
+          } catch (retryErr) {
+            debugPrint('[VoiceCall] Camera retry error: $retryErr');
+          }
+          if (mounted) setState(() {});
+        }
+      }
     } catch (e) {
       debugPrint('[VoiceCall] Camera toggle error: $e');
+      // Reset state if camera failed to enable
+      if (newCameraOn && mounted) {
+        setState(() => _cameraOn = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Не удалось включить камеру: $e'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -1089,54 +1145,42 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   // ── Server-side translation helpers ──
 
-  void _handleDataReceived(lk.DataReceivedEvent event) {
-    if (!_translationEnabled || !mounted) return;
-    try {
-      final payload = jsonDecode(utf8.decode(event.data));
-      if (payload['type'] != 'subtitle') return;
-      final translations = payload['translations'] as Map<String, dynamic>?;
-      final original = payload['original'] as String? ?? '';
-      if (translations == null) return;
 
-      // Show translation for user's preferred language
-      final translated = translations[_preferredLang] as String?;
-      if (translated == null || translated.isEmpty) return;
+  /// Subscribe to translation-{lang} track from voice-translator, unsubscribe others
+  void _updateTranslationTrackSubscription() {
+    final room = _room;
+    if (room == null) return;
+    final translator = room.remoteParticipants.values
+        .where((p) => p.identity == 'voice-translator')
+        .firstOrNull;
+    if (translator == null) return;
 
-      setState(() {
-        _originalSttText = original;
-        _translatedText = translated;
-      });
-      // Auto-hide subtitle after 8 seconds
-      _subtitleTimer?.cancel();
-      _subtitleTimer = Timer(const Duration(seconds: 8), () {
-        if (mounted) setState(() {
-          _translatedText = '';
-          _originalSttText = '';
-        });
-      });
-    } catch (e) {
-      debugPrint('[Translation] data channel parse error: $e');
+    for (final pub in translator.audioTrackPublications) {
+      final wantedName = 'translation-$_preferredLang';
+      if (_translationEnabled && pub.name == wantedName) {
+        if (!pub.subscribed) {
+          try { pub.subscribe(); } catch (_) {}
+        }
+      } else {
+        if (pub.subscribed) {
+          try { pub.unsubscribe(); } catch (_) {}
+        }
+      }
     }
   }
 
   Future<void> _toggleTranslation(bool enabled) async {
-    if (enabled) {
-      // Start server-side translator agent
-      await _startServerTranslator();
-    } else {
-      _subtitleTimer?.cancel();
-      // Optionally stop server translator (leave running for other participants)
-    }
+    // Set flags BEFORE starting translator so TrackPublishedEvent handler knows to subscribe
     if (mounted) {
       setState(() {
         _translationEnabled = enabled;
         _translationActive = enabled;
-        if (!enabled) {
-          _translatedText = '';
-          _originalSttText = '';
-        }
       });
     }
+    if (enabled) {
+      await _startServerTranslator();
+    }
+    _updateTranslationTrackSubscription();
   }
 
   Future<void> _startServerTranslator() async {
@@ -1174,14 +1218,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   Future<void> _setPreferredLang(String lang) async {
     setState(() {
       _preferredLang = lang;
-      _translatedText = '';
-      _originalSttText = '';
     });
     // Update language on server
     final roomName = _roomName;
     if (roomName != null && _translationEnabled) {
       await _setServerLang(roomName, lang);
     }
+    // Switch audio track subscription to new language
+    _updateTranslationTrackSubscription();
   }
 
   Future<void> _showLangPicker() async {
@@ -1303,7 +1347,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     WidgetsBinding.instance.removeObserver(this);
     _callEndedSub?.cancel();
     _ringbackTimer?.cancel();
-    _subtitleTimer?.cancel();
     _ringbackActive = false;
     _audioChannel.setMethodCallHandler(null);
     WakelockPlus.disable();
@@ -1348,47 +1391,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       body: Stack(
         children: [
           _buildBody(),
-          // Translation subtitle overlay
-          if (_translationEnabled && (_translatedText.isNotEmpty || _originalSttText.isNotEmpty))
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 220,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.75),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_originalSttText.isNotEmpty)
-                      Text(
-                        _originalSttText,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 13,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    if (_translatedText.isNotEmpty) ...[
-                      if (_originalSttText.isNotEmpty) const SizedBox(height: 4),
-                      Text(
-                        _translatedText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
           if (_reconnecting)
             Container(
               color: Colors.black54,
