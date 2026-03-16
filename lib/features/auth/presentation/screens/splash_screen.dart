@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -50,34 +51,43 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     final storage = sl<SecureStorageService>();
-    final hasToken = await storage.hasRefreshToken;
 
-    if (!hasToken) {
-      final onboardingSeen = await storage.isOnboardingSeen;
-      if (mounted) {
-        context.go(onboardingSeen ? RouteConstants.login : RouteConstants.onboarding);
-      }
-      return;
-    }
+    try {
+      final hasToken = await storage.hasRefreshToken;
 
-    final pinEnabled = await storage.isPinEnabled;
-    final biometricEnabled = await storage.isBiometricEnabled;
-
-    if (biometricEnabled) {
-      final success = await _tryBiometric();
-      if (success) {
-        if (mounted) context.go(RouteConstants.assistant);
+      if (!hasToken) {
+        final onboardingSeen = await storage.isOnboardingSeen;
+        if (mounted) {
+          context.go(onboardingSeen ? RouteConstants.login : RouteConstants.onboarding);
+        }
         return;
       }
-      if (pinEnabled) {
+
+      final pinEnabled = await storage.isPinEnabled;
+      final biometricEnabled = await storage.isBiometricEnabled;
+
+      if (biometricEnabled) {
+        final success = await _tryBiometric();
+        if (success) {
+          if (mounted) context.go(RouteConstants.assistant);
+          return;
+        }
+        if (pinEnabled) {
+          if (mounted) context.go(RouteConstants.pinEntry);
+          return;
+        }
+        if (mounted) context.go(RouteConstants.login);
+      } else if (pinEnabled) {
         if (mounted) context.go(RouteConstants.pinEntry);
-        return;
+      } else {
+        if (mounted) context.go(RouteConstants.assistant);
       }
+    } catch (e) {
+      // Corrupted storage after reinstall — clear and go to login
+      debugPrint('SplashScreen: storage error, clearing: $e');
+      try { await storage.clearTokens(); } catch (_) {}
+      try { await storage.clearPin(); } catch (_) {}
       if (mounted) context.go(RouteConstants.login);
-    } else if (pinEnabled) {
-      if (mounted) context.go(RouteConstants.pinEntry);
-    } else {
-      if (mounted) context.go(RouteConstants.assistant);
     }
   }
 

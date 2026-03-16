@@ -110,6 +110,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   bool _screenShareFullscreen = false;
   String? _screenShareParticipantName;
   bool _isFrontCamera = true;
+  final TransformationController _screenShareTransformCtrl = TransformationController();
 
   static const _audioChannel = MethodChannel('taler_id/audio');
 
@@ -1431,6 +1432,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     _eventsListener?.dispose();
     _room?.removeListener(_onRoomChanged);
     _ringPlayer.dispose();
+    _screenShareTransformCtrl.dispose();
+    // Restore portrait if we were in landscape for screen share
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     // Translation cleanup — server-side, nothing local to stop
     // Do NOT disconnect room — call continues in background via CallStateService
     super.dispose();
@@ -1973,7 +1977,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     );
   }
 
-  /// Fullscreen screen share view with exit button.
+  /// Fullscreen screen share view with pinch-to-zoom and landscape support.
   Widget _buildScreenShareFullscreen() {
     final screenTrack = _remoteScreenShareTrack;
     final ownerName = _remoteScreenShareOwner ?? '';
@@ -1981,62 +1985,78 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     // If screen share ended, exit fullscreen
     if (screenTrack == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _screenShareFullscreen = false);
+        if (mounted) _exitScreenShareFullscreen();
       });
       return const SizedBox.shrink();
     }
 
-    return GestureDetector(
-      onTap: () => setState(() => _screenShareFullscreen = false),
-      child: Container(
-        color: Colors.black,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            lk.VideoTrackRenderer(screenTrack),
-            // Label
-            Positioned(
-              top: 8,
-              left: 8,
+    // Allow landscape when viewing screen share fullscreen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    return Container(
+      color: Colors.black,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Pinch-to-zoom + pan on the screen share
+          InteractiveViewer(
+            transformationController: _screenShareTransformCtrl,
+            minScale: 1.0,
+            maxScale: 5.0,
+            child: lk.VideoTrackRenderer(screenTrack),
+          ),
+          // Label
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.screen_share_rounded, color: Colors.white, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$ownerName — экран',
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Exit fullscreen button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: _exitScreenShareFullscreen,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.screen_share_rounded, color: Colors.white, size: 16),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$ownerName — экран',
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+                child: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 24),
               ),
             ),
-            // Exit fullscreen button
-            Positioned(
-              top: 8,
-              right: 8,
-              child: GestureDetector(
-                onTap: () => setState(() => _screenShareFullscreen = false),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 24),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _exitScreenShareFullscreen() {
+    _screenShareTransformCtrl.value = Matrix4.identity();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    setState(() => _screenShareFullscreen = false);
   }
 
   /// Horizontal strip of participant thumbnails (used below screen share).
