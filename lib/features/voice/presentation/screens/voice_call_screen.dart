@@ -107,6 +107,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   // Video state
   bool _cameraOn = false;
+  bool _screenShareFullscreen = false;
+  String? _screenShareParticipantName;
   bool _isFrontCamera = true;
 
   static const _audioChannel = MethodChannel('taler_id/audio');
@@ -471,6 +473,20 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         }
         // Just update UI — each participant leaves on their own
         if (mounted) setState(() {});
+      })
+      ..on<lk.RoomMetadataChangedEvent>((event) {
+        // When another participant enables translator, backend updates room metadata
+        // to signal all participants to disable E2EE
+        try {
+          final metadata = event.metadata;
+          if (metadata != null && metadata.contains('e2ee_disabled')) {
+            final room = _room;
+            if (room?.e2eeManager != null) {
+              room!.setE2EEEnabled(false);
+              debugPrint('[VoiceCall] E2EE disabled via room metadata signal');
+            }
+          }
+        } catch (_) {}
       });
   }
 
@@ -971,6 +987,33 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         p.videoTrackPublications.any((pub) => pub.subscribed && pub.track != null));
   }
 
+  /// Find the first remote screen share track (if any).
+  lk.VideoTrack? get _remoteScreenShareTrack {
+    for (final p in _participants) {
+      for (final pub in p.videoTrackPublications) {
+        if (pub.source == lk.TrackSource.screenShareVideo &&
+            pub.subscribed &&
+            pub.track != null) {
+          return pub.track as lk.VideoTrack;
+        }
+      }
+    }
+    return null;
+  }
+
+  String? get _remoteScreenShareOwner {
+    for (final p in _participants) {
+      for (final pub in p.videoTrackPublications) {
+        if (pub.source == lk.TrackSource.screenShareVideo &&
+            pub.subscribed &&
+            pub.track != null) {
+          return p.name?.isNotEmpty == true ? p.name! : p.identity;
+        }
+      }
+    }
+    return null;
+  }
+
   Future<void> _showAudioOutputPicker() async {
     List<Map<String, String>> outputs = [
       {'id': 'earpiece', 'name': 'Телефон', 'type': 'earpiece'},
@@ -1178,9 +1221,36 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       });
     }
     if (enabled) {
+      // Disable E2EE so the translator agent can hear unencrypted audio
+      await _disableE2EEForTranslator();
       await _startServerTranslator();
     }
     _updateTranslationTrackSubscription();
+  }
+
+  Future<void> _disableE2EEForTranslator() async {
+    final room = _room;
+    if (room == null) return;
+    if (room.e2eeManager == null) return; // E2EE not active
+    try {
+      await room.setE2EEEnabled(false);
+      debugPrint('[Translation] E2EE disabled for translator');
+    } catch (e) {
+      debugPrint('[Translation] Failed to disable E2EE: $e');
+    }
+    // Ask backend to disable E2EE for all other participants in the room
+    final roomName = _roomName;
+    if (roomName != null) {
+      try {
+        await sl<DioClient>().post(
+          '/voice/rooms/$roomName/disable-e2ee',
+          data: {},
+          fromJson: (d) => d,
+        );
+      } catch (e) {
+        debugPrint('[Translation] Failed to notify others to disable E2EE: $e');
+      }
+    }
   }
 
   Future<void> _startServerTranslator() async {
@@ -1589,12 +1659,18 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             ],
           ),
         ),
-        // Participants list or video grid
+        // Participants list or video grid (with screen share support)
         Expanded(
-          child: _hasAnyVideo ? _buildVideoGrid() : _buildParticipantsList(),
+          child: _screenShareFullscreen
+              ? _buildScreenShareFullscreen()
+              : _remoteScreenShareTrack != null
+                  ? _buildScreenShareLayout()
+                  : _hasAnyVideo
+                      ? _buildVideoGrid()
+                      : _buildParticipantsList(),
         ),
         // Self participant indicator (audio mode only)
-        if (!_hasAnyVideo)
+        if (!_hasAnyVideo && !_screenShareFullscreen)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Card(
@@ -1623,7 +1699,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             ),
           ),
         ),
-        // Controls — two rows for small screens
+        // Controls — two rows for small screens (hidden in fullscreen screen share)
+        if (!_screenShareFullscreen)
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Column(
@@ -1817,7 +1894,229 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           );
   }
 
-  Widget _buildVideoGrid() {
+  /// Screen share layout: large screen share on top, small participant strip at bottom.
+  Widget _buildScreenShareLayout() {
+    final screenTrack = _remoteScreenShareTrack;
+    final ownerName = _remoteScreenShareOwner ?? '';
+
+    return Column(
+      children: [
+        // Screen share view (takes most of the space)
+        Expanded(
+          flex: 3,
+          child: GestureDetector(
+            onTap: () => setState(() => _screenShareFullscreen = true),
+            child: Container(
+              color: Colors.black,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (screenTrack != null)
+                    lk.VideoTrackRenderer(screenTrack),
+                  // Screen share label
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.screen_share_rounded, color: Colors.white, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$ownerName — экран',
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Fullscreen hint
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black38,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.fullscreen_rounded, color: Colors.white70, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // Small participant thumbnails at bottom
+        SizedBox(
+          height: 110,
+          child: _buildParticipantStrip(),
+        ),
+      ],
+    );
+  }
+
+  /// Fullscreen screen share view with exit button.
+  Widget _buildScreenShareFullscreen() {
+    final screenTrack = _remoteScreenShareTrack;
+    final ownerName = _remoteScreenShareOwner ?? '';
+
+    // If screen share ended, exit fullscreen
+    if (screenTrack == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _screenShareFullscreen = false);
+      });
+      return const SizedBox.shrink();
+    }
+
+    return GestureDetector(
+      onTap: () => setState(() => _screenShareFullscreen = false),
+      child: Container(
+        color: Colors.black,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            lk.VideoTrackRenderer(screenTrack),
+            // Label
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.screen_share_rounded, color: Colors.white, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$ownerName — экран',
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Exit fullscreen button
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => setState(() => _screenShareFullscreen = false),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 24),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Horizontal strip of participant thumbnails (used below screen share).
+  Widget _buildParticipantStrip() {
+    final tiles = <_VideoTileData>[];
+    for (final p in _participants) {
+      if (p.identity == 'voice-translator') continue;
+      final track = p.videoTrackPublications
+          .firstWhereOrNull((pub) =>
+              pub.subscribed &&
+              pub.track != null &&
+              pub.source != lk.TrackSource.screenShareVideo)
+          ?.track as lk.VideoTrack?;
+      final isAI = p.identity == 'ai-assistant';
+      final isRecorder = p.identity == 'meeting-recorder';
+      final name = isAI
+          ? 'AI Ассистент'
+          : isRecorder
+              ? 'AI Запись'
+              : (p.name?.isNotEmpty == true ? p.name! : p.identity);
+      tiles.add(_VideoTileData(name: name, track: track, hasMic: _participantHasMic(p), isLocal: false, isAI: isAI, isRecorder: isRecorder));
+    }
+    // Add local
+    if (_cameraOn) {
+      final localTrack = (_room?.localParticipant?.videoTrackPublications ?? [])
+          .firstWhereOrNull((p) => p.track != null)?.track;
+      tiles.add(_VideoTileData(
+        name: _room?.localParticipant?.name ?? '',
+        track: localTrack as lk.VideoTrack?,
+        hasMic: !_muted,
+        isLocal: true,
+        isAI: false,
+      ));
+    }
+    if (tiles.isEmpty) return const SizedBox.shrink();
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      itemCount: tiles.length,
+      itemBuilder: (_, i) {
+        final tile = tiles[i];
+        return Container(
+          width: 90,
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              color: AppColors.of(context).surface,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (tile.track != null)
+                    lk.VideoTrackRenderer(tile.track!)
+                  else
+                    Center(
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.of(context).card,
+                        child: Text(
+                          tile.name.isNotEmpty ? tile.name[0].toUpperCase() : '?',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.of(context).textPrimary),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+                      child: Text(
+                        tile.isLocal ? 'Вы' : tile.name,
+                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildVideoGrid({bool excludeScreenShare = false}) {
     // Collect all tiles: local + remote participants
     final localPubs = _room?.localParticipant?.videoTrackPublications ?? [];
     final localTrack = localPubs.firstWhereOrNull((p) => p.track != null)?.track;
@@ -1829,8 +2128,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     // Add remote participants
     for (final p in _participants) {
       if (p.identity == 'voice-translator') continue;
+      // Pick camera track only (skip screen share tracks)
       final track = p.videoTrackPublications
-          .firstWhereOrNull((pub) => pub.subscribed && pub.track != null)
+          .firstWhereOrNull((pub) =>
+              pub.subscribed &&
+              pub.track != null &&
+              pub.source != lk.TrackSource.screenShareVideo)
           ?.track as lk.VideoTrack?;
       final isAI = p.identity == 'ai-assistant';
       final isRecorder = p.identity == 'meeting-recorder';
