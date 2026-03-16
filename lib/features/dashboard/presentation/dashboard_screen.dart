@@ -433,10 +433,12 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   ? NetworkImage(fromAvatar)
                   : null,
               child: fromAvatar == null || fromAvatar.isEmpty
-                  ? Text(
-                      fromName.isNotEmpty ? fromName[0].toUpperCase() : '?',
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
-                    )
+                  ? (fromName.isNotEmpty && fromName != 'Пользователь'
+                      ? Text(
+                          fromName[0].toUpperCase(),
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
+                        )
+                      : const Icon(Icons.person_rounded, size: 40, color: Colors.black))
                   : null,
             ),
             const SizedBox(height: 16),
@@ -474,8 +476,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               // Reset flag after CallKit has had time to arrive and be dismissed
               Future.delayed(const Duration(seconds: 5), () => _acceptingInApp = false);
               final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
+              final calleeParam = fromName.isNotEmpty ? '&callee=${Uri.encodeComponent(fromName)}' : '';
               final uri = '/dashboard/voice?room=$roomName'
-                  '${convId.isNotEmpty ? '&convId=$convId' : ''}$e2eeParam';
+                  '${convId.isNotEmpty ? '&convId=$convId' : ''}$e2eeParam$calleeParam';
               context.push(uri);
             },
             icon: const Icon(Icons.call, color: Colors.white),

@@ -1289,13 +1289,21 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     setState(() {
       _preferredLang = lang;
     });
-    // Update language on server
+    // Unsubscribe from old tracks immediately
+    _updateTranslationTrackSubscription();
+    // Update language on server (this triggers session recreation + new track publish)
     final roomName = _roomName;
     if (roomName != null && _translationEnabled) {
       await _setServerLang(roomName, lang);
     }
-    // Switch audio track subscription to new language
-    _updateTranslationTrackSubscription();
+    // Retry subscription — the new track may take time to appear
+    for (final delay in [500, 1500, 3000, 5000]) {
+      Future.delayed(Duration(milliseconds: delay), () {
+        if (mounted && _preferredLang == lang) {
+          _updateTranslationTrackSubscription();
+        }
+      });
+    }
   }
 
   Future<void> _showLangPicker() async {
@@ -1496,14 +1504,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           CircleAvatar(
             radius: 48,
             backgroundColor: colors.primary.withOpacity(0.15),
-            child: Text(
-              name != null && name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: colors.primary,
-              ),
-            ),
+            child: name != null && name.isNotEmpty
+                ? Text(
+                    name[0].toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: colors.primary,
+                    ),
+                  )
+                : Icon(Icons.person_rounded, size: 48, color: colors.primary),
           ),
           const SizedBox(height: 20),
           if (name != null && name.isNotEmpty)
