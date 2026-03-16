@@ -49,10 +49,6 @@ import '../../features/messenger/data/repositories/messenger_repository_impl.dar
 import '../../features/messenger/domain/repositories/i_messenger_repository.dart';
 import '../../features/messenger/presentation/bloc/messenger_bloc.dart';
 
-// Translator
-import '../../features/translator/data/repositories/translator_repository_impl.dart';
-import '../../features/translator/domain/repositories/i_translator_repository.dart';
-import '../../features/translator/presentation/bloc/translator_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -131,9 +127,6 @@ Future<void> setupDependencies() async {
     () => MessengerRepositoryImpl(sl<MessengerRemoteDataSource>()),
   );
 
-  // Translator
-  sl.registerLazySingleton<ITranslatorRepository>(() => TranslatorRepositoryImpl());
-
   // Update check
   sl.registerLazySingleton(() => UpdateCheckService());
 
@@ -144,6 +137,5 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => TenantBloc(repo: sl<ITenantRepository>()));
   sl.registerFactory(() => SessionsBloc(repo: sl<ISessionRepository>()));
   sl.registerFactory(() => ChatBloc(repo: sl<IChatRepository>()));
-  sl.registerFactory(() => TranslatorBloc(repo: sl<ITranslatorRepository>()));
   sl.registerLazySingleton(() => MessengerBloc(repo: sl<IMessengerRepository>()));
 }

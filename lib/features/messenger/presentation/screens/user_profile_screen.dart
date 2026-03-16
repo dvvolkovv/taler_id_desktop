@@ -1,13 +1,16 @@
+import 'dart:convert';
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/dio_client.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/call_state_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../data/datasources/messenger_remote_datasource.dart';
 import '../bloc/messenger_bloc.dart';
 import '../bloc/messenger_event.dart';
-import '../bloc/messenger_state.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -41,18 +44,75 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
-  Future<void> _openChat() async {
+  Future<String?> _getOrCreateConversation() async {
     final bloc = context.read<MessengerBloc>();
     bloc.add(StartConversationWith(widget.userId));
-    // Wait for new conversation ID
     final state = await bloc.stream.firstWhere(
       (s) => s.newConversationId != null || (!s.isLoading && s.error != null),
     );
-    if (!mounted) return;
+    if (!mounted) return null;
     final convId = state.newConversationId;
     if (convId != null) {
       bloc.add(ClearNewConversation());
+    }
+    return convId;
+  }
+
+  Future<void> _openChat() async {
+    final convId = await _getOrCreateConversation();
+    if (convId != null && mounted) {
       context.push('/dashboard/messenger/$convId');
+    }
+  }
+
+  Future<void> _startDirectCall() async {
+    if (CallStateService.instance.isInCall) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Уже идёт звонок'),
+            backgroundColor: AppColors.of(context).error,
+          ),
+        );
+      }
+      return;
+    }
+
+    final convId = await _getOrCreateConversation();
+    if (convId == null || !mounted) return;
+
+    try {
+      final client = sl<DioClient>();
+      final res = await client.post(
+        '/voice/rooms',
+        data: {'withAi': false, 'conversationId': convId},
+        fromJson: (d) => Map<String, dynamic>.from(d as Map),
+      );
+      final roomName = res['roomName'] as String;
+      final e2eeKey = base64Url.encode(
+        List<int>.generate(32, (_) => Random.secure().nextInt(256)),
+      );
+      sl<MessengerRemoteDataSource>().sendCallInvite(convId, roomName, e2eeKey: e2eeKey);
+
+      final firstName = _profile?['firstName'] as String? ?? '';
+      final lastName = _profile?['lastName'] as String? ?? '';
+      final calleeName = [firstName, lastName].where((s) => s.isNotEmpty).join(' ');
+      final calleeParam = calleeName.isNotEmpty
+          ? '&callee=${Uri.encodeComponent(calleeName)}'
+          : '';
+      final e2eeParam = '&e2ee=${Uri.encodeComponent(e2eeKey)}';
+      if (mounted) {
+        context.push('/dashboard/voice?room=$roomName&convId=$convId$calleeParam$e2eeParam');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка звонка: $e'),
+            backgroundColor: AppColors.of(context).error,
+          ),
+        );
+      }
     }
   }
 
@@ -137,33 +197,40 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                       ],
                       const SizedBox(height: 32),
-                      BlocListener<MessengerBloc, MessengerState>(
-                        listenWhen: (p, c) =>
-                            p.newConversationId != c.newConversationId &&
-                            c.newConversationId != null,
-                        listener: (context, state) {
-                          final convId = state.newConversationId;
-                          if (convId != null) {
-                            context.read<MessengerBloc>().add(ClearNewConversation());
-                            context.push('/dashboard/messenger/$convId');
-                          }
-                        },
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _openChat,
-                            icon: const Icon(Icons.chat_bubble_outline_rounded,
-                                color: Colors.black),
-                            label: const Text('Написать сообщение',
-                                style: TextStyle(color: Colors.black)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.of(context).primary,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _openChat,
+                              icon: const Icon(Icons.chat_bubble_outline_rounded,
+                                  color: Colors.black),
+                              label: const Text('Написать',
+                                  style: TextStyle(color: Colors.black)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.of(context).primary,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
                             ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _startDirectCall,
+                              icon: const Icon(Icons.call_outlined,
+                                  color: Colors.black),
+                              label: const Text('Позвонить',
+                                  style: TextStyle(color: Colors.black)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.of(context).primary,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

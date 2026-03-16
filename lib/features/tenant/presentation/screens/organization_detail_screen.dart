@@ -1,11 +1,19 @@
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:flutter_idensic_mobile_sdk_plugin/flutter_idensic_mobile_sdk_plugin.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/call_state_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
+import '../../../messenger/data/datasources/messenger_remote_datasource.dart';
+import '../../../messenger/presentation/bloc/messenger_bloc.dart';
+import '../../../messenger/presentation/bloc/messenger_event.dart';
 import '../../domain/entities/tenant_entity.dart';
 import '../bloc/tenant_bloc.dart';
 import '../bloc/tenant_event.dart';
@@ -225,6 +233,59 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
         ),
       );
 
+  Future<void> _callMember(TenantMemberEntity member) async {
+    final userId = member.userId ?? member.id;
+    if (CallStateService.instance.isInCall) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('Уже идёт звонок'), backgroundColor: AppColors.of(context).error),
+        );
+      }
+      return;
+    }
+
+    try {
+      // Create or find 1-on-1 conversation
+      final bloc = context.read<MessengerBloc>();
+      bloc.add(StartConversationWith(userId));
+      final state = await bloc.stream.firstWhere(
+        (s) => s.newConversationId != null || (!s.isLoading && s.error != null),
+      );
+      if (!mounted) return;
+      final convId = state.newConversationId;
+      if (convId == null) return;
+      bloc.add(ClearNewConversation());
+
+      // Create voice room
+      final client = sl<DioClient>();
+      final res = await client.post(
+        '/voice/rooms',
+        data: {'withAi': false, 'conversationId': convId},
+        fromJson: (d) => Map<String, dynamic>.from(d as Map),
+      );
+      final roomName = res['roomName'] as String;
+      final e2eeKey = base64Url.encode(
+        List<int>.generate(32, (_) => Random.secure().nextInt(256)),
+      );
+      sl<MessengerRemoteDataSource>().sendCallInvite(convId, roomName, e2eeKey: e2eeKey);
+
+      final calleeName = [member.firstName, member.lastName]
+          .where((s) => s != null && s.isNotEmpty)
+          .join(' ');
+      final calleeParam = calleeName.isNotEmpty ? '&callee=${Uri.encodeComponent(calleeName)}' : '';
+      final e2eeParam = '&e2ee=${Uri.encodeComponent(e2eeKey)}';
+      if (mounted) {
+        context.push('/dashboard/voice?room=$roomName&convId=$convId$calleeParam$e2eeParam');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка звонка: $e'), backgroundColor: AppColors.of(context).error),
+        );
+      }
+    }
+  }
+
   Widget _memberRow(TenantMemberEntity member, TenantRole? myRole, bool canManage) {
     final l10n = AppLocalizations.of(context)!;
     final roleColors = {
@@ -261,6 +322,13 @@ class _OrganizationDetailScreenState extends State<OrganizationDetailScreen> {
                 Text(member.email, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 11)),
               ],
             ),
+          ),
+          // Call button
+          IconButton(
+            icon: Icon(Icons.call_outlined, color: AppColors.of(context).primary, size: 20),
+            onPressed: () => _callMember(member),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           ),
           // Role badge or dropdown
           if (canManage && member.role != TenantRole.owner)
