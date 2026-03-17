@@ -559,6 +559,18 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                   _formatDate(e.startedAt),
                   style: TextStyle(color: colors.textSecondary, fontSize: 12),
                 ),
+                if (e.hasSummary || e.hasRecording) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 6,
+                    children: [
+                      if (e.hasRecording)
+                        _CallBadge(icon: Icons.mic_rounded, label: 'Запись', color: Colors.red),
+                      if (e.hasSummary)
+                        _CallBadge(icon: Icons.description_rounded, label: 'Резюме', color: colors.primary),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -614,6 +626,32 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
 }
 
 // ─── Helper widgets ───
+
+class _CallBadge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _CallBadge({required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 3),
+          Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
 
 class _LinkRow extends StatelessWidget {
   final String link;
@@ -699,6 +737,8 @@ class _CallEntry {
   final bool isOutgoing;
   final bool withAi;
   final String? conversationId;
+  final bool hasSummary;
+  final bool hasRecording;
 
   const _CallEntry({
     required this.id,
@@ -708,6 +748,8 @@ class _CallEntry {
     required this.isOutgoing,
     required this.withAi,
     this.conversationId,
+    this.hasSummary = false,
+    this.hasRecording = false,
   });
 
   factory _CallEntry.fromJson(Map<String, dynamic> json) {
@@ -722,6 +764,11 @@ class _CallEntry {
           .join(', ');
       if (name.isEmpty) name = 'Неизвестный';
     }
+    // Check for meeting summary info
+    final summary = json['meetingSummary'] as Map<String, dynamic>?;
+    final hasSummary = summary != null && (summary['summary'] as String?)?.isNotEmpty == true;
+    final hasRecording = summary != null && (summary['recordingUrl'] as String?)?.isNotEmpty == true;
+
     return _CallEntry(
       id: json['id'] as String? ?? '',
       otherPartyName: name,
@@ -730,6 +777,8 @@ class _CallEntry {
       isOutgoing: json['isOutgoing'] as bool? ?? true,
       withAi: withAi,
       conversationId: json['conversationId'] as String?,
+      hasSummary: hasSummary,
+      hasRecording: hasRecording,
     );
   }
 }
