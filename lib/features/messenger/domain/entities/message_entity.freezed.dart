@@ -34,6 +34,8 @@ mixin _$MessageEntity {
   bool get isRead => throw _privateConstructorUsedError;
   bool get isSystem => throw _privateConstructorUsedError;
   bool get isEdited => throw _privateConstructorUsedError;
+  List<Map<String, dynamic>> get reactions =>
+      throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -61,7 +63,8 @@ abstract class $MessageEntityCopyWith<$Res> {
       bool isDelivered,
       bool isRead,
       bool isSystem,
-      bool isEdited});
+      bool isEdited,
+      List<Map<String, dynamic>> reactions});
 }
 
 /// @nodoc
@@ -91,6 +94,7 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
     Object? isRead = null,
     Object? isSystem = null,
     Object? isEdited = null,
+    Object? reactions = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -149,6 +153,10 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
           ? _value.isEdited
           : isEdited // ignore: cast_nullable_to_non_nullable
               as bool,
+      reactions: null == reactions
+          ? _value.reactions
+          : reactions // ignore: cast_nullable_to_non_nullable
+              as List<Map<String, dynamic>>,
     ) as $Val);
   }
 }
@@ -175,7 +183,8 @@ abstract class _$$MessageEntityImplCopyWith<$Res>
       bool isDelivered,
       bool isRead,
       bool isSystem,
-      bool isEdited});
+      bool isEdited,
+      List<Map<String, dynamic>> reactions});
 }
 
 /// @nodoc
@@ -203,6 +212,7 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
     Object? isRead = null,
     Object? isSystem = null,
     Object? isEdited = null,
+    Object? reactions = null,
   }) {
     return _then(_$MessageEntityImpl(
       id: null == id
@@ -261,6 +271,10 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
           ? _value.isEdited
           : isEdited // ignore: cast_nullable_to_non_nullable
               as bool,
+      reactions: null == reactions
+          ? _value._reactions
+          : reactions // ignore: cast_nullable_to_non_nullable
+              as List<Map<String, dynamic>>,
     ));
   }
 }
@@ -282,7 +296,9 @@ class _$MessageEntityImpl implements _MessageEntity {
       this.isDelivered = false,
       this.isRead = false,
       this.isSystem = false,
-      this.isEdited = false});
+      this.isEdited = false,
+      final List<Map<String, dynamic>> reactions = const []})
+      : _reactions = reactions;
 
   factory _$MessageEntityImpl.fromJson(Map<String, dynamic> json) =>
       _$$MessageEntityImplFromJson(json);
@@ -319,10 +335,18 @@ class _$MessageEntityImpl implements _MessageEntity {
   @override
   @JsonKey()
   final bool isEdited;
+  final List<Map<String, dynamic>> _reactions;
+  @override
+  @JsonKey()
+  List<Map<String, dynamic>> get reactions {
+    if (_reactions is EqualUnmodifiableListView) return _reactions;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_reactions);
+  }
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType, isDelivered: $isDelivered, isRead: $isRead, isSystem: $isSystem, isEdited: $isEdited)';
+    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType, isDelivered: $isDelivered, isRead: $isRead, isSystem: $isSystem, isEdited: $isEdited, reactions: $reactions)';
   }
 
   @override
@@ -352,7 +376,9 @@ class _$MessageEntityImpl implements _MessageEntity {
             (identical(other.isSystem, isSystem) ||
                 other.isSystem == isSystem) &&
             (identical(other.isEdited, isEdited) ||
-                other.isEdited == isEdited));
+                other.isEdited == isEdited) &&
+            const DeepCollectionEquality()
+                .equals(other._reactions, _reactions));
   }
 
   @JsonKey(ignore: true)
@@ -372,7 +398,8 @@ class _$MessageEntityImpl implements _MessageEntity {
       isDelivered,
       isRead,
       isSystem,
-      isEdited);
+      isEdited,
+      const DeepCollectionEquality().hash(_reactions));
 
   @JsonKey(ignore: true)
   @override
@@ -403,7 +430,8 @@ abstract class _MessageEntity implements MessageEntity {
       final bool isDelivered,
       final bool isRead,
       final bool isSystem,
-      final bool isEdited}) = _$MessageEntityImpl;
+      final bool isEdited,
+      final List<Map<String, dynamic>> reactions}) = _$MessageEntityImpl;
 
   factory _MessageEntity.fromJson(Map<String, dynamic> json) =
       _$MessageEntityImpl.fromJson;
@@ -436,6 +464,8 @@ abstract class _MessageEntity implements MessageEntity {
   bool get isSystem;
   @override
   bool get isEdited;
+  @override
+  List<Map<String, dynamic>> get reactions;
   @override
   @JsonKey(ignore: true)
   _$$MessageEntityImplCopyWith<_$MessageEntityImpl> get copyWith =>

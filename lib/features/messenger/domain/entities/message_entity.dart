@@ -20,6 +20,7 @@ class MessageEntity with _$MessageEntity {
     @Default(false) bool isRead,
     @Default(false) bool isSystem,
     @Default(false) bool isEdited,
+    @Default([]) List<Map<String, dynamic>> reactions,
   }) = _MessageEntity;
 
   factory MessageEntity.fromJson(Map<String, dynamic> json) =>

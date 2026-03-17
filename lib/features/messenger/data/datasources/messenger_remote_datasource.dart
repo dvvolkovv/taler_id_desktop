@@ -32,6 +32,7 @@ class MessengerRemoteDataSource {
   final _typingCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _contactRequestCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _contactAcceptedCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _reactionUpdatedCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _reconnectCtrl = StreamController<void>.broadcast();
 
   MessengerRemoteDataSource(this._http);
@@ -109,6 +110,9 @@ class MessengerRemoteDataSource {
     _socket!.on('typing', (d) {
       try { _typingCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
     });
+    _socket!.on('message_reaction_updated', (d) {
+      try { _reactionUpdatedCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
+    });
     _socket!.on('contact_request', (d) {
       try { _contactRequestCtrl.add(Map<String, dynamic>.from(d as Map)); } catch (_) {}
     });
@@ -150,6 +154,7 @@ class MessengerRemoteDataSource {
   Stream<Map<String, dynamic>> get typingStream => _typingCtrl.stream;
   Stream<Map<String, dynamic>> get contactRequestStream => _contactRequestCtrl.stream;
   Stream<Map<String, dynamic>> get contactAcceptedStream => _contactAcceptedCtrl.stream;
+  Stream<Map<String, dynamic>> get reactionUpdatedStream => _reactionUpdatedCtrl.stream;
   bool get isSocketConnected => _socket?.connected ?? false;
 
   void joinConversation(String id) {
@@ -210,6 +215,13 @@ class MessengerRemoteDataSource {
 
   void markRead(String conversationId) =>
       _socket?.emit('mark_read', {'conversationId': conversationId});
+
+  void reactToMessage(String conversationId, String messageId, String emoji) =>
+      _socket?.emit('react_message', {
+        'conversationId': conversationId,
+        'messageId': messageId,
+        'emoji': emoji,
+      });
 
   // ─── REST: Direct ───
 
@@ -381,5 +393,6 @@ class MessengerRemoteDataSource {
     _typingCtrl.close();
     _contactRequestCtrl.close();
     _contactAcceptedCtrl.close();
+    _reactionUpdatedCtrl.close();
   }
 }

@@ -24,6 +24,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   StreamSubscription? _typingSub;
   StreamSubscription? _contactReqSub;
   StreamSubscription? _contactAccSub;
+  StreamSubscription? _reactionSub;
   final Map<String, Timer> _typingTimers = {}; // auto-clear typing after timeout
 
   MessengerBloc({required IMessengerRepository repo})
@@ -72,6 +73,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<RejectContactRequest>(_onRejectContactRequest);
     on<ContactRequestReceived>(_onContactRequestReceived);
     on<ContactRequestAccepted>(_onContactRequestAccepted);
+    on<ReactToMessage>(_onReactToMessage);
+    on<ReactionUpdated>(_onReactionUpdated);
   }
 
   Future<void> _onConnect(
@@ -171,6 +174,17 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _contactAccSub?.cancel();
     _contactAccSub = _repo.contactAcceptedStream.listen((data) {
       add(ContactRequestAccepted(data));
+    });
+    _reactionSub?.cancel();
+    _reactionSub = _repo.reactionUpdatedStream.listen((data) {
+      final msgId = data['messageId'] as String?;
+      final convId = data['conversationId'] as String?;
+      final reactions = (data['reactions'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e as Map))
+          .toList() ?? [];
+      if (msgId != null && convId != null) {
+        add(ReactionUpdated(messageId: msgId, conversationId: convId, reactions: reactions));
+      }
     });
     emit(state.copyWith(
       isConnected: true,
@@ -573,6 +587,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _typingSub?.cancel();
     _contactReqSub?.cancel();
     _contactAccSub?.cancel();
+    _reactionSub?.cancel();
     for (final timer in _typingTimers.values) { timer.cancel(); }
     _repo.dispose();
     return super.close();
@@ -649,6 +664,23 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _repo.deleteMessage(event.conversationId, event.messageId, event.forEveryone ? 'all' : 'self');
     // Refresh conversation list to update last message preview
     add(LoadConversations());
+  }
+
+  // ─── Reaction handlers ───
+
+  void _onReactToMessage(ReactToMessage event, Emitter<MessengerState> emit) {
+    _repo.reactToMessage(event.conversationId, event.messageId, event.emoji);
+  }
+
+  void _onReactionUpdated(ReactionUpdated event, Emitter<MessengerState> emit) {
+    final allMessages = Map<String, List<MessageEntity>>.from(state.messages);
+    final msgs = List<MessageEntity>.from(allMessages[event.conversationId] ?? []);
+    final idx = msgs.indexWhere((m) => m.id == event.messageId);
+    if (idx != -1) {
+      msgs[idx] = msgs[idx].copyWith(reactions: event.reactions);
+      allMessages[event.conversationId] = msgs;
+      emit(state.copyWith(messages: allMessages));
+    }
   }
 
   void _onMessageDeleted(MessageDeleted event, Emitter<MessengerState> emit) {

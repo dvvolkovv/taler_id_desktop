@@ -307,6 +307,26 @@ class ContactRequestReceived extends MessengerEvent {
   List<Object?> get props => [data];
 }
 
+// ─── Reaction events ───
+
+class ReactToMessage extends MessengerEvent {
+  final String conversationId;
+  final String messageId;
+  final String emoji;
+  const ReactToMessage({required this.conversationId, required this.messageId, required this.emoji});
+  @override
+  List<Object?> get props => [conversationId, messageId, emoji];
+}
+
+class ReactionUpdated extends MessengerEvent {
+  final String messageId;
+  final String conversationId;
+  final List<Map<String, dynamic>> reactions;
+  const ReactionUpdated({required this.messageId, required this.conversationId, required this.reactions});
+  @override
+  List<Object?> get props => [messageId, conversationId, reactions];
+}
+
 class ContactRequestAccepted extends MessengerEvent {
   final Map<String, dynamic> data;
   const ContactRequestAccepted(this.data);

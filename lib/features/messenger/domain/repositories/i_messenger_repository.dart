@@ -49,6 +49,9 @@ abstract class IMessengerRepository {
   Future<void> rejectContactRequest(String requestId);
   Stream<Map<String, dynamic>> get contactRequestStream;
   Stream<Map<String, dynamic>> get contactAcceptedStream;
+  // Reaction methods
+  void reactToMessage(String conversationId, String messageId, String emoji);
+  Stream<Map<String, dynamic>> get reactionUpdatedStream;
   // Mute methods
   Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes});
   Future<void> unmuteConversation(String conversationId);

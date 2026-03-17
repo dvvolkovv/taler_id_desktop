@@ -228,18 +228,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return;
     }
 
-    // Show bottom sheet to choose call type
-    final withAi = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: AppColors.of(context).card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => const _CallOptionsSheet(),
-    );
-    if (withAi == null || !mounted) return;
-
     try {
+      const withAi = false;
       final client = sl<DioClient>();
       final res = await client.post(
         '/voice/rooms',
@@ -656,6 +646,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                 senderName: sName,
                                 onReply: msg.isSystem ? null : () => _setReply(msg, isMe ? 'Вы' : sName),
                                 onEdit: (isMe && !msg.isSystem && msg.fileUrl == null) ? () => _startEditing(msg) : null,
+                                onReact: msg.isSystem ? null : (emoji) {
+                                  context.read<MessengerBloc>().add(ReactToMessage(
+                                    conversationId: msg.conversationId,
+                                    messageId: msg.id,
+                                    emoji: emoji,
+                                  ));
+                                },
+                                currentUserId: state.currentUserId,
                               ),
                             ],
                           );
@@ -855,6 +853,8 @@ class _MessageBubble extends StatefulWidget {
   final bool isGroup;
   final VoidCallback? onReply;
   final VoidCallback? onEdit;
+  final void Function(String emoji)? onReact;
+  final String? currentUserId;
   const _MessageBubble({
     required this.message,
     required this.isMe,
@@ -862,6 +862,8 @@ class _MessageBubble extends StatefulWidget {
     this.isGroup = false,
     this.onReply,
     this.onEdit,
+    this.onReact,
+    this.currentUserId,
   });
 
   @override
@@ -928,8 +930,10 @@ class _MessageBubbleState extends State<_MessageBubble> {
             offset: Offset(_dragOffset * 0.65, 0),
             child: Align(
       alignment: widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: widget.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+      Container(
         padding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints: BoxConstraints(
@@ -1052,12 +1056,24 @@ class _MessageBubbleState extends State<_MessageBubble> {
           ],
         ),
       ),
+      if (widget.message.reactions.isNotEmpty)
+        _ReactionsRow(
+          reactions: widget.message.reactions,
+          currentUserId: widget.currentUserId,
+          onTap: widget.onReact,
+        ),
+      if (widget.message.reactions.isEmpty)
+        const SizedBox(height: 8),
+        ],
+      ),
           ),
           ),
         ],
       ),
     );
   }
+
+  static const _quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
   void _showMessageActions(BuildContext context) {
     final colors = AppColors.of(context);
@@ -1079,7 +1095,38 @@ class _MessageBubbleState extends State<_MessageBubble> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 8),
+            if (widget.onReact != null) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: _quickEmojis.map((emoji) {
+                    final myReaction = widget.message.reactions.any(
+                      (r) => r['emoji'] == emoji && r['userId'] == widget.currentUserId,
+                    );
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        widget.onReact!(emoji);
+                      },
+                      child: Container(
+                        width: 44, height: 44,
+                        decoration: BoxDecoration(
+                          color: myReaction
+                              ? colors.primary.withValues(alpha: 0.2)
+                              : colors.background,
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const Divider(height: 16),
+            ],
             if (widget.onReply != null)
               ListTile(
                 leading: Icon(Icons.reply_rounded, color: colors.primary),
@@ -1812,6 +1859,67 @@ class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderState
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+class _ReactionsRow extends StatelessWidget {
+  final List<Map<String, dynamic>> reactions;
+  final String? currentUserId;
+  final void Function(String emoji)? onTap;
+  const _ReactionsRow({required this.reactions, this.currentUserId, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    // Group reactions by emoji: { emoji: [userId, ...] }
+    final grouped = <String, List<String>>{};
+    for (final r in reactions) {
+      final emoji = r['emoji'] as String? ?? '';
+      final userId = r['userId'] as String? ?? '';
+      grouped.putIfAbsent(emoji, () => []).add(userId);
+    }
+    final colors = AppColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 2, bottom: 6),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 2,
+        children: grouped.entries.map((entry) {
+          final isMine = entry.value.contains(currentUserId);
+          return GestureDetector(
+            onTap: onTap != null ? () => onTap!(entry.key) : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isMine
+                    ? colors.primary.withValues(alpha: 0.2)
+                    : colors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: isMine
+                    ? Border.all(color: colors.primary.withValues(alpha: 0.5), width: 1)
+                    : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(entry.key, style: const TextStyle(fontSize: 14)),
+                  if (entry.value.length > 1) ...[
+                    const SizedBox(width: 2),
+                    Text(
+                      '${entry.value.length}',
+                      style: TextStyle(
+                        color: isMine ? colors.primary : colors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

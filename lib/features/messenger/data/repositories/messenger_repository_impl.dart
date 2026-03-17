@@ -137,6 +137,13 @@ class MessengerRepositoryImpl implements IMessengerRepository {
   @override
   Stream<Map<String, dynamic>> get contactAcceptedStream => _remote.contactAcceptedStream;
 
+  // Reaction methods
+  @override
+  void reactToMessage(String conversationId, String messageId, String emoji) =>
+      _remote.reactToMessage(conversationId, messageId, emoji);
+  @override
+  Stream<Map<String, dynamic>> get reactionUpdatedStream => _remote.reactionUpdatedStream;
+
   // Mute methods
   @override
   Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes}) =>
