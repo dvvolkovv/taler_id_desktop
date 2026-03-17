@@ -97,6 +97,7 @@ Future<void> showCallkitIncoming({
     android: const AndroidParams(
       isCustomNotification: true,
       isShowLogo: false,
+      isShowFullLockedScreen: true,
       ringtonePath: 'system_ringtone_default',
       backgroundColor: '#0A1628',
       actionColor: '#167EF2',
