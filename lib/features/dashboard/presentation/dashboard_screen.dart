@@ -422,92 +422,123 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     // Deduplicate: don't show a second dialog for the same room
     if (_showingCallDialogRoom == roomName) return;
     _showingCallDialogRoom = roomName;
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isDismissible: false,
+      enableDrag: false,
       useRootNavigator: true,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.of(context).card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: AppColors.of(context).primary,
-              backgroundImage: fromAvatar != null && fromAvatar.isNotEmpty
-                  ? NetworkImage(fromAvatar)
-                  : null,
-              child: fromAvatar == null || fromAvatar.isEmpty
-                  ? (fromName.isNotEmpty && fromName != 'Пользователь'
-                      ? Text(
-                          fromName[0].toUpperCase(),
-                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
-                        )
-                      : const Icon(Icons.person_rounded, size: 40, color: Colors.black))
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              fromName,
-              style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 22, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text('Входящий звонок',
-                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14)),
-          ],
+      backgroundColor: AppColors.of(context).card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.call_rounded,
+                size: 48,
+                color: AppColors.of(context).primary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Входящий звонок',
+                style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                fromName,
+                style: TextStyle(
+                  color: AppColors.of(context).textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).pop();
+                      // Dismiss native CallKit ringing
+                      FlutterCallkitIncoming.endAllCalls();
+                      // Notify caller that the call was declined
+                      if (convId.isNotEmpty && roomName.isNotEmpty) {
+                        try {
+                          sl<MessengerRemoteDataSource>().sendCallEnded(convId, roomName);
+                        } catch (_) {}
+                      }
+                    },
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: AppColors.of(context).error,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.call_end_rounded, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Отклонить',
+                          style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () async {
+                      Navigator.of(context, rootNavigator: true).pop();
+                      _acceptingInApp = true;
+                      try {
+                        await FlutterCallkitIncoming.endCall(toCallkitId(roomName));
+                      } catch (_) {}
+                      try {
+                        await FlutterCallkitIncoming.endAllCalls();
+                      } catch (_) {}
+                      for (final delay in [500, 1500, 3000]) {
+                        Future.delayed(Duration(milliseconds: delay), () {
+                          try { FlutterCallkitIncoming.endAllCalls(); } catch (_) {}
+                        });
+                      }
+                      Future.delayed(const Duration(seconds: 5), () => _acceptingInApp = false);
+                      final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
+                      final calleeParam = fromName.isNotEmpty ? '&callee=${Uri.encodeComponent(fromName)}' : '';
+                      final uri = '/dashboard/voice?room=$roomName'
+                          '${convId.isNotEmpty ? '&convId=$convId' : ''}$e2eeParam$calleeParam';
+                      context.push(uri);
+                    },
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: const BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.call_rounded, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Принять',
+                          style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
-        actions: [
-          ElevatedButton.icon(
-            onPressed: () async {
-              Navigator.of(context, rootNavigator: true).pop();
-              // Suppress actionCallDecline → sendCallEnded when we dismiss CallKit
-              _acceptingInApp = true;
-              // Dismiss native CallKit ringing (may have started from FCM background handler)
-              try {
-                await FlutterCallkitIncoming.endCall(toCallkitId(roomName));
-              } catch (_) {}
-              try {
-                await FlutterCallkitIncoming.endAllCalls();
-              } catch (_) {}
-              // VoIP push may arrive AFTER in-app accept — schedule repeated
-              // endAllCalls to catch late-arriving CallKit UI
-              for (final delay in [500, 1500, 3000]) {
-                Future.delayed(Duration(milliseconds: delay), () {
-                  try { FlutterCallkitIncoming.endAllCalls(); } catch (_) {}
-                });
-              }
-              // Reset flag after CallKit has had time to arrive and be dismissed
-              Future.delayed(const Duration(seconds: 5), () => _acceptingInApp = false);
-              final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
-              final calleeParam = fromName.isNotEmpty ? '&callee=${Uri.encodeComponent(fromName)}' : '';
-              final uri = '/dashboard/voice?room=$roomName'
-                  '${convId.isNotEmpty ? '&convId=$convId' : ''}$e2eeParam$calleeParam';
-              context.push(uri);
-            },
-            icon: const Icon(Icons.call, color: Colors.white),
-            label: const Text('Принять'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
-              // Dismiss native CallKit ringing
-              FlutterCallkitIncoming.endAllCalls();
-              // Notify caller that the call was declined
-              if (convId.isNotEmpty && roomName.isNotEmpty) {
-                try {
-                  sl<MessengerRemoteDataSource>().sendCallEnded(convId, roomName);
-                } catch (_) {}
-              }
-            },
-            icon: const Icon(Icons.call_end, color: Colors.white),
-            label: const Text('Отклонить'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.of(context).error),
-          ),
-        ],
       ),
     ).whenComplete(() {
       if (_showingCallDialogRoom == roomName) _showingCallDialogRoom = null;

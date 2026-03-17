@@ -519,7 +519,11 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   }
 
   Widget _buildCallCard(_CallEntry e, AppColorsExtension colors) {
-    return AppCard(
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => CallDetailScreen(callId: e.id)),
+      ),
+      child: AppCard(
       child: Row(
         children: [
           Container(
@@ -582,6 +586,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                   onPressed: () => _callBack(e),
                 ),
         ],
+      ),
       ),
     );
   }
@@ -725,6 +730,373 @@ class _CallEntry {
       isOutgoing: json['isOutgoing'] as bool? ?? true,
       withAi: withAi,
       conversationId: json['conversationId'] as String?,
+    );
+  }
+}
+
+// ─── Call Detail Screen ───
+
+class CallDetailScreen extends StatefulWidget {
+  final String callId;
+  const CallDetailScreen({super.key, required this.callId});
+  @override
+  State<CallDetailScreen> createState() => _CallDetailScreenState();
+}
+
+class _CallDetailScreenState extends State<CallDetailScreen> {
+  late Future<Map<String, dynamic>> _future;
+  final _player = AudioPlayer();
+  PlayerState _playerState = PlayerState.stopped;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  final List<StreamSubscription> _subs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+    _subs.add(_player.onPlayerStateChanged.listen((s) {
+      if (mounted) setState(() => _playerState = s);
+    }));
+    _subs.add(_player.onPositionChanged.listen((p) {
+      if (mounted) setState(() => _position = p);
+    }));
+    _subs.add(_player.onDurationChanged.listen((d) {
+      if (mounted) setState(() => _duration = d);
+    }));
+    _subs.add(_player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() { _playerState = PlayerState.stopped; _position = Duration.zero; });
+    }));
+  }
+
+  @override
+  void dispose() {
+    for (final s in _subs) s.cancel();
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<Map<String, dynamic>> _load() async {
+    final data = await sl<DioClient>().get<dynamic>('/voice/call-history/${widget.callId}');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<void> _togglePlay(String url) async {
+    if (_playerState == PlayerState.playing) {
+      await _player.pause();
+    } else if (_playerState == PlayerState.paused) {
+      await _player.resume();
+    } else {
+      setState(() => _position = Duration.zero);
+      await _player.play(UrlSource(url));
+    }
+  }
+
+  String _fmtPos(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  String _fmtDuration(int sec) {
+    if (sec < 60) return '${sec}с';
+    final m = sec ~/ 60;
+    final s = sec % 60;
+    if (m < 60) return '${m}м ${s.toString().padLeft(2, '0')}с';
+    final h = m ~/ 60;
+    final mm = m % 60;
+    return '${h}ч ${mm.toString().padLeft(2, '0')}м';
+  }
+
+  String _fmtDate(DateTime dt) {
+    final l = dt.toLocal();
+    final now = DateTime.now();
+    final time = '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
+    if (l.day == now.day && l.month == now.month && l.year == now.year) return 'Сегодня, $time';
+    final yesterday = now.subtract(const Duration(days: 1));
+    if (l.day == yesterday.day && l.month == yesterday.month && l.year == yesterday.year) return 'Вчера, $time';
+    return '${l.day.toString().padLeft(2, '0')}.${l.month.toString().padLeft(2, '0')}.${l.year}, $time';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(title: const Text('Детали звонка')),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _future,
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary));
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline, color: colors.error, size: 36),
+                  const SizedBox(height: 8),
+                  Text('Ошибка загрузки', style: TextStyle(color: colors.textPrimary)),
+                  TextButton(
+                    onPressed: () => setState(() => _future = _load()),
+                    child: Text('Повторить', style: TextStyle(color: colors.primary)),
+                  ),
+                ],
+              ),
+            );
+          }
+          final data = snap.data!;
+          return _buildContent(data, colors);
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent(Map<String, dynamic> data, AppColorsExtension colors) {
+    final startedAt = DateTime.tryParse(data['startedAt'] as String? ?? '')?.toLocal() ?? DateTime.now();
+    final durationSec = data['durationSec'] as int?;
+    final isOutgoing = data['isOutgoing'] as bool? ?? true;
+    final withAi = data['withAi'] as bool? ?? false;
+    final participants = (data['participants'] as List?)
+        ?.map((p) => Map<String, dynamic>.from(p as Map))
+        .toList() ?? [];
+    final summary = data['summary'] as Map<String, dynamic>?;
+    final recordingUrl = summary?['recordingUrl'] as String?;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Header card
+        AppCard(
+          child: Column(
+            children: [
+              Icon(
+                isOutgoing ? Icons.call_made_rounded : Icons.call_received_rounded,
+                size: 40,
+                color: isOutgoing ? colors.primary : _kIncomingColor,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isOutgoing ? 'Исходящий звонок' : 'Входящий звонок',
+                style: TextStyle(color: colors.textSecondary, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _fmtDate(startedAt),
+                style: TextStyle(color: colors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              if (durationSec != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: colors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Длительность: ${_fmtDuration(durationSec)}',
+                    style: TextStyle(color: colors.primary, fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+              if (withAi) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.smart_toy_rounded, size: 16, color: colors.primary),
+                    const SizedBox(width: 4),
+                    Text('С AI-ассистентом', style: TextStyle(color: colors.primary, fontSize: 13)),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Participants
+        if (participants.isNotEmpty) ...[
+          _SectionHeader(icon: Icons.people_rounded, title: 'Участники', colors: colors),
+          const SizedBox(height: 8),
+          AppCard(
+            child: Column(
+              children: participants.map((p) {
+                final name = p['displayName'] as String? ?? 'Неизвестный';
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: colors.primary.withOpacity(0.15),
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                          style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(name, style: TextStyle(color: colors.textPrimary, fontSize: 15)),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // Recording
+        if (recordingUrl != null && recordingUrl.isNotEmpty) ...[
+          _SectionHeader(icon: Icons.fiber_manual_record_rounded, title: 'Запись встречи', colors: colors),
+          const SizedBox(height: 8),
+          AppCard(
+            child: Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    _playerState == PlayerState.playing
+                        ? Icons.pause_circle_filled_rounded
+                        : Icons.play_circle_filled_rounded,
+                    size: 40,
+                    color: colors.primary,
+                  ),
+                  onPressed: () => _togglePlay(recordingUrl),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                          activeTrackColor: colors.primary,
+                          inactiveTrackColor: colors.border,
+                          thumbColor: colors.primary,
+                          overlayColor: colors.primary.withValues(alpha: 0.2),
+                        ),
+                        child: Slider(
+                          value: _duration.inMilliseconds > 0
+                              ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+                              : 0.0,
+                          onChanged: _duration.inMilliseconds > 0
+                              ? (v) => _player.seek(Duration(milliseconds: (v * _duration.inMilliseconds).round()))
+                              : null,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(_fmtPos(_position), style: TextStyle(color: colors.textSecondary, fontSize: 11)),
+                            Text(
+                              _duration > Duration.zero ? _fmtPos(_duration) : '',
+                              style: TextStyle(color: colors.textSecondary, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.share_rounded, size: 20, color: colors.textSecondary),
+                  onPressed: () => Share.share(recordingUrl),
+                  tooltip: 'Поделиться',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // Meeting summary
+        if (summary != null && summary['status'] != 'processing') ...[
+          if ((summary['summary'] as String? ?? '').isNotEmpty) ...[
+            _SectionHeader(icon: Icons.smart_toy_rounded, title: 'Резюме встречи', colors: colors),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => MeetingSummaryDetailScreen(id: summary['id'] as String)),
+              ),
+              child: AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      summary['summary'] as String,
+                      style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(Icons.arrow_forward_rounded, size: 16, color: colors.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Подробнее',
+                          style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ],
+
+        if (summary != null && summary['status'] == 'processing') ...[
+          AppCard(
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Резюме обрабатывается...',
+                    style: TextStyle(color: colors.textSecondary, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final AppColorsExtension colors;
+  const _SectionHeader({required this.icon, required this.title, required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: colors.primary),
+        const SizedBox(width: 8),
+        Text(title, style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }

@@ -182,6 +182,21 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       try {
         await _audioChannel.invokeMethod('requestAudioFocus');
       } catch (_) {}
+      // Re-enable microphone — OS may have disabled it during interruption
+      try {
+        await _room?.localParticipant?.setMicrophoneEnabled(true);
+      } catch (_) {}
+      // Re-subscribe to remote audio tracks that may have been paused
+      if (_room != null) {
+        for (final p in _room!.remoteParticipants.values) {
+          for (final pub in p.audioTrackPublications) {
+            if (!pub.subscribed) {
+              try { pub.subscribe(); } catch (_) {}
+            }
+          }
+        }
+      }
+      if (mounted) setState(() {});
     }
     return null;
   }

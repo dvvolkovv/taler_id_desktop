@@ -130,11 +130,16 @@ import flutter_callkit_incoming
           let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
     DispatchQueue.main.async {
       if type == .began {
-        // Notify Flutter to play 3 beeps
         self.audioChannel?.invokeMethod("audioInterrupted", arguments: nil)
       } else if type == .ended {
-        // Reactivate our audio session when the other call ends
-        try? AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
+        // Fully restore audio session with voiceChat mode after external call ends
+        let session = AVAudioSession.sharedInstance()
+        do {
+          try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
+          try session.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+          NSLog("[Audio] Failed to restore session after interruption: %@", error.localizedDescription)
+        }
         self.audioChannel?.invokeMethod("audioResumed", arguments: nil)
       }
     }

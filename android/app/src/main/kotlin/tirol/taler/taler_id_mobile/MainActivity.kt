@@ -175,8 +175,9 @@ class MainActivity : FlutterFragmentActivity() {
                 .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                 .build()
-            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(attrs)
+                .setAcceptsDelayedFocusGain(true)
                 .setOnAudioFocusChangeListener(listener)
                 .build()
             audioFocusRequest = req
@@ -185,7 +186,7 @@ class MainActivity : FlutterFragmentActivity() {
         } else {
             @Suppress("DEPRECATION")
             val result = am.requestAudioFocus(listener, AudioManager.STREAM_VOICE_CALL,
-                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                AudioManager.AUDIOFOCUS_GAIN)
             audioFocusGranted = (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
         }
     }
