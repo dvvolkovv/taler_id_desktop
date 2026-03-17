@@ -369,5 +369,7 @@
   "createCallLink": "Ссылка на звонок",
   "callLinkCopied": "Ссылка скопирована",
   "callLinkTitle": "Ссылка на комнату",
-  "connectionUnstable": "Соединение нестабильно — проверьте интернет"
+  "connectionUnstable": "Соединение нестабильно — проверьте интернет",
+  "today": "Сегодня",
+  "yesterday": "Вчера"
 }

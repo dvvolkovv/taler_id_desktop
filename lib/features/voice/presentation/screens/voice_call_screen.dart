@@ -1092,6 +1092,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     setState(() => _audioOutputType = type);
   }
 
+  void _minimizeCall() {
+    if (_navigatedAway || !mounted) return;
+    _navigatedAway = true;
+    // Navigate to dashboard without ending the call
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(RouteConstants.messenger);
+    }
+  }
+
   Future<void> _hangUp() async {
     // Stop ringback if still playing (call not answered)
     _stopRingback();
@@ -1458,8 +1469,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
               : 'Голосовой звонок'),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: _hangUp,
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _minimizeCall,
         ),
         automaticallyImplyLeading: false,
         actions: [

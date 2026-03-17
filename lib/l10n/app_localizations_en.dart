@@ -1047,4 +1047,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionUnstable => 'Connection unstable — check your internet';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
 }

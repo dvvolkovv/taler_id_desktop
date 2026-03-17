@@ -1050,4 +1050,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get connectionUnstable =>
       'Соединение нестабильно — проверьте интернет';
+
+  @override
+  String get today => 'Сегодня';
+
+  @override
+  String get yesterday => 'Вчера';
 }

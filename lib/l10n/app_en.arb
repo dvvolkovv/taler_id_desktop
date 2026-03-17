@@ -369,5 +369,7 @@
   "createCallLink": "Call link",
   "callLinkCopied": "Link copied",
   "callLinkTitle": "Room link",
-  "connectionUnstable": "Connection unstable — check your internet"
+  "connectionUnstable": "Connection unstable — check your internet",
+  "today": "Today",
+  "yesterday": "Yesterday"
 }

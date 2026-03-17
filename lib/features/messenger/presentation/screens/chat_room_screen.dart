@@ -631,13 +631,33 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           final msg = messages[messages.length - 1 - index];
                           final isMe = _isMyMessage(msg, state);
                           final sName = isMe ? null : (msg.senderName ?? otherUserName);
-                          return _MessageBubble(
-                            message: msg,
-                            isMe: isMe,
-                            isGroup: isGroup,
-                            senderName: sName,
-                            onReply: msg.isSystem ? null : () => _setReply(msg, isMe ? 'Вы' : sName),
-                            onEdit: (isMe && !msg.isSystem && msg.fileUrl == null) ? () => _startEditing(msg) : null,
+                          // Show date separator above this message if it's the first
+                          // message of its day (i.e. previous message in chronological
+                          // order is from a different day, or this is the very first message).
+                          // Since the list is reversed, "previous chronological" = index+1.
+                          final msgDate = DateTime(msg.sentAt.year, msg.sentAt.month, msg.sentAt.day);
+                          bool showDate = false;
+                          if (index == messages.length - 1) {
+                            // oldest message — always show date
+                            showDate = true;
+                          } else {
+                            final prevMsg = messages[messages.length - 2 - index];
+                            final prevDate = DateTime(prevMsg.sentAt.year, prevMsg.sentAt.month, prevMsg.sentAt.day);
+                            showDate = msgDate != prevDate;
+                          }
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (showDate) _DateSeparator(date: msg.sentAt),
+                              _MessageBubble(
+                                message: msg,
+                                isMe: isMe,
+                                isGroup: isGroup,
+                                senderName: sName,
+                                onReply: msg.isSystem ? null : () => _setReply(msg, isMe ? 'Вы' : sName),
+                                onEdit: (isMe && !msg.isSystem && msg.fileUrl == null) ? () => _startEditing(msg) : null,
+                              ),
+                            ],
                           );
                         },
                       ),
@@ -778,6 +798,51 @@ class _ActiveCallBanner extends StatelessWidget {
             child: Text(AppLocalizations.of(context)!.joinCall, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DateSeparator extends StatelessWidget {
+  final DateTime date;
+  const _DateSeparator({required this.date});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final msgDay = DateTime(date.year, date.month, date.day);
+
+    String label;
+    if (msgDay == today) {
+      label = AppLocalizations.of(context)!.today;
+    } else if (msgDay == yesterday) {
+      label = AppLocalizations.of(context)!.yesterday;
+    } else if (date.year == now.year) {
+      label = DateFormat('d MMMM', Localizations.localeOf(context).languageCode).format(date);
+    } else {
+      label = DateFormat('d MMMM y', Localizations.localeOf(context).languageCode).format(date);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.of(context).card,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: AppColors.of(context).textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
       ),
     );
   }
