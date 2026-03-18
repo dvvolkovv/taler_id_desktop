@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
@@ -11,6 +12,7 @@ import 'core/api/dio_client.dart';
 import 'core/di/service_locator.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/services/call_state_service.dart';
+import 'core/utils/platform_utils.dart';
 import 'firebase_options.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'core/router/app_router.dart';
@@ -31,7 +33,7 @@ import 'features/sessions/presentation/bloc/sessions_bloc.dart';
 /// All other code uses [NotificationService.callEvents] (a broadcast StreamController
 /// fed from here) to safely receive CallKit events.
 void _setupCallkitListener() {
-  if (kIsWeb) return;
+  if (!isMobilePlatform) return;
   FlutterCallkitIncoming.onEvent.listen((CallEvent? event) {
     debugPrint('[CallKit] event: ${event?.event}');
     // Forward to all other subscribers (DashboardScreen etc.)
@@ -143,27 +145,30 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Set up CallKit listener early — before runApp — to catch accept events
-  // that arrive while the app is cold-starting.
-  _setupCallkitListener();
+  // that arrive while the app is cold-starting. (mobile only)
+  if (isMobilePlatform) {
+    _setupCallkitListener();
+    _checkInitialCallKitCall();
+  }
 
-  // Fallback: check if CallKit already has an active accepted call
-  // (event may have fired before the listener was registered on cold start).
-  _checkInitialCallKitCall();
+  // Lock orientation on mobile only — desktop needs landscape support
+  if (isMobilePlatform) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // Init web token storage (Hive-based, avoids flutter_secure_storage hang)
-  await SecureStorageService.initWeb();
+  // Init Hive storage for web + desktop (avoids flutter_secure_storage hang on macOS)
+  await Hive.initFlutter();
+  await SecureStorageService.initHive();
 
   // Setup DI first — must happen before NotificationService.init() so that
   // DioClient is registered when we try to save FCM/VoIP tokens.
   await setupDependencies();
 
   // Initialize Firebase (mobile only) — after DI so DioClient is available
-  if (!kIsWeb) {
+  if (isMobilePlatform) {
     try {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
       // Initialize FCM

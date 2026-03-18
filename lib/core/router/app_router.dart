@@ -22,6 +22,8 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/chat/presentation/screens/chat_screen.dart';
 import '../../features/messenger/presentation/screens/conversations_screen.dart';
 import '../../features/messenger/presentation/screens/chat_room_screen.dart';
+import '../../features/messenger/presentation/screens/messenger_desktop_layout.dart';
+import '../utils/platform_utils.dart';
 import '../../features/messenger/presentation/screens/user_search_screen.dart';
 import '../../features/messenger/presentation/screens/user_profile_screen.dart';
 import '../../features/messenger/presentation/screens/create_group_screen.dart';
@@ -167,10 +169,12 @@ final appRouter = GoRouter(
             userId: state.pathParameters['userId']!,
           ),
         ),
-        // Messenger
+        // Messenger — desktop uses two-panel layout, mobile uses push navigation
         GoRoute(
           path: RouteConstants.messenger,
-          builder: (_, __) => const ConversationsScreen(),
+          builder: (_, __) => isDesktopPlatform
+              ? const MessengerDesktopLayout()
+              : const ConversationsScreen(),
           routes: [
             GoRoute(
               path: 'search',
@@ -182,9 +186,13 @@ final appRouter = GoRouter(
             ),
             GoRoute(
               path: ':id',
-              builder: (_, state) => ChatRoomScreen(
-                conversationId: state.pathParameters['id']!,
-              ),
+              builder: (_, state) => isDesktopPlatform
+                  ? MessengerDesktopLayout(
+                      initialConversationId: state.pathParameters['id']!,
+                    )
+                  : ChatRoomScreen(
+                      conversationId: state.pathParameters['id']!,
+                    ),
               routes: [
                 GoRoute(
                   path: 'settings',

@@ -18,6 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/api/dio_client.dart';
 import '../../../../core/utils/constants.dart';
 import '../../../../core/services/call_state_service.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../../../profile/presentation/bloc/profile_bloc.dart';
 import '../../../profile/presentation/bloc/profile_state.dart';
 import '../../../messenger/data/datasources/messenger_remote_datasource.dart';
@@ -119,7 +120,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Listen for audio interruptions from native (parallel call from phone/other app)
-    _audioChannel.setMethodCallHandler(_onNativeAudioEvent);
+    if (isMobilePlatform) _audioChannel.setMethodCallHandler(_onNativeAudioEvent);
     // Listen for call_ended socket event — the other party hung up
     _callEndedSub = sl<MessengerRemoteDataSource>()
         .callEndedStream
@@ -151,12 +152,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       }
       // End CallKit now that the voice screen is visible — release native UI
       if (widget.isIncoming) {
-        FlutterCallkitIncoming.endAllCalls();
+        if (isMobilePlatform) FlutterCallkitIncoming.endAllCalls();
         // Re-activate audio session after CallKit releases it —
         // without this LiveKit loses audio when accepting from lock screen.
-        try {
-          _audioChannel.invokeMethod('requestAudioFocus');
-        } catch (_) {}
+        if (isMobilePlatform) {
+          try {
+            _audioChannel.invokeMethod('requestAudioFocus');
+          } catch (_) {}
+        }
         // Re-enable microphone — CallKit deactivation may have muted it
         try {
           _room!.localParticipant?.setMicrophoneEnabled(true);
@@ -179,9 +182,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       _playInterruptionBeeps();
     } else if (call.method == 'audioResumed') {
       // Reactivate audio focus so LiveKit resumes after parallel call ends
-      try {
-        await _audioChannel.invokeMethod('requestAudioFocus');
-      } catch (_) {}
+      if (isMobilePlatform) {
+        try {
+          await _audioChannel.invokeMethod('requestAudioFocus');
+        } catch (_) {}
+      }
       // Re-enable microphone — OS may have disabled it during interruption
       try {
         await _room?.localParticipant?.setMicrophoneEnabled(true);
@@ -222,16 +227,18 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       // By the time _connect() is called, the phone is already unlocked
       // (navigation happens only after didChangeAppLifecycleState.resumed),
       // so endAllCalls() no longer causes iOS to re-lock the screen.
-      try {
-        await FlutterCallkitIncoming.endAllCalls();
-        debugPrint('[VoiceCall] endAllCalls() done');
-      } catch (e) {
-        debugPrint('[VoiceCall] endAllCalls() error: $e');
+      if (isMobilePlatform) {
+        try {
+          await FlutterCallkitIncoming.endAllCalls();
+          debugPrint('[VoiceCall] endAllCalls() done');
+        } catch (e) {
+          debugPrint('[VoiceCall] endAllCalls() error: $e');
+        }
+        // Re-activate audio session independently for LiveKit
+        try {
+          await _audioChannel.invokeMethod('requestAudioFocus');
+        } catch (_) {}
       }
-      // Re-activate audio session independently for LiveKit
-      try {
-        await _audioChannel.invokeMethod('requestAudioFocus');
-      } catch (_) {}
     }
     // Play ringback tone for outgoing calls to user (not incoming, not AI assistant)
     if (!widget.isIncoming && widget.roomName != null) {
@@ -374,9 +381,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
       // Request audio focus BEFORE enabling microphone — ensures the audio session
       // is active (critical after endAllCalls() deactivated it for incoming calls).
-      try {
-        await _audioChannel.invokeMethod('requestAudioFocus');
-      } catch (_) {}
+      if (isMobilePlatform) {
+        try {
+          await _audioChannel.invokeMethod('requestAudioFocus');
+        } catch (_) {}
+      }
 
       // Enable microphone; may fail on iOS simulator — don't treat as fatal
       try {
@@ -410,9 +419,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         try {
           await lk.Hardware.instance.setSpeakerphoneOn(false);
         } catch (_) {}
-        try {
-          await _audioChannel.invokeMethod('setAudioOutput', 'earpiece');
-        } catch (_) {}
+        if (isMobilePlatform) {
+          try {
+            await _audioChannel.invokeMethod('setAudioOutput', 'earpiece');
+          } catch (_) {}
+        }
       }
     }
   }
@@ -430,7 +441,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         _reconnectAttempts = 0;
         // Restore mic and audio focus after LiveKit auto-reconnect
         try { await _room?.localParticipant?.setMicrophoneEnabled(!_muted); } catch (_) {}
-        try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+        if (isMobilePlatform) {
+          try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+        }
         _forceEarpiece();
         setState(() => _reconnecting = false);
       })
@@ -593,7 +606,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
         try { await newRoom.localParticipant?.setMicrophoneEnabled(!_muted); } catch (_) {}
         if (_cameraOn) { try { await newRoom.localParticipant?.setCameraEnabled(true); } catch (_) {} }
-        try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+        if (isMobilePlatform) {
+          try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+        }
         _forceEarpiece();
 
         _manualReconnecting = false;
@@ -871,7 +886,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   }
 
   Future<void> _toggleCamera() async {
-    if (!_cameraOn) {
+    if (!_cameraOn && isMobilePlatform) {
       final status = await Permission.camera.request();
       debugPrint('[VoiceCall] Camera permission: $status');
       if (!status.isGranted) {
@@ -895,7 +910,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     try {
       // iOS: switch AVAudioSession before camera toggle.
       // Default voiceChat mode blocks RTCCameraVideoCapturer initialization.
-      if (Platform.isIOS) {
+      if (isMobilePlatform && Platform.isIOS) {
         if (newCameraOn) {
           await _audioChannel.invokeMethod('setAudioSessionForVideo');
           debugPrint('[VoiceCall] setAudioSessionForVideo called');
@@ -1035,12 +1050,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       {'id': 'earpiece', 'name': 'Телефон', 'type': 'earpiece'},
       {'id': 'speaker', 'name': 'Динамик', 'type': 'speaker'},
     ];
-    try {
-      final raw = await _audioChannel.invokeMethod<List>('getAudioOutputs');
-      if (raw != null) {
-        outputs = raw.map((e) => Map<String, String>.from(e as Map)).toList();
-      }
-    } catch (_) {}
+    if (isMobilePlatform) {
+      try {
+        final raw = await _audioChannel.invokeMethod<List>('getAudioOutputs');
+        if (raw != null) {
+          outputs = raw.map((e) => Map<String, String>.from(e as Map)).toList();
+        }
+      } catch (_) {}
+    }
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
@@ -1101,9 +1118,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       final speakerOn = type == 'speaker';
       await lk.Hardware.instance.setSpeakerphoneOn(speakerOn);
     } catch (_) {}
-    try {
-      await _audioChannel.invokeMethod('setAudioOutput', type);
-    } catch (_) {}
+    if (isMobilePlatform) {
+      try {
+        await _audioChannel.invokeMethod('setAudioOutput', type);
+      } catch (_) {}
+    }
     setState(() => _audioOutputType = type);
   }
 
@@ -1134,18 +1153,22 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       } catch (_) {}
     }
     // Release audio focus
-    try {
-      await _audioChannel.invokeMethod('abandonAudioFocus');
-    } catch (_) {}
-    // Deactivate iOS audio session so system call process stops
-    try {
-      await _audioChannel.invokeMethod('deactivateAudioSession');
-    } catch (_) {}
+    if (isMobilePlatform) {
+      try {
+        await _audioChannel.invokeMethod('abandonAudioFocus');
+      } catch (_) {}
+      // Deactivate iOS audio session so system call process stops
+      try {
+        await _audioChannel.invokeMethod('deactivateAudioSession');
+      } catch (_) {}
+    }
     CallStateService.instance.endCall();
     // Tell CallKit the call ended (releases iOS background audio session)
-    try {
-      await FlutterCallkitIncoming.endAllCalls();
-    } catch (_) {}
+    if (isMobilePlatform) {
+      try {
+        await FlutterCallkitIncoming.endAllCalls();
+      } catch (_) {}
+    }
     _navigateBack();
   }
 
@@ -1204,7 +1227,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
 
   Future<void> _reactivateAudio() async {
     // Re-activate AVAudioSession after returning from lock screen / background
-    try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+    if (isMobilePlatform) {
+      try { await _audioChannel.invokeMethod('requestAudioFocus'); } catch (_) {}
+    }
     // Re-enable mic (LiveKit may have suspended the track while backgrounded)
     try { await _room?.localParticipant?.setMicrophoneEnabled(!_muted); } catch (_) {}
     // Restore earpiece mode if applicable
@@ -1453,7 +1478,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     _callEndedSub?.cancel();
     _ringbackTimer?.cancel();
     _ringbackActive = false;
-    _audioChannel.setMethodCallHandler(null);
+    if (isMobilePlatform) _audioChannel.setMethodCallHandler(null);
     WakelockPlus.disable();
     _eventsListener?.dispose();
     _room?.removeListener(_onRoomChanged);
@@ -2236,19 +2261,30 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       );
     }
 
-    // Grid layout: adapt columns based on tile count
+    // Grid layout: adapt columns based on tile count and screen orientation
     final count = tiles.length;
-    final crossAxisCount = count <= 1 ? 1 : count <= 4 ? 2 : 3;
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(4),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
-        childAspectRatio: count <= 2 ? 3 / 4 : 3 / 4,
-      ),
-      itemCount: count,
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWide = constraints.maxWidth > constraints.maxHeight;
+      final crossAxisCount = count <= 1
+          ? 1
+          : count <= 4
+              ? 2
+              : 3;
+      // On wide screens use landscape ratio, on portrait use mobile ratio
+      final childAspectRatio = isWide
+          ? (count <= 1 ? constraints.maxWidth / constraints.maxHeight : 16 / 9)
+          : (3 / 4);
+
+      return GridView.builder(
+        padding: const EdgeInsets.all(4),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: 4,
+          mainAxisSpacing: 4,
+          childAspectRatio: childAspectRatio,
+        ),
+        itemCount: count,
       itemBuilder: (_, i) {
         final tile = tiles[i];
         return GestureDetector(
@@ -2370,6 +2406,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         );
       },
     );
+    });
   }
 }
 

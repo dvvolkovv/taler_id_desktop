@@ -15,6 +15,7 @@ import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 // Note: do NOT use FlutterCallkitIncoming.onEvent directly here — see _setupCallkitListener
 // in main.dart. Use NotificationService.callEvents (the shared broadcast proxy) instead.
 import '../../../core/notifications/notification_service.dart';
+import '../../../core/utils/platform_utils.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/services/update_check_service.dart';
@@ -59,7 +60,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     // Do NOT use FlutterCallkitIncoming.onEvent directly here — that creates a NEW
     // EventChannel listener each time, replacing (killing) the one in main.dart.
     // Navigation on accept is handled by _navigateWhenResumed in main.dart.
-    _callkitSub = NotificationService.callEvents.listen((CallEvent? event) {
+    if (isMobilePlatform) _callkitSub = NotificationService.callEvents.listen((CallEvent? event) {
       if (event == null) return;
       final extra = event.body['extra'] as Map?;
       final roomName = extra?['roomName'] as String?;
@@ -132,7 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         return;
       }
       // Fallback: check CallKit active calls (EventChannel may have missed the event)
-      if (await _checkActiveCallKitCalls()) return;
+      if (isMobilePlatform && await _checkActiveCallKitCalls()) return;
       // Handle FCM notification tap when app was terminated
       final initialMsg = await NotificationService.getInitialMessage();
       if (initialMsg != null) {
@@ -201,6 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     String? wasInCallRoom,
     bool fallbackEndAll = false,
   }) async {
+    if (!isMobilePlatform) return;
     try {
       final calls = await FlutterCallkitIncoming.activeCalls() as List;
       for (final call in calls) {
@@ -282,7 +284,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       // Final fallback: check if CallKit has an active accepted call that
       // the EventChannel missed (iOS may not deliver EventChannel events
       // to suspended Flutter engine on locked screen).
-      _checkActiveCallKitCalls();
+      if (isMobilePlatform) _checkActiveCallKitCalls();
     }
   }
 
@@ -292,6 +294,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   /// engine was suspended. This method polls CallKit's native state directly
   /// to detect such orphaned accepts and navigate to the voice screen.
   Future<bool> _checkActiveCallKitCalls() async {
+    if (!isMobilePlatform) return false;
     if (_waitingForCallAccept) return false;
     if (CallStateService.instance.isInCall) return false;
     try {
@@ -397,11 +400,11 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     final isForegrounded = lifecycle == AppLifecycleState.resumed;
 
-    if (isForegrounded) {
-      // App is visible: show in-app dialog
+    if (isForegrounded || !isMobilePlatform) {
+      // App is visible (or desktop — always in-app): show in-app dialog
       _showIncomingCallDialog(context, fromName: fromName, fromAvatar: fromAvatar, roomName: roomName, convId: convId, e2eeKey: e2eeKey);
     } else {
-      // App is backgrounded/paused: use native CallKit UI
+      // App is backgrounded/paused: use native CallKit UI (mobile only)
       showCallkitIncoming(
         fromName: fromName,
         roomName: roomName,
@@ -464,8 +467,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   GestureDetector(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).pop();
-                      // Dismiss native CallKit ringing
-                      FlutterCallkitIncoming.endAllCalls();
+                      // Dismiss native CallKit ringing (mobile only)
+                      if (isMobilePlatform) FlutterCallkitIncoming.endAllCalls();
                       // Notify caller that the call was declined
                       if (convId.isNotEmpty && roomName.isNotEmpty) {
                         try {
@@ -496,16 +499,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                     onTap: () async {
                       Navigator.of(context, rootNavigator: true).pop();
                       _acceptingInApp = true;
-                      try {
-                        await FlutterCallkitIncoming.endCall(toCallkitId(roomName));
-                      } catch (_) {}
-                      try {
-                        await FlutterCallkitIncoming.endAllCalls();
-                      } catch (_) {}
-                      for (final delay in [500, 1500, 3000]) {
-                        Future.delayed(Duration(milliseconds: delay), () {
-                          try { FlutterCallkitIncoming.endAllCalls(); } catch (_) {}
-                        });
+                      if (isMobilePlatform) {
+                        try {
+                          await FlutterCallkitIncoming.endCall(toCallkitId(roomName));
+                        } catch (_) {}
+                        try {
+                          await FlutterCallkitIncoming.endAllCalls();
+                        } catch (_) {}
+                        for (final delay in [500, 1500, 3000]) {
+                          Future.delayed(Duration(milliseconds: delay), () {
+                            try { FlutterCallkitIncoming.endAllCalls(); } catch (_) {}
+                          });
+                        }
                       }
                       Future.delayed(const Duration(seconds: 5), () => _acceptingInApp = false);
                       final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';

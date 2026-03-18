@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/constants.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../../../../core/di/service_locator.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,8 +21,9 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
-  late VideoPlayerController _videoController;
+  VideoPlayerController? _videoController;
   bool _videoReady = false;
+  bool _videoInitialized = false;
 
   @override
   void initState() {
@@ -32,18 +34,27 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
 
-    _videoController = VideoPlayerController.asset('assets/video.mp4')
-      ..setLooping(true)
-      ..setVolume(0)
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() => _videoReady = true);
-          _videoController.play();
-          _animController.forward();
-        }
-      });
-
     _checkAuthState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_videoInitialized) {
+      _videoInitialized = true;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final asset = isDark ? 'assets/video.mp4' : 'assets/video_light.mp4';
+      _videoController = VideoPlayerController.asset(asset)
+        ..setLooping(true)
+        ..setVolume(0)
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() => _videoReady = true);
+            _videoController!.play();
+            _animController.forward();
+          }
+        });
+    }
   }
 
   Future<void> _checkAuthState() async {
@@ -92,6 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<bool> _tryBiometric() async {
+    if (!supportsBiometric) return false;
     final localAuth = LocalAuthentication();
     try {
       final canAuth = await localAuth.canCheckBiometrics;
@@ -108,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _animController.dispose();
-    _videoController.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
 
@@ -140,13 +152,13 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: _videoReady
+                  child: _videoReady && _videoController != null
                       ? FittedBox(
                           fit: BoxFit.cover,
                           child: SizedBox(
-                            width: _videoController.value.size.width,
-                            height: _videoController.value.size.height,
-                            child: VideoPlayer(_videoController),
+                            width: _videoController!.value.size.width,
+                            height: _videoController!.value.size.height,
+                            child: VideoPlayer(_videoController!),
                           ),
                         )
                       : Image.asset('app_icon_1024.png', width: 80, height: 80),

@@ -14,6 +14,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../api/dio_client.dart';
 import '../di/service_locator.dart';
 import '../storage/secure_storage_service.dart';
+import '../utils/platform_utils.dart';
 import '../../firebase_options.dart';
 
 final _localNotifications = FlutterLocalNotificationsPlugin();
@@ -84,6 +85,7 @@ Future<void> showCallkitIncoming({
   required String fromName,
   required String convId,
 }) async {
+  if (!isMobilePlatform) return;
   if (_isIosSimulator) return;
   await FlutterCallkitIncoming.showCallkitIncoming(CallKitParams(
     id: toCallkitId(roomName),
@@ -169,6 +171,7 @@ class NotificationService {
   static void addCallEvent(CallEvent? event) => _callEventController.add(event);
 
   static Future<void> init() async {
+    if (!isMobilePlatform) return;
     // Register background handler — must be registered synchronously before any isolate runs.
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -246,6 +249,7 @@ class NotificationService {
   /// Call this after the user logs in to ensure FCM token is registered.
   /// Needed because init() runs before login and the PUT /profile call fails with 401.
   static Future<void> refreshToken() async {
+    if (!isMobilePlatform) return;
     try {
       final token = _currentToken ?? await _fcm.getToken();
       if (token != null) {
@@ -276,6 +280,7 @@ class NotificationService {
   /// Set up foreground notification tap handlers
   /// Call this after GoRouter is initialized
   static void setupForegroundHandlers({required Function(RemoteMessage) onTap}) {
+    if (!isMobilePlatform) return;
     // Foreground FCM messages.
     // - call_invite: handled by WebSocket (in-app dialog) — skip to avoid double ringing.
     // - new_message: show local notification (Android won't auto-show FCM when app is open).
@@ -297,8 +302,10 @@ class NotificationService {
   }
 
   /// Check if app was opened from a notification (terminated state)
-  static Future<RemoteMessage?> getInitialMessage() =>
-      _fcm.getInitialMessage();
+  static Future<RemoteMessage?> getInitialMessage() async {
+    if (!isMobilePlatform) return null;
+    return _fcm.getInitialMessage();
+  }
 
   static String? get token => _currentToken;
 }

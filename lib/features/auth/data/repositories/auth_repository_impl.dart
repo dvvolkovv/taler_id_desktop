@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../../domain/entities/auth_entities.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
@@ -113,9 +114,11 @@ class AuthRepositoryImpl implements IAuthRepository {
       String? fcmToken;
       String? voipToken;
       try {
-        fcmToken = await FirebaseMessaging.instance.getToken();
-        if (!kIsWeb && Platform.isIOS) {
-          voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
+        if (isMobilePlatform) {
+          fcmToken = await FirebaseMessaging.instance.getToken();
+          if (Platform.isIOS) {
+            voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
+          }
         }
       } catch (_) {}
       await remote.logout(fcmToken: fcmToken, voipToken: voipToken?.isNotEmpty == true ? voipToken : null);

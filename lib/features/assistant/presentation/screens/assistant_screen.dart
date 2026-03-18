@@ -13,6 +13,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/api/dio_client.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/utils/constants.dart';
+import 'package:video_player/video_player.dart';
+import '../../../../core/utils/platform_utils.dart';
 
 enum _CallState { idle, connecting, connected, error }
 
@@ -30,6 +32,10 @@ class _AssistantScreenState extends State<AssistantScreen>
   final _recorder = AudioRecorder();
   StreamSubscription<Uint8List>? _recordSub;
   final _player = AudioPlayer();
+
+  VideoPlayerController? _logoVideo;
+  bool _logoVideoReady = false;
+  bool _logoVideoInitialized = false;
 
   bool _muted = false;
   bool _speakerOn = false;
@@ -74,8 +80,28 @@ class _AssistantScreenState extends State<AssistantScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_logoVideoInitialized) {
+      _logoVideoInitialized = true;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final asset = isDark ? 'assets/video.mp4' : 'assets/video_light.mp4';
+      _logoVideo = VideoPlayerController.asset(asset)
+        ..setLooping(true)
+        ..setVolume(0)
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() => _logoVideoReady = true);
+            _logoVideo!.play();
+          }
+        });
+    }
+  }
+
+  @override
   void dispose() {
     _pulseCtrl.dispose();
+    _logoVideo?.dispose();
     _cleanup();
     _player.dispose();
     super.dispose();
@@ -332,9 +358,11 @@ class _AssistantScreenState extends State<AssistantScreen>
   }
 
   Future<void> _setSpeaker(bool on) async {
-    try {
-      await _audioChannel.invokeMethod('setSpeaker', on);
-    } catch (_) {}
+    if (isMobilePlatform) {
+      try {
+        await _audioChannel.invokeMethod('setSpeaker', on);
+      } catch (_) {}
+    }
     setState(() => _speakerOn = on);
   }
 
@@ -392,8 +420,23 @@ class _AssistantScreenState extends State<AssistantScreen>
                     ),
                   ],
                 ),
-                child: Icon(Icons.mic_rounded,
-                    size: 64, color: AppColors.of(context).primary),
+                child: ClipOval(
+                  child: _logoVideoReady
+                      ? SizedBox(
+                          width: 120,
+                          height: 120,
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: _logoVideo!.value.size.width,
+                              height: _logoVideo!.value.size.height,
+                              child: VideoPlayer(_logoVideo!),
+                            ),
+                          ),
+                        )
+                      : Image.asset('app_icon_1024.png',
+                          width: 120, height: 120, fit: BoxFit.cover),
+                ),
               ),
             ),
           ),
@@ -463,8 +506,23 @@ class _AssistantScreenState extends State<AssistantScreen>
                     ]
                   : null,
             ),
-            child: Icon(Icons.smart_toy_rounded,
-                size: 52, color: AppColors.of(context).primary),
+            child: ClipOval(
+              child: _logoVideoReady
+                  ? SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: _logoVideo!.value.size.width,
+                          height: _logoVideo!.value.size.height,
+                          child: VideoPlayer(_logoVideo!),
+                        ),
+                      ),
+                    )
+                  : Image.asset('app_icon_1024.png',
+                      width: 90, height: 90, fit: BoxFit.cover),
+            ),
           ),
         ),
         const SizedBox(height: 20),

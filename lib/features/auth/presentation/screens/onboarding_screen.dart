@@ -8,6 +8,7 @@ import '../../../../core/notifications/notification_service.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/constants.dart';
+import '../../../../core/utils/platform_utils.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -31,20 +32,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finish() async {
-    final storage = sl<SecureStorageService>();
-    await storage.setOnboardingSeen();
+    try {
+      final storage = sl<SecureStorageService>();
+      await storage.setOnboardingSeen();
+    } catch (_) {}
     if (mounted) context.go(RouteConstants.login);
   }
 
   Future<void> _requestNotifications() async {
-    if (!kIsWeb) {
+    if (isMobilePlatform) {
       await NotificationService.requestPermission();
     }
     setState(() => _notificationsRequested = true);
   }
 
   Future<void> _requestMicrophone() async {
-    if (!kIsWeb) {
+    if (isMobilePlatform) {
       await Permission.microphone.request();
     }
     setState(() => _microphoneRequested = true);
