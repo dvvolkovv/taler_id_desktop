@@ -1046,6 +1046,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   }
 
   Future<void> _showAudioOutputPicker() async {
+    if (isDesktopPlatform) {
+      await _showDesktopDevicePicker();
+      return;
+    }
     List<Map<String, String>> outputs = [
       {'id': 'earpiece', 'name': 'Телефон', 'type': 'earpiece'},
       {'id': 'speaker', 'name': 'Динамик', 'type': 'speaker'},
@@ -1107,6 +1111,128 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
             }),
             const SizedBox(height: 8),
           ],
+        ),
+      ),
+    );
+  }
+
+  String? _selectedAudioInputId;
+  String? _selectedAudioOutputId;
+
+  Future<void> _showDesktopDevicePicker() async {
+    List<lk.MediaDevice> audioInputs = [];
+    List<lk.MediaDevice> audioOutputs = [];
+    try {
+      final devices = await lk.Hardware.instance.enumerateDevices();
+      audioInputs = devices.where((d) => d.kind == 'audioinput').toList();
+      audioOutputs = devices.where((d) => d.kind == 'audiooutput').toList();
+    } catch (e) {
+      debugPrint('[VoiceCall] enumerateDevices error: $e');
+    }
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.of(context).card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: AppColors.of(context).border, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Microphone section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('Микрофон', style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 4),
+              if (audioInputs.isEmpty)
+                ListTile(
+                  leading: Icon(Icons.mic_off_rounded, color: AppColors.of(context).textSecondary),
+                  title: Text('Нет доступных микрофонов', style: TextStyle(color: AppColors.of(context).textSecondary)),
+                )
+              else
+                ...audioInputs.map((d) {
+                  final isSelected = _selectedAudioInputId == d.deviceId ||
+                      (_selectedAudioInputId == null && d.deviceId == 'default');
+                  return ListTile(
+                    leading: Icon(Icons.mic_rounded, color: isSelected ? AppColors.of(context).primary : AppColors.of(context).textSecondary),
+                    title: Text(
+                      d.label.isNotEmpty ? d.label : 'Микрофон',
+                      style: TextStyle(
+                        color: isSelected ? AppColors.of(context).primary : AppColors.of(context).textPrimary,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: isSelected ? Icon(Icons.check_rounded, color: AppColors.of(context).primary) : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      _selectedAudioInputId = d.deviceId;
+                      try {
+                        await _room?.localParticipant?.setMicrophoneEnabled(false);
+                        await lk.Hardware.instance.selectAudioInput(d);
+                        await _room?.localParticipant?.setMicrophoneEnabled(!_muted);
+                        debugPrint('[VoiceCall] Selected audio input: ${d.label}');
+                      } catch (e) {
+                        debugPrint('[VoiceCall] selectAudioInput error: $e');
+                      }
+                      if (mounted) setState(() {});
+                    },
+                  );
+                }),
+              const Divider(height: 24),
+              // Speaker section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('Динамик', style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 4),
+              if (audioOutputs.isEmpty)
+                ListTile(
+                  leading: Icon(Icons.volume_off_rounded, color: AppColors.of(context).textSecondary),
+                  title: Text('Нет доступных динамиков', style: TextStyle(color: AppColors.of(context).textSecondary)),
+                )
+              else
+                ...audioOutputs.map((d) {
+                  final isSelected = _selectedAudioOutputId == d.deviceId ||
+                      (_selectedAudioOutputId == null && d.deviceId == 'default');
+                  return ListTile(
+                    leading: Icon(Icons.volume_up_rounded, color: isSelected ? AppColors.of(context).primary : AppColors.of(context).textSecondary),
+                    title: Text(
+                      d.label.isNotEmpty ? d.label : 'Динамик',
+                      style: TextStyle(
+                        color: isSelected ? AppColors.of(context).primary : AppColors.of(context).textPrimary,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: isSelected ? Icon(Icons.check_rounded, color: AppColors.of(context).primary) : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      _selectedAudioOutputId = d.deviceId;
+                      try {
+                        await lk.Hardware.instance.selectAudioOutput(d);
+                        debugPrint('[VoiceCall] Selected audio output: ${d.label}');
+                      } catch (e) {
+                        debugPrint('[VoiceCall] selectAudioOutput error: $e');
+                      }
+                      if (mounted) setState(() => _audioOutputType = 'speaker');
+                    },
+                  );
+                }),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
       ),
     );
@@ -1726,13 +1852,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         ),
         // Participants list or video grid (with screen share support)
         Expanded(
-          child: _screenShareFullscreen
-              ? _buildScreenShareFullscreen()
-              : _remoteScreenShareTrack != null
-                  ? _buildScreenShareLayout()
-                  : _hasAnyVideo
-                      ? _buildVideoGrid()
-                      : _buildParticipantsList(),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _screenShareFullscreen
+                ? _buildScreenShareFullscreen()
+                : _remoteScreenShareTrack != null
+                    ? _buildScreenShareLayout()
+                    : _hasAnyVideo
+                        ? KeyedSubtree(key: const ValueKey('video-grid'), child: _buildVideoGrid())
+                        : KeyedSubtree(key: const ValueKey('participants-list'), child: _buildParticipantsList()),
+          ),
         ),
         // Self participant indicator (audio mode only)
         if (!_hasAnyVideo && !_screenShareFullscreen)
