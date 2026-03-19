@@ -94,11 +94,6 @@ final appRouter = GoRouter(
         return '${RouteConstants.voice}?publicCode=$code';
       },
     ),
-    // Chat (full-screen, outside ShellRoute)
-    GoRoute(
-      path: RouteConstants.chat,
-      builder: (_, __) => const ChatScreen(),
-    ),
     // Voice call (full-screen, outside ShellRoute)
     GoRoute(
       path: RouteConstants.voice,
@@ -161,6 +156,11 @@ final appRouter = GoRouter(
         GoRoute(
           path: RouteConstants.settings,
           builder: (_, __) => const SettingsScreen(),
+        ),
+        // AI Chat
+        GoRoute(
+          path: RouteConstants.chat,
+          builder: (_, __) => const ChatScreen(),
         ),
         // User profile
         GoRoute(

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/platform_utils.dart';
 
 class ChatInput extends StatefulWidget {
   final void Function(String text) onSend;
@@ -28,7 +29,8 @@ class _ChatInputState extends State<ChatInput> {
   @override
   void initState() {
     super.initState();
-    _initSpeech();
+    // Speech recognition crashes on macOS sandbox (TCC kills app)
+    if (isMobilePlatform) _initSpeech();
   }
 
   Future<void> _initSpeech() async {
