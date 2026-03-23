@@ -87,7 +87,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
   StreamSubscription? _callEndedSub;
 
   // Server-side translation state
-  String _preferredLang = 'ru';
+  String _preferredLang = '';
   bool _translationEnabled = false;
   bool _translationActive = false; // translator agent is running
 
@@ -503,20 +503,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
         // Just update UI — each participant leaves on their own
         if (mounted) setState(() {});
       })
-      ..on<lk.RoomMetadataChangedEvent>((event) {
-        // When another participant enables translator, backend updates room metadata
-        // to signal all participants to disable E2EE
-        try {
-          final metadata = event.metadata;
-          if (metadata != null && metadata.contains('e2ee_disabled')) {
-            final room = _room;
-            if (room?.e2eeManager != null) {
-              room!.setE2EEEnabled(false);
-              debugPrint('[VoiceCall] E2EE disabled via room metadata signal');
-            }
-          }
-        } catch (_) {}
-      });
+      ..on<lk.RoomMetadataChangedEvent>((_) {});
   }
 
   void _onRoomChanged() {
@@ -1399,36 +1386,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       });
     }
     if (enabled) {
-      // Disable E2EE so the translator agent can hear unencrypted audio
-      await _disableE2EEForTranslator();
       await _startServerTranslator();
+    } else {
+      await _stopServerTranslator();
     }
     _updateTranslationTrackSubscription();
-  }
-
-  Future<void> _disableE2EEForTranslator() async {
-    final room = _room;
-    if (room == null) return;
-    if (room.e2eeManager == null) return; // E2EE not active
-    try {
-      await room.setE2EEEnabled(false);
-      debugPrint('[Translation] E2EE disabled for translator');
-    } catch (e) {
-      debugPrint('[Translation] Failed to disable E2EE: $e');
-    }
-    // Ask backend to disable E2EE for all other participants in the room
-    final roomName = _roomName;
-    if (roomName != null) {
-      try {
-        await sl<DioClient>().post(
-          '/voice/rooms/$roomName/disable-e2ee',
-          data: {},
-          fromJson: (d) => d,
-        );
-      } catch (e) {
-        debugPrint('[Translation] Failed to notify others to disable E2EE: $e');
-      }
-    }
   }
 
   Future<void> _startServerTranslator() async {
@@ -1436,17 +1398,30 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     if (roomName == null) return;
     try {
       final client = sl<DioClient>();
-      // Start translator agent for the room
       await client.post(
         '/voice/rooms/$roomName/translator/start',
         data: {},
         fromJson: (d) => d,
       );
-      // Set preferred language on the server
       await _setServerLang(roomName, _preferredLang);
       debugPrint('[Translation] Server translator started for $roomName');
     } catch (e) {
       debugPrint('[Translation] Failed to start server translator: $e');
+    }
+  }
+
+  Future<void> _stopServerTranslator() async {
+    final roomName = _roomName;
+    if (roomName == null) return;
+    try {
+      await sl<DioClient>().post(
+        '/voice/rooms/$roomName/translator/stop',
+        data: {},
+        fromJson: (d) => d,
+      );
+      debugPrint('[Translation] Server translator stopped for $roomName');
+    } catch (e) {
+      debugPrint('[Translation] Failed to stop server translator: $e');
     }
   }
 
@@ -1496,11 +1471,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
       ),
       builder: (_) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          final filtered = _translationLangs.entries.where((e) =>
+          final filtered = (_translationLangs.entries.where((e) =>
             searchQuery.isEmpty ||
             e.value.toLowerCase().contains(searchQuery.toLowerCase()) ||
             e.key.toLowerCase().contains(searchQuery.toLowerCase()),
-          ).toList();
+          ).toList()..sort((a, b) => a.value.compareTo(b.value)));
           return SafeArea(
             child: DraggableScrollableSheet(
               initialChildSize: 0.7,
@@ -1569,22 +1544,15 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
                               : null,
                           onTap: () {
                             Navigator.pop(context);
-                            _setPreferredLang(e.key);
-                            if (!_translationEnabled) _toggleTranslation(true);
+                            if (_preferredLang == e.key && _translationEnabled) {
+                              _toggleTranslation(false);
+                              setState(() => _preferredLang = '');
+                            } else {
+                              _setPreferredLang(e.key);
+                              if (!_translationEnabled) _toggleTranslation(true);
+                            }
                           },
                         )),
-                        SwitchListTile(
-                          title: Text(
-                            'Включить перевод',
-                            style: TextStyle(color: colors.textPrimary),
-                          ),
-                          value: _translationEnabled,
-                          activeColor: colors.primary,
-                          onChanged: (v) {
-                            Navigator.pop(context);
-                            _toggleTranslation(v);
-                          },
-                        ),
                         const SizedBox(height: 8),
                       ],
                     ),
