@@ -24,6 +24,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:video_player/video_player.dart' as vp;
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../voice/presentation/widgets/pulsing_avatar.dart';
 import '../../../../core/services/wallpaper_service.dart';
@@ -413,15 +414,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     icon: Icons.photo_library_rounded,
                     color: const Color(0xFF4CAF50),
                     label: l10n.chatPhotoVideo,
-                    onTap: _pickMediaFromGallery,
+                    onTap: isDesktopPlatform ? _pickMediaDesktop : _pickMediaFromGallery,
                   ),
-                  _attachItem(
-                    ctx: ctx,
-                    icon: Icons.camera_alt_rounded,
-                    color: const Color(0xFF2196F3),
-                    label: l10n.chatCamera,
-                    onTap: _pickFromCamera,
-                  ),
+                  if (isMobilePlatform)
+                    _attachItem(
+                      ctx: ctx,
+                      icon: Icons.camera_alt_rounded,
+                      color: const Color(0xFF2196F3),
+                      label: l10n.chatCamera,
+                      onTap: _pickFromCamera,
+                    ),
                   _attachItem(
                     ctx: ctx,
                     icon: Icons.insert_drive_file_rounded,
@@ -648,6 +650,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _pickFromCamera() async {
+    if (!isMobilePlatform) return;
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
     if (picked == null || !mounted) return;
@@ -669,6 +672,34 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         if (imageExts.contains(ext)) typeOverride = 'image';
         if (videoExts.contains(ext)) typeOverride = 'video';
         _pendingFiles.add(_PendingFile(path: path, name: name, type: typeOverride));
+      }
+    });
+  }
+
+  Future<void> _pickMediaDesktop() async {
+    setState(() => _isPreparing = true);
+    FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp', 'mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'],
+        allowMultiple: true,
+      );
+    } catch (_) {}
+    finally {
+      if (mounted) setState(() => _isPreparing = false);
+    }
+    if (!mounted || result == null || result!.files.isEmpty) return;
+    const imageExts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp'};
+    const videoExts = {'mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'};
+    setState(() {
+      for (final file in result!.files) {
+        if (file.path == null) continue;
+        final ext = file.name.split('.').last.toLowerCase();
+        String? typeOverride;
+        if (imageExts.contains(ext)) typeOverride = 'image';
+        if (videoExts.contains(ext)) typeOverride = 'video';
+        _pendingFiles.add(_PendingFile(path: file.path!, name: file.name, type: typeOverride));
       }
     });
   }
@@ -923,12 +954,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _startRecording() async {
-    final hasPermission = await _recorder.hasPermission();
-    if (!hasPermission || !mounted) return;
-    final dir = await getTemporaryDirectory();
-    final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
-    setState(() { _isRecording = true; _recordingPath = path; });
+    try {
+      final hasPermission = await _recorder.hasPermission();
+      if (!hasPermission || !mounted) return;
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+      setState(() { _isRecording = true; _recordingPath = path; });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка записи: $e'),
+          backgroundColor: AppColors.of(context).error,
+        ),
+      );
+    }
   }
 
   Future<void> _stopRecordingAndSend() async {
@@ -967,6 +1008,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _recordVideoNote() async {
+    if (!isMobilePlatform) return;
     try {
       final picker = ImagePicker();
       final video = await picker.pickVideo(
@@ -1174,7 +1216,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 onPressed: _exitSearchMode,
               )
             : null,
-        automaticallyImplyLeading: !_searchMode,
+        automaticallyImplyLeading: !_searchMode && !isDesktopPlatform,
         title: _searchMode
             ? TextField(
                 controller: _searchCtrl,
@@ -3361,18 +3403,39 @@ class _InputBar extends StatelessWidget {
                       Text(AppLocalizations.of(context)!.chatRecording, style: TextStyle(color: AppColors.of(context).error, fontSize: 14)),
                     ],
                   )
-                : TextField(
-                    controller: controller,
-                    style: TextStyle(color: AppColors.of(context).textPrimary),
-                    textCapitalization: TextCapitalization.sentences,
-                    minLines: 1,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.chatMessageHint,
-                      hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
-                      border: InputBorder.none,
+                : KeyboardListener(
+                    focusNode: FocusNode(),
+                    onKeyEvent: isDesktopPlatform
+                        ? (event) {
+                            if (event is KeyDownEvent &&
+                                event.logicalKey == LogicalKeyboardKey.enter &&
+                                !HardwareKeyboard.instance.isShiftPressed) {
+                              // Prevent default newline and send message
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                // Remove the trailing newline that TextField inserts
+                                final text = controller.text;
+                                if (text.endsWith('\n')) {
+                                  controller.text = text.substring(0, text.length - 1);
+                                  controller.selection = TextSelection.collapsed(offset: controller.text.length);
+                                }
+                                onSend();
+                              });
+                            }
+                          }
+                        : null,
+                    child: TextField(
+                      controller: controller,
+                      style: TextStyle(color: AppColors.of(context).textPrimary),
+                      textCapitalization: TextCapitalization.sentences,
+                      minLines: 1,
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)!.chatMessageHint,
+                        hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
+                        border: InputBorder.none,
+                      ),
+                      textInputAction: isDesktopPlatform ? TextInputAction.send : TextInputAction.newline,
                     ),
-                    textInputAction: TextInputAction.newline,
                   ),
           ),
           // Mic/Video button: long press = voice, short tap = video note

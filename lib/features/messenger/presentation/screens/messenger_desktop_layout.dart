@@ -752,6 +752,83 @@ class _MessengerDesktopLayoutState extends State<MessengerDesktopLayout> {
     );
   }
 
+  Widget _buildConversationAvatarsStrip(AppColorsExtension colors) {
+    return BlocBuilder<MessengerBloc, MessengerState>(
+      builder: (context, state) {
+        final convs = state.conversations;
+        return Container(
+          width: 68,
+          decoration: BoxDecoration(
+            color: colors.background,
+            border: Border(right: BorderSide(color: colors.border, width: 0.5)),
+          ),
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: convs.length,
+            itemBuilder: (context, index) {
+              final conv = convs[index];
+              final isGroup = conv.type == 'GROUP';
+              final name = isGroup
+                  ? (conv.name ?? 'Группа')
+                  : (conv.otherUserName ?? '?');
+              final avatar = isGroup ? conv.avatarUrl : conv.otherUserAvatar;
+              final isActive = conv.id == _topicsGroupId;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: GestureDetector(
+                  onTap: () {
+                    if (conv.topicsEnabled && conv.type == 'GROUP') {
+                      if (conv.id != _topicsGroupId) {
+                        _enterTopicsMode(conv.id, conv.name ?? 'Группа');
+                      }
+                    } else {
+                      _exitTopicsMode();
+                      _selectConversation(conv.id);
+                    }
+                  },
+                  child: Center(
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: isActive
+                            ? Border.all(color: colors.primary, width: 2.5)
+                            : null,
+                      ),
+                      child: CircleAvatar(
+                        radius: 22,
+                        backgroundColor: isGroup
+                            ? colors.primary.withValues(alpha: 0.7)
+                            : colors.primary,
+                        child: avatar != null
+                            ? ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: avatar,
+                                  width: 44, height: 44,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) => Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -773,8 +850,12 @@ class _MessengerDesktopLayoutState extends State<MessengerDesktopLayout> {
       body: Row(
         children: [
           // Left panel — conversations or topics list
+          if (_topicsGroupId != null)
+            _buildConversationAvatarsStrip(colors)
+          else
+            const SizedBox.shrink(),
           SizedBox(
-            width: 340,
+            width: _topicsGroupId != null ? 292 : 340,
             child: _topicsGroupId != null
                 ? _buildTopicsPanel(colors, l10n)
                 : _buildConversationsPanel(colors, l10n),
@@ -817,10 +898,36 @@ class _DesktopConversationTile extends StatelessWidget {
     if (lastMsg != null) {
       if (conversation.lastMessageIsSystem) {
         subtitleText = _formatSystemMessage(context, lastMsg);
-      } else if (isGroup && conversation.lastMessageSenderName != null) {
-        subtitleText = '${conversation.lastMessageSenderName}: $lastMsg';
       } else {
-        subtitleText = lastMsg;
+        String displayMsg = lastMsg;
+        if (lastMsg.startsWith('[CONTACT]')) {
+          try {
+            final json = lastMsg.substring('[CONTACT]'.length);
+            final data = Map<String, dynamic>.from(
+              const JsonDecoder().convert(json) as Map,
+            );
+            displayMsg = '\u{1F464} ${data['name'] ?? 'Контакт'}';
+          } catch (_) {
+            displayMsg = '\u{1F464} Контакт';
+          }
+        } else if (lastMsg.startsWith('[FILE]')) {
+          displayMsg = '\u{1F4CE} Файл';
+        } else if (lastMsg.startsWith('[VOICE]')) {
+          displayMsg = '\u{1F3A4} Голосовое';
+        } else if (lastMsg.startsWith('[VIDEO_NOTE]')) {
+          displayMsg = '\u{1F3A5} Видео';
+        } else if (lastMsg.startsWith('[LOCATION]')) {
+          displayMsg = '\u{1F4CD} Геопозиция';
+        } else if (lastMsg.startsWith('[POLL]')) {
+          displayMsg = '\u{1F4CA} Опрос';
+        } else if (lastMsg.startsWith('[CALL_INVITE]') || lastMsg.startsWith('[CALL_ENDED]')) {
+          displayMsg = '\u{1F4DE} Звонок';
+        }
+        if (isGroup && conversation.lastMessageSenderName != null) {
+          subtitleText = '${conversation.lastMessageSenderName}: $displayMsg';
+        } else {
+          subtitleText = displayMsg;
+        }
       }
     }
 
