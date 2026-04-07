@@ -31,8 +31,8 @@ class MessengerRepositoryImpl implements IMessengerRepository {
   void joinConversation(String id) => _remote.joinConversation(id);
 
   @override
-  void sendMessage(String conversationId, String content, {String? fileUrl, String? fileName, int? fileSize, String? fileType}) =>
-      _remote.sendMessage(conversationId, content, fileUrl: fileUrl, fileName: fileName, fileSize: fileSize, fileType: fileType);
+  void sendMessage(String conversationId, String content, {String? fileUrl, String? fileName, int? fileSize, String? fileType, String? s3Key, String? thumbnailSmallUrl, String? thumbnailMediumUrl, String? thumbnailLargeUrl, String? fileRecordId, String? topicId, String? clientTempId}) =>
+      _remote.sendMessage(conversationId, content, fileUrl: fileUrl, fileName: fileName, fileSize: fileSize, fileType: fileType, s3Key: s3Key, thumbnailSmallUrl: thumbnailSmallUrl, thumbnailMediumUrl: thumbnailMediumUrl, thumbnailLargeUrl: thumbnailLargeUrl, fileRecordId: fileRecordId, topicId: topicId, clientTempId: clientTempId);
 
   @override
   void editMessage(String conversationId, String messageId, String newContent) =>
@@ -90,8 +90,8 @@ class MessengerRepositoryImpl implements IMessengerRepository {
       _remote.changeGroupMemberRole(conversationId, userId, role);
 
   @override
-  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl, String? description}) =>
-      _remote.updateGroupInfo(conversationId, name: name, avatarUrl: avatarUrl, description: description);
+  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl, String? description, bool? slowMode, bool? topicsEnabled, int? autoDeleteDays}) =>
+      _remote.updateGroupInfo(conversationId, name: name, avatarUrl: avatarUrl, description: description, slowMode: slowMode, topicsEnabled: topicsEnabled, autoDeleteDays: autoDeleteDays);
 
   @override
   Future<void> leaveGroup(String conversationId) => _remote.leaveGroup(conversationId);
@@ -133,6 +133,8 @@ class MessengerRepositoryImpl implements IMessengerRepository {
   @override
   Future<void> rejectContactRequest(String requestId) => _remote.rejectContactRequest(requestId);
   @override
+  Future<List<Map<String, dynamic>>> getSentContactRequests() => _remote.getSentContactRequests();
+  @override
   Stream<Map<String, dynamic>> get contactRequestStream => _remote.contactRequestStream;
   @override
   Stream<Map<String, dynamic>> get contactAcceptedStream => _remote.contactAcceptedStream;
@@ -143,6 +145,8 @@ class MessengerRepositoryImpl implements IMessengerRepository {
       _remote.reactToMessage(conversationId, messageId, emoji);
   @override
   Stream<Map<String, dynamic>> get reactionUpdatedStream => _remote.reactionUpdatedStream;
+  @override
+  Stream<String> get socketErrorStream => _remote.socketErrorStream;
 
   // Mute methods
   @override

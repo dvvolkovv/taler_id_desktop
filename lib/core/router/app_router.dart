@@ -31,6 +31,17 @@ import '../../features/messenger/presentation/screens/group_settings_screen.dart
 import '../../features/messenger/presentation/screens/add_group_members_screen.dart';
 import '../../features/voice/presentation/screens/voice_call_screen.dart';
 import '../../features/call_history/presentation/screens/call_history_screen.dart';
+import '../../features/contacts/presentation/screens/contacts_screen.dart';
+import '../../features/notes/presentation/screens/notes_screen.dart';
+import '../../features/calendar/presentation/screens/calendar_screen.dart';
+import '../../features/settings/presentation/screens/wallpaper_picker_screen.dart';
+import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/profile_sections/presentation/screens/profile_sections_screen.dart';
+import '../../features/messenger/presentation/screens/contact_requests_screen.dart';
+import '../../features/messenger/presentation/screens/saved_messages_screen.dart';
+import '../../features/messenger/presentation/screens/thread_screen.dart';
+import '../../features/messenger/domain/entities/message_entity.dart';
+import '../../features/messenger/presentation/screens/topics_list_screen.dart';
 import '../storage/secure_storage_service.dart';
 import '../di/service_locator.dart';
 import '../utils/constants.dart';
@@ -94,6 +105,11 @@ final appRouter = GoRouter(
         return '${RouteConstants.voice}?publicCode=$code';
       },
     ),
+    // AI Chat (full-screen, outside ShellRoute)
+    GoRoute(
+      path: RouteConstants.chat,
+      builder: (_, __) => const ChatScreen(),
+    ),
     // Voice call (full-screen, outside ShellRoute)
     GoRoute(
       path: RouteConstants.voice,
@@ -126,8 +142,30 @@ final appRouter = GoRouter(
           builder: (_, __) => const AssistantScreen(),
         ),
         GoRoute(
+          path: RouteConstants.contacts,
+          builder: (_, __) => const ContactsScreen(),
+        ),
+        GoRoute(
+          path: RouteConstants.notes,
+          builder: (_, __) => const NotesScreen(),
+        ),
+        GoRoute(
+          path: RouteConstants.calendar,
+          builder: (_, __) => const CalendarScreen(),
+        ),
+        GoRoute(
           path: RouteConstants.profile,
           builder: (_, __) => const ProfileScreen(),
+          routes: [
+            GoRoute(
+              path: 'sections',
+              builder: (_, __) => const ProfileSectionsScreen(),
+            ),
+            GoRoute(
+              path: 'edit',
+              builder: (_, __) => const EditProfileScreen(),
+            ),
+          ],
         ),
         GoRoute(
           path: RouteConstants.kyc,
@@ -156,11 +194,12 @@ final appRouter = GoRouter(
         GoRoute(
           path: RouteConstants.settings,
           builder: (_, __) => const SettingsScreen(),
-        ),
-        // AI Chat
-        GoRoute(
-          path: RouteConstants.chat,
-          builder: (_, __) => const ChatScreen(),
+          routes: [
+            GoRoute(
+              path: 'wallpaper',
+              builder: (_, __) => const WallpaperPickerScreen(),
+            ),
+          ],
         ),
         // User profile
         GoRoute(
@@ -181,8 +220,16 @@ final appRouter = GoRouter(
               builder: (_, __) => const UserSearchScreen(),
             ),
             GoRoute(
+              path: 'contacts',
+              builder: (_, __) => const ContactRequestsScreen(),
+            ),
+            GoRoute(
               path: 'create-group',
               builder: (_, __) => const CreateGroupScreen(),
+            ),
+            GoRoute(
+              path: 'saved',
+              builder: (_, __) => const SavedMessagesScreen(),
             ),
             GoRoute(
               path: ':id',
@@ -205,6 +252,32 @@ final appRouter = GoRouter(
                   builder: (_, state) => AddGroupMembersScreen(
                     conversationId: state.pathParameters['id']!,
                   ),
+                ),
+                GoRoute(
+                  path: 'topics',
+                  builder: (_, state) => TopicsListScreen(
+                    conversationId: state.pathParameters['id']!,
+                    groupName: (state.extra as Map<String, dynamic>?)?['groupName'] as String? ?? '',
+                  ),
+                ),
+                GoRoute(
+                  path: 'thread/:messageId',
+                  builder: (_, state) {
+                    final extra = state.extra;
+                    final MessageEntity parentMessage = extra is MessageEntity
+                        ? extra
+                        : MessageEntity(
+                            id: state.pathParameters['messageId']!,
+                            conversationId: state.pathParameters['id']!,
+                            senderId: '',
+                            content: '',
+                            sentAt: DateTime.now(),
+                          );
+                    return ThreadScreen(
+                      conversationId: state.pathParameters['id']!,
+                      parentMessage: parentMessage,
+                    );
+                  },
                 ),
               ],
             ),

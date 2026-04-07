@@ -16,6 +16,8 @@ import 'core/utils/platform_utils.dart';
 import 'firebase_options.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'core/router/app_router.dart';
+import 'core/services/wallpaper_service.dart';
+import 'core/services/share_intent_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/profile/presentation/bloc/profile_bloc.dart';
@@ -166,6 +168,14 @@ Future<void> main() async {
   // Setup DI first — must happen before NotificationService.init() so that
   // DioClient is registered when we try to save FCM/VoIP tokens.
   await setupDependencies();
+
+  // Load wallpaper preference from storage
+  await WallpaperService.instance.loadFromStorage();
+
+  // Initialize share intent (mobile only; no-op stub on desktop)
+  if (isMobilePlatform) {
+    ShareIntentService.instance.init();
+  }
 
   // Initialize Firebase (mobile only) — after DI so DioClient is available
   if (isMobilePlatform) {

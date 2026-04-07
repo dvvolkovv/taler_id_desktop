@@ -217,6 +217,33 @@ class SecureStorageService {
   }
 
   // ---------------------------------------------------------------------------
+  // Wallpaper
+  // ---------------------------------------------------------------------------
+
+  Future<String?> getWallpaper() async {
+    if (_useHive) {
+      return _hiveBox?.get(ApiConstants.wallpaperKey) as String?;
+    }
+    return _storage.read(key: ApiConstants.wallpaperKey);
+  }
+
+  Future<void> saveWallpaper(String? id) async {
+    if (_useHive) {
+      if (id == null) {
+        await _hiveBox?.delete(ApiConstants.wallpaperKey);
+      } else {
+        await _hiveBox?.put(ApiConstants.wallpaperKey, id);
+      }
+    } else {
+      if (id == null) {
+        await _storage.delete(key: ApiConstants.wallpaperKey);
+      } else {
+        await _storage.write(key: ApiConstants.wallpaperKey, value: id);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Onboarding
   // ---------------------------------------------------------------------------
 
@@ -233,6 +260,46 @@ class SecureStorageService {
       await _hiveBox?.put(ApiConstants.onboardingSeenKey, 'true');
     } else {
       await _storage.write(key: ApiConstants.onboardingSeenKey, value: 'true');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Badge seen counts — persist across app restarts
+  // ---------------------------------------------------------------------------
+
+  Future<int> getSeenMissedCalls() async {
+    String? v;
+    if (_useHive) {
+      v = _hiveBox?.get('seen_missed_calls') as String?;
+    } else {
+      v = await _storage.read(key: 'seen_missed_calls');
+    }
+    return int.tryParse(v ?? '') ?? 0;
+  }
+
+  Future<void> setSeenMissedCalls(int count) async {
+    if (_useHive) {
+      await _hiveBox?.put('seen_missed_calls', '$count');
+    } else {
+      await _storage.write(key: 'seen_missed_calls', value: '$count');
+    }
+  }
+
+  Future<int> getSeenCalendarInvites() async {
+    String? v;
+    if (_useHive) {
+      v = _hiveBox?.get('seen_calendar_invites') as String?;
+    } else {
+      v = await _storage.read(key: 'seen_calendar_invites');
+    }
+    return int.tryParse(v ?? '') ?? 0;
+  }
+
+  Future<void> setSeenCalendarInvites(int count) async {
+    if (_useHive) {
+      await _hiveBox?.put('seen_calendar_invites', '$count');
+    } else {
+      await _storage.write(key: 'seen_calendar_invites', value: '$count');
     }
   }
 }

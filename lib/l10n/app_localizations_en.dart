@@ -498,6 +498,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifications => 'Notifications';
 
   @override
+  String get permissions => 'Permissions';
+
+  @override
+  String get permissionNotifications => 'Push Notifications';
+
+  @override
+  String get permissionNotificationsDesc => 'Calls, messages, statuses';
+
+  @override
+  String get permissionMicrophone => 'Microphone';
+
+  @override
+  String get permissionMicrophoneDesc => 'Calls and voice assistant';
+
+  @override
+  String get permissionCamera => 'Camera';
+
+  @override
+  String get permissionCameraDesc => 'Video calls and verification';
+
+  @override
+  String get permissionLocation => 'Location';
+
+  @override
+  String get permissionLocationDesc => 'Used for verification';
+
+  @override
+  String get permissionOpenSettings =>
+      'To revoke a permission, open system settings';
+
+  @override
   String get pushKycStatus => 'KYC Status Push';
 
   @override
@@ -766,6 +797,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabMessenger => 'Messages';
 
   @override
+  String get tabCalls => 'Calls';
+
+  @override
+  String get tabCalendar => 'Calendar';
+
+  @override
   String get appearance => 'Appearance';
 
   @override
@@ -1031,6 +1068,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get translatorLangAr => 'Arabic';
 
   @override
+  String get translatorLangPl => 'Polish';
+
+  @override
+  String get translatorLangSk => 'Slovak';
+
+  @override
+  String get translatorLangCs => 'Czech';
+
+  @override
+  String get translatorLangNl => 'Dutch';
+
+  @override
+  String get translatorLangSv => 'Swedish';
+
+  @override
+  String get translatorLangDa => 'Danish';
+
+  @override
+  String get translatorLangNo => 'Norwegian';
+
+  @override
+  String get translatorLangFi => 'Finnish';
+
+  @override
+  String get translatorLangUk => 'Ukrainian';
+
+  @override
+  String get translatorLangEl => 'Greek';
+
+  @override
+  String get translatorLangRo => 'Romanian';
+
+  @override
+  String get translatorLangHu => 'Hungarian';
+
+  @override
+  String get translatorLangBg => 'Bulgarian';
+
+  @override
+  String get translatorLangHr => 'Croatian';
+
+  @override
+  String get translatorLangSr => 'Serbian';
+
+  @override
+  String get translatorLangHi => 'Hindi';
+
+  @override
+  String get translatorLangTh => 'Thai';
+
+  @override
+  String get translatorLangVi => 'Vietnamese';
+
+  @override
+  String get translatorLangId => 'Indonesian';
+
+  @override
+  String get translatorLangMs => 'Malay';
+
+  @override
+  String get translatorLangHe => 'Hebrew';
+
+  @override
+  String get translatorLangFa => 'Persian';
+
+  @override
   String get callInProgress => 'Call in progress';
 
   @override
@@ -1053,4 +1156,1741 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yesterday => 'Yesterday';
+
+  @override
+  String get errorTimeout =>
+      'Connection timed out. Check your internet connection.';
+
+  @override
+  String get errorNoConnection => 'No internet connection.';
+
+  @override
+  String get errorGeneral => 'An error occurred. Please try again.';
+
+  @override
+  String errorWithMessage(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get notifChannelMessages => 'Messages';
+
+  @override
+  String get notifChannelMessagesDesc => 'New message notifications';
+
+  @override
+  String get notifChannelMissedCalls => 'Missed calls';
+
+  @override
+  String get notifChannelMissedCallsDesc => 'Missed call notifications';
+
+  @override
+  String get notifMissedCall => 'Missed call';
+
+  @override
+  String get notifAccept => 'Accept';
+
+  @override
+  String get notifDecline => 'Decline';
+
+  @override
+  String get notifIncomingCall => 'Incoming call';
+
+  @override
+  String get notifIncomingCallChannel => 'Incoming call';
+
+  @override
+  String get notifMissedCallChannel => 'Missed call';
+
+  @override
+  String get notifUnknown => 'Unknown';
+
+  @override
+  String get effectNone => 'No background';
+
+  @override
+  String get effectBlur => 'Blur';
+
+  @override
+  String get effectOffice => 'Office';
+
+  @override
+  String get effectNature => 'Nature';
+
+  @override
+  String get effectGradient => 'Gradient';
+
+  @override
+  String get effectLibrary => 'Library';
+
+  @override
+  String get effectCity => 'City';
+
+  @override
+  String get effectMinimalism => 'Minimalism';
+
+  @override
+  String get voiceParticipant => 'Participant';
+
+  @override
+  String get voiceInvitesToRoom => 'invites you to the room';
+
+  @override
+  String get voiceRoom => 'Room';
+
+  @override
+  String get voicePasswordProtected => 'Password protected';
+
+  @override
+  String get voicePasswordHint => 'Password';
+
+  @override
+  String get voiceEnter => 'Enter';
+
+  @override
+  String get voiceJoinRoom => 'Join the room';
+
+  @override
+  String get voiceYourName => 'Your name';
+
+  @override
+  String voiceInvitationSent(String name) {
+    return 'Invitation sent to $name';
+  }
+
+  @override
+  String get voiceNoActiveRoom => 'No active room';
+
+  @override
+  String get voiceCameraPermission =>
+      'Allow camera access in Settings → Privacy → Camera → TalerID';
+
+  @override
+  String get voiceOpenSettings => 'Open';
+
+  @override
+  String voiceCameraError(String error) {
+    return 'Failed to enable camera: $error';
+  }
+
+  @override
+  String get voiceAllAgreedRecording => 'All agreed. Recording started.';
+
+  @override
+  String get voiceNewParticipantAgreed =>
+      'New participant agreed to recording.';
+
+  @override
+  String get voiceDeclinedRecording =>
+      'You declined recording. Leaving the call.';
+
+  @override
+  String get voiceRecordingEnded => 'Recording ended';
+
+  @override
+  String get voiceRecordingInProgress => 'Recording in progress';
+
+  @override
+  String get voiceTranscriptionRequest => 'Transcription request';
+
+  @override
+  String get voiceRecordingRequest => 'Recording request';
+
+  @override
+  String get voiceAgree => 'Agree';
+
+  @override
+  String get voiceDeclineAndLeave => 'Decline and leave';
+
+  @override
+  String get voiceAudioOutput => 'Audio output';
+
+  @override
+  String get voiceAudioPhone => 'Phone';
+
+  @override
+  String get voiceAudioSpeaker => 'Speaker';
+
+  @override
+  String get voiceAudioBluetooth => 'Bluetooth';
+
+  @override
+  String get voiceAudioHeadphones => 'Headphones';
+
+  @override
+  String get voiceLinkCopied => 'Link copied';
+
+  @override
+  String get voiceTranslateTo => 'Translate to';
+
+  @override
+  String get voiceSearchLanguage => 'Search language...';
+
+  @override
+  String voiceRoomWithCreator(String name) {
+    return 'Room $name';
+  }
+
+  @override
+  String get voiceVoiceCall => 'Voice call';
+
+  @override
+  String get voiceOnHold => 'On hold';
+
+  @override
+  String get voiceActiveCall => 'Active';
+
+  @override
+  String get voiceEndAllCalls => 'End all calls';
+
+  @override
+  String get voiceEndThisCall => 'End this call';
+
+  @override
+  String get voiceCopyLink => 'Copy link';
+
+  @override
+  String get voiceAddParticipant => 'Add participant';
+
+  @override
+  String get voiceReconnecting => 'Reconnecting...';
+
+  @override
+  String get voiceConnectionError => 'Connection error';
+
+  @override
+  String get voiceClose => 'Close';
+
+  @override
+  String get voiceCalling => 'Calling...';
+
+  @override
+  String get voiceCallActive => 'Call active';
+
+  @override
+  String get voiceWaiting => 'Waiting';
+
+  @override
+  String get voiceWaitingUpper => 'WAITING';
+
+  @override
+  String get voiceRec => 'REC';
+
+  @override
+  String get voiceStop => 'Stop';
+
+  @override
+  String get voiceRecord => 'Recording';
+
+  @override
+  String get voiceTranslation => 'Translation';
+
+  @override
+  String get voiceAudio => 'Audio';
+
+  @override
+  String get voiceFlipCamera => 'Flip';
+
+  @override
+  String get voiceBackground => 'Background';
+
+  @override
+  String get voiceAssistantSpeakingStatus => 'Assistant speaking...';
+
+  @override
+  String get voiceAssistantListeningStatus => 'Assistant listening...';
+
+  @override
+  String get voiceUnmute => 'Unmute';
+
+  @override
+  String get voiceMic => 'Microphone';
+
+  @override
+  String get voiceAssistantLabel => 'Assistant';
+
+  @override
+  String get voiceCameraOn => 'Camera on';
+
+  @override
+  String get voiceCameraLabel => 'Camera';
+
+  @override
+  String get voiceEndCall => 'End call';
+
+  @override
+  String get voiceWaitingParticipants => 'Waiting for participants...';
+
+  @override
+  String get voiceYou => 'You';
+
+  @override
+  String get voiceAiAssistant => 'AI Assistant';
+
+  @override
+  String get voiceVideoUnavailable => 'Video unavailable';
+
+  @override
+  String get voiceSearchNickname => 'Search by nickname...';
+
+  @override
+  String get voiceTranscriptionWord => 'transcription';
+
+  @override
+  String get voiceRecordingWord => 'recording';
+
+  @override
+  String get voiceConnecting => 'Connecting...';
+
+  @override
+  String get voiceVideoBackground => 'Video background';
+
+  @override
+  String get voiceCallSettings => 'Call settings';
+
+  @override
+  String get voiceEnableAI => 'Enable AI assistant';
+
+  @override
+  String get voiceAIParticipating => 'AI will participate in the conversation';
+
+  @override
+  String get voiceNormalCall => 'Normal call without AI';
+
+  @override
+  String get voiceCallConfirm => 'Make a call?';
+
+  @override
+  String get chatAlreadyInCall => 'Already in a call';
+
+  @override
+  String chatCallError(String error) {
+    return 'Call error: $error';
+  }
+
+  @override
+  String get chatPhotoVideo => 'Photo / Video';
+
+  @override
+  String get chatCamera => 'Camera';
+
+  @override
+  String get chatFile => 'File';
+
+  @override
+  String get chatContact => 'Contact';
+
+  @override
+  String get chatSelectContact => 'Select a contact';
+
+  @override
+  String get chatNoContacts => 'No contacts';
+
+  @override
+  String get chatUser => 'User';
+
+  @override
+  String get chatFileAttachment => '📎 File';
+
+  @override
+  String chatFileUploadError(String error) {
+    return 'File upload error: $error';
+  }
+
+  @override
+  String get chatVoiceMessage => '🎤 Voice message';
+
+  @override
+  String get chatGroup => 'Group';
+
+  @override
+  String get chatDialog => 'Dialog';
+
+  @override
+  String get chatCall => 'Call';
+
+  @override
+  String get chatStartConversation => 'Start a conversation';
+
+  @override
+  String get chatYou => 'You';
+
+  @override
+  String get chatIsTyping => 'is typing...';
+
+  @override
+  String chatUserIsTyping(String name) {
+    return '$name is typing...';
+  }
+
+  @override
+  String chatUsersAreTyping(String names) {
+    return '$names are typing...';
+  }
+
+  @override
+  String get chatPreparingFile => 'Preparing file…';
+
+  @override
+  String chatUploading(int progress) {
+    return 'Uploading… $progress%';
+  }
+
+  @override
+  String get chatEdited => 'Edited';
+
+  @override
+  String get chatReply => 'Reply';
+
+  @override
+  String get chatEdit => 'Edit';
+
+  @override
+  String get chatCopy => 'Copy';
+
+  @override
+  String get chatCopied => 'Copied';
+
+  @override
+  String get chatSaveMedia => 'Save';
+
+  @override
+  String get chatForward => 'Forward';
+
+  @override
+  String get chatSaving => 'Saving...';
+
+  @override
+  String get chatSavedToGallery => 'Saved to gallery';
+
+  @override
+  String get chatNoSavePermission => 'No permission to save. Check settings.';
+
+  @override
+  String get chatFileSaveError => 'File save error';
+
+  @override
+  String get chatDeleteMessage => 'Delete message';
+
+  @override
+  String get chatDeleteForMe => 'Delete for me';
+
+  @override
+  String get chatDeleteForEveryone => 'Delete for everyone';
+
+  @override
+  String get chatMessageForwarded => 'Message forwarded';
+
+  @override
+  String get chatContactTapToOpen => 'Contact · tap to open';
+
+  @override
+  String get chatForwardTo => 'Forward to...';
+
+  @override
+  String get chatSearchHint => 'Search...';
+
+  @override
+  String get chatRecording => 'Recording...';
+
+  @override
+  String get chatMessageHint => 'Message...';
+
+  @override
+  String get chatHideKeyboard => 'Hide keyboard';
+
+  @override
+  String get chatEditing => 'Editing';
+
+  @override
+  String get chatFileDownloadError => 'File download error';
+
+  @override
+  String get chatVoiceMessageShort => 'Voice message';
+
+  @override
+  String get chatVideoSavedToGallery => 'Video saved to gallery';
+
+  @override
+  String get chatSavingError => 'Saving error';
+
+  @override
+  String get convSetNickname => 'Set a nickname';
+
+  @override
+  String get convNicknameRequired =>
+      'A nickname is required to use the messenger. Other users can find you by it.';
+
+  @override
+  String get convNicknameRules => '3–30 characters: letters, digits, _';
+
+  @override
+  String get convNicknameTaken => 'Nickname already taken';
+
+  @override
+  String get convSaveError => 'Save error';
+
+  @override
+  String get convContactsLabel => 'Contacts';
+
+  @override
+  String get convDefaultUser => 'User';
+
+  @override
+  String get convNoDialogs => 'No conversations';
+
+  @override
+  String get convFindUserToChat => 'Find a user to start chatting';
+
+  @override
+  String get convDefaultContact => 'Contact';
+
+  @override
+  String get dashboardUser => 'User';
+
+  @override
+  String get dashboardIncomingCall => 'Incoming call';
+
+  @override
+  String get dashboardDecline => 'Decline';
+
+  @override
+  String get dashboardAccept => 'Accept';
+
+  @override
+  String get dashboardActiveCall => 'Active call — tap to return';
+
+  @override
+  String dashboardUpdateAvailable(String version) {
+    return 'Update available $version';
+  }
+
+  @override
+  String get dashboardUpdate => 'Update';
+
+  @override
+  String get contactRequestsTitle => 'Contacts';
+
+  @override
+  String get messengerContactRequestsSection => 'Contact requests';
+
+  @override
+  String messengerContactRequestsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new requests',
+      one: '1 new request',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get contactRequestsSearch => 'Search';
+
+  @override
+  String get contactRequestsIncoming => 'Incoming';
+
+  @override
+  String get contactRequestsSent => 'Sent';
+
+  @override
+  String get contactRequestsSearchHint => 'Nickname or email';
+
+  @override
+  String get contactRequestSent => 'Request sent';
+
+  @override
+  String get contactRequestsNoUsers => 'No users found';
+
+  @override
+  String get contactRequestsSearchHelp =>
+      'Enter exact nickname or email\nand press search';
+
+  @override
+  String get contactRequestsSendTooltip => 'Send request';
+
+  @override
+  String get contactRequestTitle => 'Contact request';
+
+  @override
+  String contactRequestConfirm(String name) {
+    return 'Send contact request to $name?';
+  }
+
+  @override
+  String get contactRequestSend => 'Send';
+
+  @override
+  String get contactRequestsNoIncoming => 'No incoming requests';
+
+  @override
+  String get contactRequestsNoSent => 'No sent requests';
+
+  @override
+  String get contactRequestStatusPending => 'Awaiting response';
+
+  @override
+  String get contactRequestStatusAccepted => 'Accepted';
+
+  @override
+  String get contactRequestStatusRejected => 'Rejected';
+
+  @override
+  String get userSearchTitle => 'Find user';
+
+  @override
+  String get userSearchHint => 'Nickname, phone or email';
+
+  @override
+  String get userSearchHelper => 'Enter @nickname, email or name to search';
+
+  @override
+  String get userSearchNoUsers => 'No users found';
+
+  @override
+  String get userProfileShareContact => 'Share contact';
+
+  @override
+  String get userProfileShareContactDesc => 'Send contact link';
+
+  @override
+  String get userProfileCopyLink => 'Copy link';
+
+  @override
+  String get userProfileCopied => 'Copied';
+
+  @override
+  String get userProfileTitle => 'Profile';
+
+  @override
+  String get userProfileLoadError => 'Profile load error';
+
+  @override
+  String get userProfileMessage => 'Message';
+
+  @override
+  String get userProfileCall => 'Call';
+
+  @override
+  String get userProfileRequestSent => 'Request sent';
+
+  @override
+  String get userProfileAccept => 'Accept';
+
+  @override
+  String get userProfileDecline => 'Decline';
+
+  @override
+  String get userProfileAddToContacts => 'Add to contacts';
+
+  @override
+  String get userProfileMediaTab => 'Media';
+
+  @override
+  String get userProfileFilesTab => 'Files';
+
+  @override
+  String get userProfileLinksTab => 'Links';
+
+  @override
+  String get userProfileRecordingsTab => 'Recordings';
+
+  @override
+  String get userProfileSummariesTab => 'Summaries';
+
+  @override
+  String get userProfileNoMedia => 'No media files';
+
+  @override
+  String get userProfileNoFiles => 'No files';
+
+  @override
+  String get userProfileNoLinks => 'No links';
+
+  @override
+  String get userProfileNoRecordings => 'No recordings';
+
+  @override
+  String get userProfileNoSummaries => 'No summaries';
+
+  @override
+  String get userProfileMeetingSummary => 'Meeting summary';
+
+  @override
+  String get userProfileFailedOpenChat => 'Failed to open chat';
+
+  @override
+  String get sharedMediaTitle => 'Media and files';
+
+  @override
+  String get sharedMediaTab => 'Media';
+
+  @override
+  String get sharedFilesTab => 'Files';
+
+  @override
+  String get sharedLinksTab => 'Links';
+
+  @override
+  String get sharedNoMedia => 'No media files';
+
+  @override
+  String get sharedNoFiles => 'No files';
+
+  @override
+  String get sharedNoLinks => 'No links';
+
+  @override
+  String get shareToChat => 'Forward to chat';
+
+  @override
+  String get shareSelectChat => 'Select chat';
+
+  @override
+  String get shareNoChats => 'No chats';
+
+  @override
+  String shareFilesCount(int count) {
+    return '$count files';
+  }
+
+  @override
+  String get contactsTitle => 'Contacts';
+
+  @override
+  String get contactsAddTooltip => 'Add contact';
+
+  @override
+  String get contactsSearchHint => 'Search contacts...';
+
+  @override
+  String get contactsNotFound => 'Nothing found';
+
+  @override
+  String get contactsEmpty => 'No contacts';
+
+  @override
+  String get contactsAdd => 'Add contact';
+
+  @override
+  String get contactsPendingConfirmation => 'Awaiting confirmation';
+
+  @override
+  String get contactsMessage => 'Message';
+
+  @override
+  String get contactsCall => 'Call';
+
+  @override
+  String get contactsResend => 'Resend request';
+
+  @override
+  String get contactsResendTimeout => 'Retry in 24h';
+
+  @override
+  String get contactsResent => 'Request resent';
+
+  @override
+  String get contactsWantsToConnect => 'Wants to connect with you';
+
+  @override
+  String get contactsSearchPeople => 'Find people';
+
+  @override
+  String get notesTitle => 'Notes';
+
+  @override
+  String get notesAssistantSpeaking => 'Assistant speaking...';
+
+  @override
+  String get notesListening => 'Listening...';
+
+  @override
+  String get notesEmpty => 'No notes';
+
+  @override
+  String get notesEmptyHint => 'Press mic for dictation\nor + for manual entry';
+
+  @override
+  String get notesDeleteConfirm => 'Delete note?';
+
+  @override
+  String get notesNew => 'New note';
+
+  @override
+  String get notesEdit => 'Edit';
+
+  @override
+  String get notesTitleHint => 'Title';
+
+  @override
+  String get notesContentHint => 'Write your thoughts...';
+
+  @override
+  String get calendarTitle => 'Calendar';
+
+  @override
+  String get calendarStop => 'Stop';
+
+  @override
+  String get calendarVoiceInput => 'Voice input';
+
+  @override
+  String get calendarNewEvent => 'New event';
+
+  @override
+  String get calendarAssistantSpeaking => 'Assistant speaking...';
+
+  @override
+  String get calendarListening => 'Listening...';
+
+  @override
+  String calendarInvitations(int count) {
+    return 'Invitations ($count)';
+  }
+
+  @override
+  String get calendarNoEvents => 'No events';
+
+  @override
+  String get calendarDayMon => 'Mon';
+
+  @override
+  String get calendarDayTue => 'Tue';
+
+  @override
+  String get calendarDayWed => 'Wed';
+
+  @override
+  String get calendarDayThu => 'Thu';
+
+  @override
+  String get calendarDayFri => 'Fri';
+
+  @override
+  String get calendarDaySat => 'Sat';
+
+  @override
+  String get calendarDaySun => 'Sun';
+
+  @override
+  String get calendarEnterRoom => 'Enter room';
+
+  @override
+  String get calendarMeeting => 'Meeting';
+
+  @override
+  String calendarLocationPrefix(String location) {
+    return 'Location: $location';
+  }
+
+  @override
+  String get calendarEditEvent => 'Edit';
+
+  @override
+  String get calendarTitleHint => 'Title';
+
+  @override
+  String get calendarDescriptionHint => 'Description';
+
+  @override
+  String get calendarTypeEvent => 'Event';
+
+  @override
+  String get calendarTypeMeeting => 'Meeting';
+
+  @override
+  String get calendarTypeReminder => 'Reminder';
+
+  @override
+  String get calendarTypeLabel => 'Type';
+
+  @override
+  String get calendarMeetingLink => 'Meeting link';
+
+  @override
+  String get calendarLocationHint => 'Location';
+
+  @override
+  String get calendarDateLabel => 'Date';
+
+  @override
+  String get calendarTimeLabel => 'Time';
+
+  @override
+  String get calendarReminderLabel => 'Reminder';
+
+  @override
+  String get calendarReminderNone => 'None';
+
+  @override
+  String get calendarReminder15min => '15 min before';
+
+  @override
+  String get calendarReminder30min => '30 min before';
+
+  @override
+  String get calendarReminder1hour => '1 hour before';
+
+  @override
+  String get calendarRepeatLabel => 'Repeat';
+
+  @override
+  String get calendarRepeatNone => 'No repeat';
+
+  @override
+  String get calendarRepeatDaily => 'Every day';
+
+  @override
+  String get calendarRepeatWeekly => 'Every week';
+
+  @override
+  String get calendarRepeatMonthly => 'Every month';
+
+  @override
+  String get calendarRepeatYearly => 'Every year';
+
+  @override
+  String get calendarParticipants => 'Participants';
+
+  @override
+  String get calendarAddParticipant => 'Add';
+
+  @override
+  String get calendarSearchContacts => 'Search contacts...';
+
+  @override
+  String get calendarNoContacts => 'No contacts';
+
+  @override
+  String get calendarStatusAccepted => 'Accepted';
+
+  @override
+  String get calendarStatusDeclined => 'Declined';
+
+  @override
+  String get calendarStatusMaybe => 'Maybe';
+
+  @override
+  String get calendarStatusPending => 'Pending';
+
+  @override
+  String get calendarEndTime => 'End time';
+
+  @override
+  String get calendarYourAnswer => 'Your answer:';
+
+  @override
+  String get calendarOrganizer => 'Organizer';
+
+  @override
+  String calendarDeleteError(String error) {
+    return 'Failed to delete: $error';
+  }
+
+  @override
+  String get calendarRsvpAccept => 'Accept';
+
+  @override
+  String get calendarRsvpMaybe => 'Maybe';
+
+  @override
+  String get calendarRsvpDecline => 'Decline';
+
+  @override
+  String get callHistoryTitle => 'Calls';
+
+  @override
+  String get callHistoryTab => 'Call history';
+
+  @override
+  String get callHistoryTempMeeting => 'Temporary meeting';
+
+  @override
+  String get callHistoryCopy => 'Copy';
+
+  @override
+  String get callHistoryLinkCopied => 'Link copied';
+
+  @override
+  String get callHistoryShare => 'Share';
+
+  @override
+  String get callHistoryEnter => 'Enter';
+
+  @override
+  String get callHistoryAlreadyInCall => 'Already in a call';
+
+  @override
+  String get callHistoryCouldNotDeterminePeer =>
+      'Could not determine the other party';
+
+  @override
+  String get callHistoryContacts => 'Contacts';
+
+  @override
+  String get callHistoryFailedLoadRoom => 'Failed to load your room';
+
+  @override
+  String get callHistoryYourRoom => 'Your room';
+
+  @override
+  String get callHistoryCreateMeeting => 'Create meeting';
+
+  @override
+  String get callHistoryMeetingSummaries => 'Meeting summaries';
+
+  @override
+  String get callHistoryMeetingRecordings => 'Meeting recordings';
+
+  @override
+  String get callHistoryNoCalls => 'No calls';
+
+  @override
+  String get callHistoryMissed => 'Missed';
+
+  @override
+  String get callHistoryRecording => 'Recording';
+
+  @override
+  String get callHistorySummary => 'Summary';
+
+  @override
+  String get callHistoryCallAgain => 'Call again';
+
+  @override
+  String callHistoryTodayTime(String time) {
+    return 'Today, $time';
+  }
+
+  @override
+  String callHistoryYesterdayTime(String time) {
+    return 'Yesterday, $time';
+  }
+
+  @override
+  String get callHistoryUnknown => 'Unknown';
+
+  @override
+  String get callHistoryDetails => 'Call details';
+
+  @override
+  String get callHistoryOutgoing => 'Outgoing call';
+
+  @override
+  String get callHistoryIncoming => 'Incoming call';
+
+  @override
+  String callHistoryDuration(String duration) {
+    return 'Duration: $duration';
+  }
+
+  @override
+  String get callHistoryWithAI => 'With AI assistant';
+
+  @override
+  String get callHistoryParticipants => 'Participants';
+
+  @override
+  String get callHistoryMeetingSummary => 'Meeting summary';
+
+  @override
+  String get callHistoryMoreDetails => 'More details';
+
+  @override
+  String get callHistorySummaryProcessing => 'Summary processing...';
+
+  @override
+  String get callHistoryMeetingRecording => 'Meeting recording';
+
+  @override
+  String get callHistoryProcessing => 'Processing...';
+
+  @override
+  String get callHistoryCreateTranscript => 'Create transcript';
+
+  @override
+  String get callHistoryNoSummaries => 'No summaries';
+
+  @override
+  String get callHistoryRecordDuringCall => 'Press \"Record\" during a call';
+
+  @override
+  String callHistoryMeetingTime(String time) {
+    return 'Meeting $time';
+  }
+
+  @override
+  String get callHistoryTranscribing => 'Transcribing and summarizing...';
+
+  @override
+  String get callHistoryTranscriptCreated => 'Transcript created';
+
+  @override
+  String get callHistoryNoRecordings => 'No recordings';
+
+  @override
+  String callHistoryRecordingDate(String date) {
+    return 'Recording $date';
+  }
+
+  @override
+  String get callHistoryRecordingUnavailable => 'Recording unavailable';
+
+  @override
+  String get callHistoryTranscriptReady => 'Transcript ready';
+
+  @override
+  String get callHistoryTranscript => 'Transcript';
+
+  @override
+  String get callHistoryKeyPoints => 'Key points';
+
+  @override
+  String get callHistoryTasks => 'Tasks';
+
+  @override
+  String callHistoryAssignedTo(String assignee) {
+    return 'Assigned to: $assignee';
+  }
+
+  @override
+  String get callHistoryDecisions => 'Decisions';
+
+  @override
+  String get callHistoryShowTranscript => 'Show full transcript';
+
+  @override
+  String get profileScanQr => 'Scan QR';
+
+  @override
+  String get profileMyQrCode => 'My QR code';
+
+  @override
+  String profileAddMeShare(String userId) {
+    return 'Add me in Taler ID!\ntalerid://user/$userId';
+  }
+
+  @override
+  String get profileShowCode => 'Show this code to add you';
+
+  @override
+  String get profileEditDesc => 'Name, surname, patronymic, date of birth';
+
+  @override
+  String get profileAboutMe => 'About me';
+
+  @override
+  String get profileAboutMeDesc => 'Values, skills, interests and more';
+
+  @override
+  String get profileNotes => 'Notes';
+
+  @override
+  String get profileNotesDesc => 'Thoughts, ideas and notes';
+
+  @override
+  String get profileAvatarUpdated => 'Avatar updated';
+
+  @override
+  String get profileNickname => 'Nickname';
+
+  @override
+  String get profileNotSet => 'Not set';
+
+  @override
+  String get profileChangeNickname => 'Change nickname';
+
+  @override
+  String get profileNicknameUpdated => 'Nickname updated';
+
+  @override
+  String get profileShareLabel => 'Share';
+
+  @override
+  String get profileScanQrCode => 'Scan QR code';
+
+  @override
+  String get profilePointCamera => 'Point camera at QR code';
+
+  @override
+  String get profilePhotoCamera => 'Take photo';
+
+  @override
+  String get profilePhotoGallery => 'Choose from gallery';
+
+  @override
+  String get editProfilePatronymic => 'Patronymic (optional)';
+
+  @override
+  String get editProfileDateFormat => 'DD.MM.YYYY';
+
+  @override
+  String get aboutMeTitle => 'About me';
+
+  @override
+  String get aboutMeClickToFill => 'Click to fill';
+
+  @override
+  String get aboutMeCoreValues => 'Values';
+
+  @override
+  String get aboutMeWorldview => 'Worldview';
+
+  @override
+  String get aboutMeSkills => 'Skills';
+
+  @override
+  String get aboutMeInterests => 'Interests';
+
+  @override
+  String get aboutMeDesires => 'Desires';
+
+  @override
+  String get aboutMeBackground => 'Profile';
+
+  @override
+  String get aboutMeLikes => 'Likes';
+
+  @override
+  String get aboutMeDislikes => 'Dislikes';
+
+  @override
+  String get aboutMeDeleteSection => 'Delete section?';
+
+  @override
+  String get aboutMeDeleteConfirm =>
+      'All data in this section will be deleted.';
+
+  @override
+  String aboutMeConnectionError(String error) {
+    return 'Connection error: $error';
+  }
+
+  @override
+  String get aboutMeVisibility => 'Visibility';
+
+  @override
+  String get aboutMeTags => 'Tags';
+
+  @override
+  String get aboutMeAddTag => 'Add tag...';
+
+  @override
+  String get aboutMeDescription => 'Description';
+
+  @override
+  String get aboutMeDescribeLong => 'Tell us more...';
+
+  @override
+  String get aboutMeVisibilityEveryone => 'Everyone';
+
+  @override
+  String get aboutMeVisibilityContacts => 'Contacts';
+
+  @override
+  String get aboutMeVisibilityOnlyMe => 'Only me';
+
+  @override
+  String get settingsProfileSubtitle => 'Profile';
+
+  @override
+  String get settingsWallpaper => 'Wallpaper';
+
+  @override
+  String get settingsWallpaperDesc => 'Background image for the whole app';
+
+  @override
+  String get settingsWallpaperNone => 'None';
+
+  @override
+  String get settingsAccount => 'Account';
+
+  @override
+  String get settingsKycVerification => 'Identity Verification (KYC)';
+
+  @override
+  String get settingsOrganizations => 'Organizations';
+
+  @override
+  String get incomingCallLabel => 'Incoming call';
+
+  @override
+  String get incomingCallDecline => 'Decline';
+
+  @override
+  String get incomingCallAccept => 'Accept';
+
+  @override
+  String get groupCamera => 'Camera';
+
+  @override
+  String get groupGallery => 'Gallery';
+
+  @override
+  String get groupAvatarUpdated => 'Group avatar updated';
+
+  @override
+  String get groupNameTitle => 'Group name';
+
+  @override
+  String get groupEnterName => 'Enter name';
+
+  @override
+  String get groupDescriptionTitle => 'Group description';
+
+  @override
+  String get groupEnterDescription => 'Enter group description';
+
+  @override
+  String get groupChangeRoleTitle => 'Change role';
+
+  @override
+  String get groupRemoveMemberTitle => 'Remove member';
+
+  @override
+  String get groupDescription => 'Description';
+
+  @override
+  String get groupAddDescription => 'Add group description';
+
+  @override
+  String get groupNoDescription => 'No description';
+
+  @override
+  String get groupMediaAndFiles => 'Media and files';
+
+  @override
+  String get groupMuteNotifications => 'Mute notifications';
+
+  @override
+  String get groupMuted => 'Muted';
+
+  @override
+  String get groupNoResults => 'No results';
+
+  @override
+  String get authInvalidCode => 'Invalid code. Try again.';
+
+  @override
+  String get loginSubtitle => 'Use email and password';
+
+  @override
+  String get emailRequired => 'Enter email';
+
+  @override
+  String get emailInvalid => 'Invalid email';
+
+  @override
+  String get passwordRequired => 'Enter password';
+
+  @override
+  String get registerSubtitle => 'One account for the entire Taler ecosystem';
+
+  @override
+  String get usernameOptional => 'Username (optional)';
+
+  @override
+  String get usernameMinLength => 'Minimum 3 characters';
+
+  @override
+  String get usernameMaxLength => 'Maximum 30 characters';
+
+  @override
+  String get usernameInvalid => 'Only letters, digits and _';
+
+  @override
+  String get biometricLoginReason => 'Sign in to Taler ID';
+
+  @override
+  String get docTypePassport => 'Passport';
+
+  @override
+  String get docTypeIdCard => 'ID Card';
+
+  @override
+  String get docTypeDriverLicense => 'Driver\'s License';
+
+  @override
+  String get docTypeResidencePermit => 'Residence Permit';
+
+  @override
+  String addressApartment(String number) {
+    return 'apt. $number';
+  }
+
+  @override
+  String get failedToUpdateProfile => 'Failed to update profile';
+
+  @override
+  String get failedToStartKyb => 'Failed to start KYB verification';
+
+  @override
+  String get orgUpdated => 'Organization updated';
+
+  @override
+  String get failedToUpdateOrg => 'Failed to update organization';
+
+  @override
+  String get failedToChangeRole => 'Failed to change role';
+
+  @override
+  String get failedToRemoveMember => 'Failed to remove member';
+
+  @override
+  String get capabilityMessagesTitle => 'Messages';
+
+  @override
+  String get capabilityMessagesDesc =>
+      'Check messages or write to someone. For example: \"Write to Viktor: will be there in an hour\"';
+
+  @override
+  String get capabilityCallsTitle => 'Calls';
+
+  @override
+  String get capabilityCallsDesc =>
+      'Call any contact by voice. For example: \"Call Viktor Viktorov\"';
+
+  @override
+  String get capabilityChatTitle => 'Chat History';
+
+  @override
+  String get capabilityChatDesc =>
+      'I\'ll analyze the chat history. For example: \"What did we discuss with Viktor?\"';
+
+  @override
+  String get capabilityProfileTitle => 'Profile';
+
+  @override
+  String get capabilityProfileDesc =>
+      'I\'ll show or update your profile. For example: \"Show my profile\"';
+
+  @override
+  String get capabilityCoachingTitle => 'Coaching';
+
+  @override
+  String get capabilityCoachingDesc =>
+      'Modes: ICF coaching, psychologist, HR consultation. Say: \"Let\'s do coaching\"';
+
+  @override
+  String get capabilityCalendarTitle => 'Calendar';
+
+  @override
+  String get capabilityCalendarDesc =>
+      'Schedule a meeting or set a reminder. For example: \"Schedule a meeting with Viktor for tomorrow at 15:00\"';
+
+  @override
+  String get capabilityNotesTitle => 'Notes';
+
+  @override
+  String get capabilityNotesDesc =>
+      'Save a thought or read recent notes. For example: \"Write down an idea...\" or \"Read recent notes\"';
+
+  @override
+  String get assistantCallConfirm => 'Make a call?';
+
+  @override
+  String get callNoAnswer => 'No answer';
+
+  @override
+  String get contactDelete => 'Remove contact';
+
+  @override
+  String get contactDeleteTitle => 'Remove contact';
+
+  @override
+  String get contactDeleteConfirm =>
+      'Are you sure? This contact will be removed.';
+
+  @override
+  String get contactBlock => 'Block';
+
+  @override
+  String get contactBlockTitle => 'Block user';
+
+  @override
+  String get contactBlockConfirm =>
+      'This user will not be able to message or call you.';
+
+  @override
+  String get contactUnblock => 'Unblock';
+
+  @override
+  String get contactBlocked => 'Blocked';
+
+  @override
+  String get contactYouAreBlocked => 'This user has blocked you';
+
+  @override
+  String get chatBlockedByYou => 'You have blocked this user';
+
+  @override
+  String get chatYouAreBlocked => 'You have been blocked by this user';
+
+  @override
+  String get chatNotContacts => 'Add this user to contacts to message them';
+
+  @override
+  String get contactRevokeRequest => 'Revoke request';
+
+  @override
+  String get messengerPoll => 'Poll';
+
+  @override
+  String get messengerCreatePoll => 'Create Poll';
+
+  @override
+  String get messengerPollQuestion => 'Question';
+
+  @override
+  String messengerPollOption(int number) {
+    return 'Option $number';
+  }
+
+  @override
+  String get messengerPollAddOption => 'Add option';
+
+  @override
+  String get messengerPollAnonymous => 'Anonymous voting';
+
+  @override
+  String get messengerPollMultiple => 'Multiple choice';
+
+  @override
+  String get messengerPollCreateError => 'Failed to create poll';
+
+  @override
+  String get messengerPollUnavailable => 'Poll unavailable';
+
+  @override
+  String get messengerPollMultipleNote => 'You can select multiple';
+
+  @override
+  String messengerPollVotes(int count) {
+    return '$count votes';
+  }
+
+  @override
+  String get messengerVideoMessage => 'Video message';
+
+  @override
+  String get messengerVideoRecordError => 'Video recording error';
+
+  @override
+  String get messengerVideoPlaybackError => 'Could not play video';
+
+  @override
+  String get messengerGalleryAccessError => 'No access to gallery';
+
+  @override
+  String get messengerSearchInChat => 'Search in chat...';
+
+  @override
+  String get messengerSaveToFavorites => 'Save to favorites';
+
+  @override
+  String get messengerSavedToFavorites => 'Saved to favorites';
+
+  @override
+  String get messengerSearchInMessages => 'Search in messages...';
+
+  @override
+  String messengerFoundInMessages(int count) {
+    return 'Found in messages ($count)';
+  }
+
+  @override
+  String get messengerGroupDefault => 'Group';
+
+  @override
+  String get messengerUserDefault => 'User';
+
+  @override
+  String get messengerPin => 'Pin';
+
+  @override
+  String get messengerUnpin => 'Unpin';
+
+  @override
+  String get messengerArchive => 'Archive';
+
+  @override
+  String get messengerUnarchive => 'Unarchive';
+
+  @override
+  String get messengerDeleteChat => 'Delete chat';
+
+  @override
+  String get messengerDeleteChatTitle => 'Delete chat?';
+
+  @override
+  String messengerDeleteChatConfirm(String name) {
+    return 'Delete chat with $name? This cannot be undone.';
+  }
+
+  @override
+  String get messengerNewChannel => 'New Channel';
+
+  @override
+  String get messengerCreateChannel => 'Create Channel';
+
+  @override
+  String get messengerChannelName => 'Name';
+
+  @override
+  String get messengerChannelDescription => 'Description (optional)';
+
+  @override
+  String get messengerChannelCreateError => 'Failed to create channel';
+
+  @override
+  String get messengerFilterAll => 'All';
+
+  @override
+  String get messengerFilterUnread => 'Unread';
+
+  @override
+  String get messengerFilterPersonal => 'Personal';
+
+  @override
+  String get messengerFilterGroups => 'Groups';
+
+  @override
+  String get messengerFilterChannels => 'Channels';
+
+  @override
+  String get messengerArchivedSection => 'Archived';
+
+  @override
+  String get messengerSavedSection => 'Favorites';
+
+  @override
+  String get messengerSavedSubtitle => 'Save to memory';
+
+  @override
+  String messengerArchiveTitle(int count) {
+    return 'Archive ($count)';
+  }
+
+  @override
+  String get messengerArchiveEmpty => 'Archive is empty';
+
+  @override
+  String messengerYouPrefix(String message) {
+    return 'You: $message';
+  }
+
+  @override
+  String get messengerMissedCall => 'Missed call';
+
+  @override
+  String get messengerSavedTitle => 'Favorites';
+
+  @override
+  String get messengerNoSavedMessages => 'No saved messages';
+
+  @override
+  String get messengerSavedHint =>
+      'Long press a message → \"Save to favorites\"';
+
+  @override
+  String get messengerDefaultFile => 'File';
+
+  @override
+  String get messengerTopicDefault => 'General';
+
+  @override
+  String get messengerTopicNew => 'New Topic';
+
+  @override
+  String get messengerTopicNameHint => 'Topic name';
+
+  @override
+  String get messengerTopicIcon => 'Icon';
+
+  @override
+  String messengerTopicCount(int count) {
+    return '$count topics';
+  }
+
+  @override
+  String get messengerNoTopics => 'No topics';
+
+  @override
+  String get messengerNoMessages => 'No messages';
+
+  @override
+  String get you => 'You';
+
+  @override
+  String get messengerThread => 'Thread';
+
+  @override
+  String get messengerThreadReply => 'reply';
+
+  @override
+  String get messengerThreadReplies => 'replies';
+
+  @override
+  String messengerThreadReplyCount(int count, String word) {
+    return '$count $word';
+  }
+
+  @override
+  String get messengerNoReplies => 'No replies';
+
+  @override
+  String get messengerReplyHint => 'Reply to thread...';
+
+  @override
+  String get messengerContactName => 'Contact name';
+
+  @override
+  String messengerOriginalName(String name) {
+    return 'Original name: $name';
+  }
+
+  @override
+  String get messengerDisplayName => 'Display name';
+
+  @override
+  String messengerShareContact(String name) {
+    return 'Contact in Taler ID: $name';
+  }
+
+  @override
+  String get messengerAutoDelete => 'Auto-delete messages';
+
+  @override
+  String get messengerAutoDeleteOff => 'Off';
+
+  @override
+  String get messengerAutoDelete7d => '7 days';
+
+  @override
+  String get messengerAutoDelete30d => '30 days';
+
+  @override
+  String get messengerAutoDelete90d => '90 days';
+
+  @override
+  String messengerAutoDeleteDays(int count) {
+    return '$count days';
+  }
+
+  @override
+  String get messengerSettingsHeader => 'Settings';
+
+  @override
+  String get messengerAdminOnly => 'Admin-only posting';
+
+  @override
+  String get messengerAdminOnlyDesc => 'Members can only read';
+
+  @override
+  String get messengerTopics => 'Topics';
+
+  @override
+  String get messengerTopicsDesc => 'Split chat into topics';
 }

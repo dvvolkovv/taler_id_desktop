@@ -18,6 +18,7 @@ class UserEntity with _$UserEntity {
     String? phone,
     String? firstName,
     String? lastName,
+    String? middleName,
     String? country,
     String? avatarUrl,
     String? postalCode,
@@ -25,6 +26,7 @@ class UserEntity with _$UserEntity {
     @Default(KycStatus.unverified) KycStatus kycStatus,
     String? fcmToken,
     String? username,
+    String? status,
   }) = _UserEntity;
 
   factory UserEntity.fromJson(Map<String, dynamic> json) =>

@@ -6,6 +6,13 @@ import '../config/app_config.dart';
 import '../storage/secure_storage_service.dart';
 import '../storage/cache_service.dart';
 import '../services/update_check_service.dart';
+import '../services/call_history_cache_service.dart';
+import '../services/contacts_cache_service.dart';
+import '../services/message_draft_service.dart';
+import '../services/messenger_cache_service.dart';
+import '../services/pending_message_service.dart';
+import '../services/simple_list_cache.dart';
+import '../services/video_effects_service.dart';
 
 // Auth
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
@@ -49,6 +56,11 @@ import '../../features/messenger/data/repositories/messenger_repository_impl.dar
 import '../../features/messenger/domain/repositories/i_messenger_repository.dart';
 import '../../features/messenger/presentation/bloc/messenger_bloc.dart';
 
+// Profile Sections
+import '../../features/profile_sections/data/datasources/profile_sections_remote_datasource.dart';
+import '../../features/profile_sections/data/repositories/profile_sections_repository_impl.dart';
+import '../../features/profile_sections/domain/repositories/i_profile_sections_repository.dart';
+
 
 final sl = GetIt.instance;
 
@@ -60,6 +72,40 @@ Future<void> setupDependencies() async {
   // Cache
   await CacheService.init();
   sl.registerSingleton<CacheService>(CacheService());
+
+  // Messenger cache (Hive)
+  await MessengerCacheService.init();
+  sl.registerSingleton<MessengerCacheService>(MessengerCacheService());
+
+  // Message drafts (Hive) — persisted unsent text per conversation
+  final drafts = MessageDraftService();
+  await drafts.init();
+  sl.registerSingleton<MessageDraftService>(drafts);
+
+  // Pending message queue (Hive) — messages sent offline
+  final pending = PendingMessageService();
+  await pending.init();
+  sl.registerSingleton<PendingMessageService>(pending);
+
+  // Call history cache (Hive) — stale-while-revalidate for Calls screen
+  final callCache = CallHistoryCacheService();
+  await callCache.init();
+  sl.registerSingleton<CallHistoryCacheService>(callCache);
+
+  // Contacts cache (Hive) — stale-while-revalidate for Contacts screen
+  final contactsCache = ContactsCacheService();
+  await contactsCache.init();
+  sl.registerSingleton<ContactsCacheService>(contactsCache);
+
+  // Notes cache (Hive)
+  final notesCache = SimpleListCache('notes_cache');
+  await notesCache.init();
+  sl.registerSingleton<SimpleListCache>(notesCache, instanceName: 'notes');
+
+  // Calendar cache (Hive)
+  final calendarCache = SimpleListCache('calendar_cache');
+  await calendarCache.init();
+  sl.registerSingleton<SimpleListCache>(calendarCache, instanceName: 'calendar');
 
   // Dio (raw, for auth interceptor use)
   final rawDio = Dio(
@@ -127,8 +173,17 @@ Future<void> setupDependencies() async {
     () => MessengerRepositoryImpl(sl<MessengerRemoteDataSource>()),
   );
 
+  // Profile Sections
+  sl.registerLazySingleton(() => ProfileSectionsRemoteDataSource(sl<DioClient>()));
+  sl.registerLazySingleton<IProfileSectionsRepository>(
+    () => ProfileSectionsRepositoryImpl(sl<ProfileSectionsRemoteDataSource>()),
+  );
+
   // Update check
   sl.registerLazySingleton(() => UpdateCheckService());
+
+  // Video effects (background blur / virtual backgrounds)
+  sl.registerLazySingleton(() => VideoEffectsService());
 
   // BLoCs
   sl.registerFactory(() => AuthBloc(authRepository: sl<IAuthRepository>()));

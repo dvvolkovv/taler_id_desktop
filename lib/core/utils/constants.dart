@@ -10,6 +10,7 @@ class ApiConstants {
   static const pinEnabledKey = 'pin_enabled';
   static const languageKey = 'app_language';
   static const themeKey = 'app_theme';
+  static const wallpaperKey = 'app_wallpaper';
   static const onboardingSeenKey = 'onboarding_seen';
 }
 
@@ -20,6 +21,7 @@ class RouteConstants {
   static const twoFA = '/auth/2fa';
   static const dashboard = '/dashboard';
   static const profile = '/dashboard/profile';
+  static const editProfile = '/dashboard/profile/edit';
 
   static const kyc = '/dashboard/kyc';
   static const kycSumsub = '/dashboard/kyc/sumsub';
@@ -28,16 +30,22 @@ class RouteConstants {
   static const organizationMembers = '/dashboard/organization/:id/members';
   static const sessions = '/dashboard/sessions';
   static const settings = '/dashboard/settings';
+  static const wallpaper = '/dashboard/settings/wallpaper';
   static const invite = '/invite';
   static const pinSetup = '/auth/pin-setup';
   static const pinEntry = '/auth/pin-entry';
-  static const chat = '/dashboard/chat';
+  static const chat = '/chat';
   static const assistant = '/dashboard/assistant';
   static const messenger = '/dashboard/messenger';
   static const messengerSearch = '/dashboard/messenger/search';
+  static const messengerContacts = '/dashboard/messenger/contacts';
   static const voice = '/dashboard/voice';
   static const callHistory = '/dashboard/call-history';
+  static const contacts = '/dashboard/contacts';
+  static const notes = '/dashboard/notes';
+  static const calendar = '/dashboard/calendar';
   static const onboarding = '/onboarding';
   static const forgotPassword = '/auth/forgot-password';
   static const translator = '/dashboard/translator';
+  static const profileSections = '/dashboard/profile/sections';
 }

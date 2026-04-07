@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
+import 'package:dio/dio.dart' as dio_pkg;
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,6 +23,7 @@ import '../../../core/utils/platform_utils.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/services/update_check_service.dart';
+import '../../../core/services/share_intent_service.dart';
 import '../../messenger/data/datasources/messenger_remote_datasource.dart';
 import '../../messenger/presentation/bloc/messenger_bloc.dart';
 import '../../messenger/presentation/bloc/messenger_event.dart';
@@ -44,10 +49,12 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   StreamSubscription? _callEndedSub;
   StreamSubscription? _callAnsweredSub;
   StreamSubscription? _callkitSub;
+  StreamSubscription? _shareIntentSub;
   String? _showingCallDialogRoom;
   String? _pendingCallRoute; // queued when accept fires while phone is locked
   bool _waitingForCallAccept = false; // blocks in-app dialog after CallKit accept
   bool _acceptingInApp = false; // suppresses actionCallDecline after in-app accept
+  bool _endingCallKitFromSocket = false; // suppresses actionCallDecline when CallKit ended by socket call_ended
   Timer? _callAcceptTimer;
   UpdateInfo? _updateInfo;
   bool _updateDismissed = false;
@@ -60,7 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     // Do NOT use FlutterCallkitIncoming.onEvent directly here — that creates a NEW
     // EventChannel listener each time, replacing (killing) the one in main.dart.
     // Navigation on accept is handled by _navigateWhenResumed in main.dart.
-    if (isMobilePlatform) _callkitSub = NotificationService.callEvents.listen((CallEvent? event) {
+    if (isMobilePlatform) _callkitSub = NotificationService.callEvents.listen((CallEvent? event) async {
       if (event == null) return;
       final extra = event.body['extra'] as Map?;
       final roomName = extra?['roomName'] as String?;
@@ -92,6 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             bool skipNotify = _pendingCallRoute != null; // navigating to voice screen
             if (!skipNotify && _acceptingInApp) skipNotify = true; // in-app accept triggered endAllCalls
             if (!skipNotify && _waitingForCallAccept) skipNotify = true; // CallKit accept in progress
+            if (!skipNotify && _endingCallKitFromSocket) skipNotify = true; // CallKit ended by socket call_ended event
             if (!skipNotify) {
               try {
                 final loc = GoRouter.of(context)
@@ -109,12 +117,47 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             (_showingCallDialogRoom == roomName || roomName == null)) {
           Navigator.of(context, rootNavigator: true).pop();
         }
-        // End only this specific call, not all calls
-        final callId = (event.body['id'] ?? event.body['uuid']) as String?;
-        if (callId != null) {
-          FlutterCallkitIncoming.endCall(callId);
+        // End only this specific call, not all calls.
+        // SKIP if we are accepting a call — VoiceCallScreen's endAllCalls()
+        // triggers actionCallDecline for the same CallKit call; calling endCall
+        // again here would deactivate the audio session AFTER VoiceCallScreen
+        // re-activated it, killing LiveKit audio.
+        if (!_waitingForCallAccept && !_acceptingInApp) {
+          final callId = (event.body['id'] ?? event.body['uuid']) as String?;
+          if (callId != null) {
+            FlutterCallkitIncoming.endCall(callId);
+          } else {
+            FlutterCallkitIncoming.endAllCalls();
+          }
+        }
+      } else if (event.event == Event.actionCallEnded) {
+        // User pressed "End" on CallKit native UI during an active call.
+        // Only handle here if VoiceCallScreen is NOT showing — if it is,
+        // VoiceCallScreen's own listener will call _hangUp().
+        // Also skip during call accept flow — endAllCalls() in VoiceCallScreen
+        // fires actionCallEnded before VoiceCallScreen route is committed,
+        // which would kill the background-connected room.
+        bool onVoiceScreen = false;
+        try {
+          final loc = GoRouter.of(context)
+              .routerDelegate.currentConfiguration.uri.path;
+          onVoiceScreen = loc.startsWith('/dashboard/voice');
+        } catch (_) {}
+        if (_waitingForCallAccept || _acceptingInApp) {
+          debugPrint('[Dashboard] actionCallEnded SKIPPED (accepting call)');
+        } else if (onVoiceScreen) {
+          debugPrint('[Dashboard] actionCallEnded SKIPPED (VoiceCallScreen handles it)');
+        } else if (CallStateService.instance.isInCall) {
+          final rn = roomName ?? CallStateService.instance.roomName;
+          final cId = convId ?? CallStateService.instance.conversationId;
+          debugPrint('[Dashboard] actionCallEnded: roomName=$rn, convId=$cId');
+          if (rn != null && cId != null) {
+            try { sl<MessengerRemoteDataSource>().sendCallEnded(cId, rn); } catch (_) {}
+          }
+          CallStateService.instance.endCall();
+          debugPrint('[Dashboard] actionCallEnded cleanup done');
         } else {
-          FlutterCallkitIncoming.endAllCalls();
+          debugPrint('[Dashboard] actionCallEnded SKIPPED (not in call)');
         }
       }
     });
@@ -134,12 +177,14 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       }
       // Fallback: check CallKit active calls (EventChannel may have missed the event)
       if (isMobilePlatform && await _checkActiveCallKitCalls()) return;
-      // Handle FCM notification tap when app was terminated
-      final initialMsg = await NotificationService.getInitialMessage();
-      if (initialMsg != null) {
-        final route = notificationToRoute(initialMsg);
-        if (route != null && mounted) {
-          context.go(route);
+      // Handle FCM notification tap when app was terminated (mobile only)
+      if (isMobilePlatform) {
+        final initialMsg = await NotificationService.getInitialMessage();
+        if (initialMsg != null) {
+          final route = notificationToRoute(initialMsg);
+          if (route != null && mounted) {
+            context.go(route);
+          }
         }
       }
       // Re-register FCM token now that the user is authenticated.
@@ -149,6 +194,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       _listenForDisconnect();
       _listenForCallEnded();
       _listenForCallAnswered();
+      if (isMobilePlatform) _listenForShareIntent();
       _checkForUpdate();
     });
   }
@@ -163,8 +209,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
       // Always dismiss a pending incoming call invite from the UI.
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
+      // Close the in-app incoming call modal dialog if it's showing
+      if (mounted && _showingCallDialogRoom != null) {
+        _showingCallDialogRoom = null;
+        try { Navigator.of(context, rootNavigator: true).pop(); } catch (_) {}
+      }
+      // Set flag BEFORE ending CallKit so the resulting actionCallDecline
+      // doesn't emit call_ended back to the server (causing double push).
+      _endingCallKitFromSocket = true;
       // Dismiss CallKit ringing for this room.
       await _endCallKitCallForRoom(roomName, wasInCallRoom: wasInCallRoom);
+      // Reset flag after a short delay (actionCallDecline fires asynchronously)
+      Future.delayed(const Duration(seconds: 2), () => _endingCallKitFromSocket = false);
 
       if (!isOurCall) return;
 
@@ -191,6 +247,16 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       // Another device of the same user answered — dismiss this device's CallKit UI
       await _endCallKitCallForRoom(roomName, fallbackEndAll: true);
       if (mounted) context.read<MessengerBloc>().add(DismissCallInvite());
+    });
+  }
+
+  void _listenForShareIntent() {
+    if (!isMobilePlatform) return;
+    _shareIntentSub?.cancel();
+    _shareIntentSub = ShareIntentService.instance.pendingFilesStream.listen((files) {
+      if (!mounted || files.isEmpty) return;
+      debugPrint('[Dashboard] Received ${files.length} shared files');
+      // Share intent is mobile-only — no-op on desktop
     });
   }
 
@@ -341,6 +407,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     _callAnsweredSub?.cancel();
     _callkitSub?.cancel();
     _callAcceptTimer?.cancel();
+    _shareIntentSub?.cancel();
     super.dispose();
   }
 
@@ -556,6 +623,65 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
     final currentIndex = _currentIndex(location);
 
+    // On desktop: wrap content with a side NavigationRail instead of bottom nav
+    final banners = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Active call banner — visible on all tabs
+        StreamBuilder<bool>(
+          stream: CallStateService.instance.stateStream,
+          initialData: CallStateService.instance.isInCall,
+          builder: (context, snapshot) {
+            final inCall = snapshot.data ?? false;
+            if (!inCall) return const SizedBox.shrink();
+            final cs = CallStateService.instance;
+            return GestureDetector(
+              onTap: () {
+                final room = cs.roomName;
+                final convId = cs.conversationId;
+                if (room != null) {
+                  context.push(
+                    '/dashboard/voice?room=$room${convId != null ? '&convId=$convId' : ''}',
+                  );
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                color: AppColors.of(context).primary,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.call_rounded, color: Colors.white, size: 18),
+                        SizedBox(width: 10),
+                        Text(
+                          'Активный звонок — нажмите, чтобы вернуться',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        if (_updateInfo != null && _updateInfo!.isAvailable && !_updateDismissed)
+          _UpdateBanner(
+            version: _updateInfo!.latestVersion,
+            downloadUrl: _updateInfo!.downloadUrl,
+            onDismiss: () => setState(() => _updateDismissed = true),
+          ),
+      ],
+    );
+
     return BlocListener<MessengerBloc, MessengerState>(
       listenWhen: (prev, curr) =>
           curr.pendingCallInvite != null &&
@@ -565,135 +691,103 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           _showIncomingCall(context, state.pendingCallInvite!);
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.of(context).background,
-        body: Column(
-          children: [
-            // Active call banner — visible on all tabs
-            StreamBuilder<bool>(
-              stream: CallStateService.instance.stateStream,
-              initialData: CallStateService.instance.isInCall,
-              builder: (context, snapshot) {
-                final inCall = snapshot.data ?? false;
-                if (!inCall) return const SizedBox.shrink();
-                final cs = CallStateService.instance;
-                return GestureDetector(
-                  onTap: () {
-                    final room = cs.roomName;
-                    final convId = cs.conversationId;
-                    if (room != null) {
-                      context.push(
-                        '/dashboard/voice?room=$room${convId != null ? '&convId=$convId' : ''}',
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    color: AppColors.of(context).primary,
-                    child: SafeArea(
-                      bottom: false,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.call_rounded, color: Colors.white, size: 18),
-                            SizedBox(width: 10),
-                            Text(
-                              'Активный звонок — нажмите, чтобы вернуться',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+      child: isDesktopPlatform
+          ? _buildDesktopLayout(context, l10n, currentIndex, banners)
+          : _buildMobileLayout(context, l10n, currentIndex, banners),
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, AppLocalizations l10n, int currentIndex, Widget banners) {
+    return Scaffold(
+      backgroundColor: AppColors.of(context).background,
+      body: Column(
+        children: [
+          banners,
+          Expanded(child: widget.child),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context, AppLocalizations l10n, int currentIndex, Widget banners) {
+    return Scaffold(
+      backgroundColor: AppColors.of(context).background,
+      body: Column(
+        children: [
+          banners,
+          Expanded(child: widget.child),
+        ],
+      ),
+      floatingActionButton: GoRouter.of(context)
+              .routerDelegate.currentConfiguration.uri.path
+              .startsWith(RouteConstants.messenger)
+          ? null
+          : FloatingActionButton(
+              onPressed: () => context.push(RouteConstants.chat),
+              backgroundColor: AppColors.of(context).primary,
+              child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
             ),
-            // Update available banner
-            if (_updateInfo != null && _updateInfo!.isAvailable && !_updateDismissed)
-              _UpdateBanner(
-                version: _updateInfo!.latestVersion,
-                downloadUrl: _updateInfo!.downloadUrl,
-                onDismiss: () => setState(() => _updateDismissed = true),
-              ),
-            Expanded(child: widget.child),
-          ],
-        ),
-        floatingActionButton: location.startsWith(RouteConstants.messenger)
-            ? null
-            : FloatingActionButton(
-                onPressed: () => context.push(RouteConstants.chat),
-                backgroundColor: AppColors.of(context).primary,
-                child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
-              ),
-        bottomNavigationBar: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.of(context).surface.withOpacity(0.60),
-                border: Border(
-                  top: BorderSide(
-                    color: AppColors.of(context).glassColor.withOpacity(0.15),
-                    width: 0.5,
-                  ),
+      bottomNavigationBar: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.of(context).surface.withOpacity(0.60),
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.of(context).glassColor.withOpacity(0.15),
+                  width: 0.5,
                 ),
               ),
-              child: BottomNavigationBar(
-                currentIndex: currentIndex,
-                onTap: (i) => context.go(_tabs[i]),
-                backgroundColor: Colors.transparent,
-                selectedItemColor: AppColors.of(context).accent,
-                unselectedItemColor: AppColors.of(context).textSecondary,
-                type: BottomNavigationBarType.fixed,
-                elevation: 0,
-                selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                unselectedLabelStyle: const TextStyle(fontSize: 11),
-                items: [
-                  BottomNavigationBarItem(
-                    icon: BlocBuilder<MessengerBloc, MessengerState>(
-                      buildWhen: (p, c) =>
-                          p.conversations.fold<int>(0, (s, e) => s + e.unreadCount) !=
-                          c.conversations.fold<int>(0, (s, e) => s + e.unreadCount),
-                      builder: (ctx, state) {
-                        final total =
-                            state.conversations.fold<int>(0, (s, c) => s + c.unreadCount);
-                        if (total == 0) {
-                          return const Icon(Icons.chat_bubble_outline_rounded);
-                        }
-                        return Badge(
-                          label: Text('$total'),
-                          backgroundColor: AppColors.of(context).error,
-                          child: const Icon(Icons.chat_bubble_outline_rounded),
-                        );
-                      },
-                    ),
-                    activeIcon: const Icon(Icons.chat_bubble_rounded),
-                    label: l10n.tabMessenger,
+            ),
+            child: BottomNavigationBar(
+              currentIndex: currentIndex,
+              onTap: (i) => context.go(_tabs[i]),
+              backgroundColor: Colors.transparent,
+              selectedItemColor: AppColors.of(context).accent,
+              unselectedItemColor: AppColors.of(context).textSecondary,
+              type: BottomNavigationBarType.fixed,
+              elevation: 0,
+              selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              unselectedLabelStyle: const TextStyle(fontSize: 11),
+              items: [
+                BottomNavigationBarItem(
+                  icon: BlocBuilder<MessengerBloc, MessengerState>(
+                    buildWhen: (p, c) =>
+                        p.conversations.fold<int>(0, (s, e) => s + e.unreadCount) !=
+                        c.conversations.fold<int>(0, (s, e) => s + e.unreadCount),
+                    builder: (ctx, state) {
+                      final total =
+                          state.conversations.fold<int>(0, (s, c) => s + c.unreadCount);
+                      if (total == 0) {
+                        return const Icon(Icons.chat_bubble_outline_rounded);
+                      }
+                      return Badge(
+                        label: Text('$total'),
+                        backgroundColor: AppColors.of(context).error,
+                        child: const Icon(Icons.chat_bubble_outline_rounded),
+                      );
+                    },
                   ),
-                  const BottomNavigationBarItem(
-                    icon: Icon(Icons.call_outlined),
-                    activeIcon: Icon(Icons.call),
-                    label: 'Звонки',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.headset_mic_outlined),
-                    activeIcon: const Icon(Icons.headset_mic),
-                    label: l10n.tabAssistant,
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.settings_outlined),
-                    activeIcon: const Icon(Icons.settings),
-                    label: l10n.tabSettings,
-                  ),
-                ],
-              ),
+                  activeIcon: const Icon(Icons.chat_bubble_rounded),
+                  label: l10n.tabMessenger,
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.call_outlined),
+                  activeIcon: Icon(Icons.call),
+                  label: 'Звонки',
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.headset_mic_outlined),
+                  activeIcon: const Icon(Icons.headset_mic),
+                  label: l10n.tabAssistant,
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.settings_outlined),
+                  activeIcon: const Icon(Icons.settings),
+                  label: l10n.tabSettings,
+                ),
+              ],
             ),
           ),
         ),
@@ -702,7 +796,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 }
 
-class _UpdateBanner extends StatelessWidget {
+class _UpdateBanner extends StatefulWidget {
   final String version;
   final String downloadUrl;
   final VoidCallback onDismiss;
@@ -714,54 +808,118 @@ class _UpdateBanner extends StatelessWidget {
   });
 
   @override
+  State<_UpdateBanner> createState() => _UpdateBannerState();
+}
+
+class _UpdateBannerState extends State<_UpdateBanner> {
+  double? _progress; // null = idle, 0..1 = downloading
+  bool _installing = false;
+
+  Future<void> _downloadAndInstall() async {
+    if (_progress != null || _installing) return;
+
+    // Android-only (mobile): download APK and install via OpenFilex
+    if (isMobilePlatform && !isDesktopPlatform && Platform.isAndroid) {
+      setState(() => _progress = 0);
+      try {
+        final dir = await getTemporaryDirectory();
+        final apkPath = '${dir.path}/taler_id_update.apk';
+
+        await dio_pkg.Dio().download(
+          widget.downloadUrl,
+          apkPath,
+          onReceiveProgress: (received, total) {
+            if (total > 0 && mounted) {
+              setState(() => _progress = received / total);
+            }
+          },
+        );
+
+        if (!mounted) return;
+        setState(() { _progress = null; _installing = true; });
+
+        await OpenFilex.open(apkPath, type: 'application/vnd.android.package-archive');
+      } catch (_) {
+        if (mounted) setState(() { _progress = null; _installing = false; });
+      }
+      return;
+    }
+
+    // Desktop / iOS: open download URL in browser
+    final uri = Uri.parse(widget.downloadUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDownloading = _progress != null;
+
     return Container(
       width: double.infinity,
       color: const Color(0xFFE65100),
       child: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              const Icon(Icons.system_update_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Доступно обновление $version',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.system_update_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isDownloading
+                          ? '${((_progress ?? 0) * 100).toStringAsFixed(0)}%  Доступно обновление ${widget.version}'
+                          : _installing
+                              ? 'Устанавливается...'
+                              : 'Доступно обновление ${widget.version}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
+                  if (!isDownloading && !_installing) ...[
+                    TextButton(
+                      onPressed: _downloadAndInstall,
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text('Обновить', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: widget.onDismiss,
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.close, color: Colors.white, size: 18),
+                      ),
+                    ),
+                  ] else if (isDownloading)
+                    const SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    ),
+                ],
               ),
-              TextButton(
-                onPressed: () async {
-                  final uri = Uri.parse(downloadUrl);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  minimumSize: Size.zero,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text('Обновить', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
+            if (isDownloading)
+              LinearProgressIndicator(
+                value: _progress,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                minHeight: 3,
               ),
-              const SizedBox(width: 4),
-              GestureDetector(
-                onTap: onDismiss,
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(Icons.close, color: Colors.white, size: 18),
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

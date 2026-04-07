@@ -10,7 +10,7 @@ abstract class IMessengerRepository {
   Future<Map<String, dynamic>> getMessages(String conversationId, {String? cursor});
   Future<List<UserSearchEntity>> searchUsers(String query);
   void joinConversation(String id);
-  void sendMessage(String conversationId, String content, {String? fileUrl, String? fileName, int? fileSize, String? fileType});
+  void sendMessage(String conversationId, String content, {String? fileUrl, String? fileName, int? fileSize, String? fileType, String? s3Key, String? thumbnailSmallUrl, String? thumbnailMediumUrl, String? thumbnailLargeUrl, String? fileRecordId, String? topicId, String? clientTempId});
   void editMessage(String conversationId, String messageId, String newContent);
   void deleteMessage(String conversationId, String messageId, String scope);
   void sendTyping(String conversationId, bool isTyping);
@@ -27,7 +27,7 @@ abstract class IMessengerRepository {
   Future<void> addGroupMembers(String conversationId, List<String> userIds);
   Future<void> removeGroupMember(String conversationId, String userId);
   Future<void> changeGroupMemberRole(String conversationId, String userId, String role);
-  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl, String? description});
+  Future<void> updateGroupInfo(String conversationId, {String? name, String? avatarUrl, String? description, bool? slowMode, bool? topicsEnabled, int? autoDeleteDays});
   Future<void> leaveGroup(String conversationId);
   Future<void> deleteGroup(String conversationId);
   // Group streams
@@ -47,11 +47,13 @@ abstract class IMessengerRepository {
   Future<List<Map<String, dynamic>>> getContactRequests();
   Future<Map<String, dynamic>> acceptContactRequest(String requestId);
   Future<void> rejectContactRequest(String requestId);
+  Future<List<Map<String, dynamic>>> getSentContactRequests();
   Stream<Map<String, dynamic>> get contactRequestStream;
   Stream<Map<String, dynamic>> get contactAcceptedStream;
   // Reaction methods
   void reactToMessage(String conversationId, String messageId, String emoji);
   Stream<Map<String, dynamic>> get reactionUpdatedStream;
+  Stream<String> get socketErrorStream;
   // Mute methods
   Future<Map<String, dynamic>> muteConversation(String conversationId, {int? durationMinutes});
   Future<void> unmuteConversation(String conversationId);

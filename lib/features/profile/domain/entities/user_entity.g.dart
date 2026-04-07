@@ -13,6 +13,7 @@ _$UserEntityImpl _$$UserEntityImplFromJson(Map<String, dynamic> json) =>
       phone: json['phone'] as String?,
       firstName: json['firstName'] as String?,
       lastName: json['lastName'] as String?,
+      middleName: json['middleName'] as String?,
       country: json['country'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
       postalCode: json['postalCode'] as String?,
@@ -21,6 +22,7 @@ _$UserEntityImpl _$$UserEntityImplFromJson(Map<String, dynamic> json) =>
           KycStatus.unverified,
       fcmToken: json['fcmToken'] as String?,
       username: json['username'] as String?,
+      status: json['status'] as String?,
     );
 
 Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
@@ -30,6 +32,7 @@ Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
       'phone': instance.phone,
       'firstName': instance.firstName,
       'lastName': instance.lastName,
+      'middleName': instance.middleName,
       'country': instance.country,
       'avatarUrl': instance.avatarUrl,
       'postalCode': instance.postalCode,
@@ -37,6 +40,7 @@ Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
       'kycStatus': _$KycStatusEnumMap[instance.kycStatus]!,
       'fcmToken': instance.fcmToken,
       'username': instance.username,
+      'status': instance.status,
     };
 
 const _$KycStatusEnumMap = {

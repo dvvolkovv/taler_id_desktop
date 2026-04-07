@@ -16,11 +16,20 @@ class MessageEntity with _$MessageEntity {
     String? fileName,
     int? fileSize,
     String? fileType,
+    String? s3Key,
+    String? thumbnailSmallUrl,
+    String? thumbnailMediumUrl,
+    String? thumbnailLargeUrl,
+    String? fileRecordId,
     @Default(false) bool isDelivered,
     @Default(false) bool isRead,
     @Default(false) bool isSystem,
     @Default(false) bool isEdited,
     @Default([]) List<Map<String, dynamic>> reactions,
+    String? threadParentId,
+    @Default(0) int threadReplyCount,
+    List<String>? threadLastReplierAvatars,
+    String? topicId,
   }) = _MessageEntity;
 
   factory MessageEntity.fromJson(Map<String, dynamic> json) =>

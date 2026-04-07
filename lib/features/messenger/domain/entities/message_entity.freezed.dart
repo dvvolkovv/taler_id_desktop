@@ -30,12 +30,22 @@ mixin _$MessageEntity {
   String? get fileName => throw _privateConstructorUsedError;
   int? get fileSize => throw _privateConstructorUsedError;
   String? get fileType => throw _privateConstructorUsedError;
+  String? get s3Key => throw _privateConstructorUsedError;
+  String? get thumbnailSmallUrl => throw _privateConstructorUsedError;
+  String? get thumbnailMediumUrl => throw _privateConstructorUsedError;
+  String? get thumbnailLargeUrl => throw _privateConstructorUsedError;
+  String? get fileRecordId => throw _privateConstructorUsedError;
   bool get isDelivered => throw _privateConstructorUsedError;
   bool get isRead => throw _privateConstructorUsedError;
   bool get isSystem => throw _privateConstructorUsedError;
   bool get isEdited => throw _privateConstructorUsedError;
   List<Map<String, dynamic>> get reactions =>
       throw _privateConstructorUsedError;
+  String? get threadParentId => throw _privateConstructorUsedError;
+  int get threadReplyCount => throw _privateConstructorUsedError;
+  List<String>? get threadLastReplierAvatars =>
+      throw _privateConstructorUsedError;
+  String? get topicId => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -60,11 +70,20 @@ abstract class $MessageEntityCopyWith<$Res> {
       String? fileName,
       int? fileSize,
       String? fileType,
+      String? s3Key,
+      String? thumbnailSmallUrl,
+      String? thumbnailMediumUrl,
+      String? thumbnailLargeUrl,
+      String? fileRecordId,
       bool isDelivered,
       bool isRead,
       bool isSystem,
       bool isEdited,
-      List<Map<String, dynamic>> reactions});
+      List<Map<String, dynamic>> reactions,
+      String? threadParentId,
+      int threadReplyCount,
+      List<String>? threadLastReplierAvatars,
+      String? topicId});
 }
 
 /// @nodoc
@@ -90,11 +109,20 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
     Object? fileName = freezed,
     Object? fileSize = freezed,
     Object? fileType = freezed,
+    Object? s3Key = freezed,
+    Object? thumbnailSmallUrl = freezed,
+    Object? thumbnailMediumUrl = freezed,
+    Object? thumbnailLargeUrl = freezed,
+    Object? fileRecordId = freezed,
     Object? isDelivered = null,
     Object? isRead = null,
     Object? isSystem = null,
     Object? isEdited = null,
     Object? reactions = null,
+    Object? threadParentId = freezed,
+    Object? threadReplyCount = null,
+    Object? threadLastReplierAvatars = freezed,
+    Object? topicId = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -137,6 +165,26 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
           ? _value.fileType
           : fileType // ignore: cast_nullable_to_non_nullable
               as String?,
+      s3Key: freezed == s3Key
+          ? _value.s3Key
+          : s3Key // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thumbnailSmallUrl: freezed == thumbnailSmallUrl
+          ? _value.thumbnailSmallUrl
+          : thumbnailSmallUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thumbnailMediumUrl: freezed == thumbnailMediumUrl
+          ? _value.thumbnailMediumUrl
+          : thumbnailMediumUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thumbnailLargeUrl: freezed == thumbnailLargeUrl
+          ? _value.thumbnailLargeUrl
+          : thumbnailLargeUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fileRecordId: freezed == fileRecordId
+          ? _value.fileRecordId
+          : fileRecordId // ignore: cast_nullable_to_non_nullable
+              as String?,
       isDelivered: null == isDelivered
           ? _value.isDelivered
           : isDelivered // ignore: cast_nullable_to_non_nullable
@@ -157,6 +205,22 @@ class _$MessageEntityCopyWithImpl<$Res, $Val extends MessageEntity>
           ? _value.reactions
           : reactions // ignore: cast_nullable_to_non_nullable
               as List<Map<String, dynamic>>,
+      threadParentId: freezed == threadParentId
+          ? _value.threadParentId
+          : threadParentId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      threadReplyCount: null == threadReplyCount
+          ? _value.threadReplyCount
+          : threadReplyCount // ignore: cast_nullable_to_non_nullable
+              as int,
+      threadLastReplierAvatars: freezed == threadLastReplierAvatars
+          ? _value.threadLastReplierAvatars
+          : threadLastReplierAvatars // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+      topicId: freezed == topicId
+          ? _value.topicId
+          : topicId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -180,11 +244,20 @@ abstract class _$$MessageEntityImplCopyWith<$Res>
       String? fileName,
       int? fileSize,
       String? fileType,
+      String? s3Key,
+      String? thumbnailSmallUrl,
+      String? thumbnailMediumUrl,
+      String? thumbnailLargeUrl,
+      String? fileRecordId,
       bool isDelivered,
       bool isRead,
       bool isSystem,
       bool isEdited,
-      List<Map<String, dynamic>> reactions});
+      List<Map<String, dynamic>> reactions,
+      String? threadParentId,
+      int threadReplyCount,
+      List<String>? threadLastReplierAvatars,
+      String? topicId});
 }
 
 /// @nodoc
@@ -208,11 +281,20 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
     Object? fileName = freezed,
     Object? fileSize = freezed,
     Object? fileType = freezed,
+    Object? s3Key = freezed,
+    Object? thumbnailSmallUrl = freezed,
+    Object? thumbnailMediumUrl = freezed,
+    Object? thumbnailLargeUrl = freezed,
+    Object? fileRecordId = freezed,
     Object? isDelivered = null,
     Object? isRead = null,
     Object? isSystem = null,
     Object? isEdited = null,
     Object? reactions = null,
+    Object? threadParentId = freezed,
+    Object? threadReplyCount = null,
+    Object? threadLastReplierAvatars = freezed,
+    Object? topicId = freezed,
   }) {
     return _then(_$MessageEntityImpl(
       id: null == id
@@ -255,6 +337,26 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
           ? _value.fileType
           : fileType // ignore: cast_nullable_to_non_nullable
               as String?,
+      s3Key: freezed == s3Key
+          ? _value.s3Key
+          : s3Key // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thumbnailSmallUrl: freezed == thumbnailSmallUrl
+          ? _value.thumbnailSmallUrl
+          : thumbnailSmallUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thumbnailMediumUrl: freezed == thumbnailMediumUrl
+          ? _value.thumbnailMediumUrl
+          : thumbnailMediumUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      thumbnailLargeUrl: freezed == thumbnailLargeUrl
+          ? _value.thumbnailLargeUrl
+          : thumbnailLargeUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fileRecordId: freezed == fileRecordId
+          ? _value.fileRecordId
+          : fileRecordId // ignore: cast_nullable_to_non_nullable
+              as String?,
       isDelivered: null == isDelivered
           ? _value.isDelivered
           : isDelivered // ignore: cast_nullable_to_non_nullable
@@ -275,6 +377,22 @@ class __$$MessageEntityImplCopyWithImpl<$Res>
           ? _value._reactions
           : reactions // ignore: cast_nullable_to_non_nullable
               as List<Map<String, dynamic>>,
+      threadParentId: freezed == threadParentId
+          ? _value.threadParentId
+          : threadParentId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      threadReplyCount: null == threadReplyCount
+          ? _value.threadReplyCount
+          : threadReplyCount // ignore: cast_nullable_to_non_nullable
+              as int,
+      threadLastReplierAvatars: freezed == threadLastReplierAvatars
+          ? _value._threadLastReplierAvatars
+          : threadLastReplierAvatars // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+      topicId: freezed == topicId
+          ? _value.topicId
+          : topicId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -293,12 +411,22 @@ class _$MessageEntityImpl implements _MessageEntity {
       this.fileName,
       this.fileSize,
       this.fileType,
+      this.s3Key,
+      this.thumbnailSmallUrl,
+      this.thumbnailMediumUrl,
+      this.thumbnailLargeUrl,
+      this.fileRecordId,
       this.isDelivered = false,
       this.isRead = false,
       this.isSystem = false,
       this.isEdited = false,
-      final List<Map<String, dynamic>> reactions = const []})
-      : _reactions = reactions;
+      final List<Map<String, dynamic>> reactions = const [],
+      this.threadParentId,
+      this.threadReplyCount = 0,
+      final List<String>? threadLastReplierAvatars,
+      this.topicId})
+      : _reactions = reactions,
+        _threadLastReplierAvatars = threadLastReplierAvatars;
 
   factory _$MessageEntityImpl.fromJson(Map<String, dynamic> json) =>
       _$$MessageEntityImplFromJson(json);
@@ -324,6 +452,16 @@ class _$MessageEntityImpl implements _MessageEntity {
   @override
   final String? fileType;
   @override
+  final String? s3Key;
+  @override
+  final String? thumbnailSmallUrl;
+  @override
+  final String? thumbnailMediumUrl;
+  @override
+  final String? thumbnailLargeUrl;
+  @override
+  final String? fileRecordId;
+  @override
   @JsonKey()
   final bool isDelivered;
   @override
@@ -345,8 +483,27 @@ class _$MessageEntityImpl implements _MessageEntity {
   }
 
   @override
+  final String? threadParentId;
+  @override
+  @JsonKey()
+  final int threadReplyCount;
+  final List<String>? _threadLastReplierAvatars;
+  @override
+  List<String>? get threadLastReplierAvatars {
+    final value = _threadLastReplierAvatars;
+    if (value == null) return null;
+    if (_threadLastReplierAvatars is EqualUnmodifiableListView)
+      return _threadLastReplierAvatars;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  final String? topicId;
+
+  @override
   String toString() {
-    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType, isDelivered: $isDelivered, isRead: $isRead, isSystem: $isSystem, isEdited: $isEdited, reactions: $reactions)';
+    return 'MessageEntity(id: $id, conversationId: $conversationId, senderId: $senderId, senderName: $senderName, content: $content, sentAt: $sentAt, fileUrl: $fileUrl, fileName: $fileName, fileSize: $fileSize, fileType: $fileType, s3Key: $s3Key, thumbnailSmallUrl: $thumbnailSmallUrl, thumbnailMediumUrl: $thumbnailMediumUrl, thumbnailLargeUrl: $thumbnailLargeUrl, fileRecordId: $fileRecordId, isDelivered: $isDelivered, isRead: $isRead, isSystem: $isSystem, isEdited: $isEdited, reactions: $reactions, threadParentId: $threadParentId, threadReplyCount: $threadReplyCount, threadLastReplierAvatars: $threadLastReplierAvatars, topicId: $topicId)';
   }
 
   @override
@@ -370,6 +527,15 @@ class _$MessageEntityImpl implements _MessageEntity {
                 other.fileSize == fileSize) &&
             (identical(other.fileType, fileType) ||
                 other.fileType == fileType) &&
+            (identical(other.s3Key, s3Key) || other.s3Key == s3Key) &&
+            (identical(other.thumbnailSmallUrl, thumbnailSmallUrl) ||
+                other.thumbnailSmallUrl == thumbnailSmallUrl) &&
+            (identical(other.thumbnailMediumUrl, thumbnailMediumUrl) ||
+                other.thumbnailMediumUrl == thumbnailMediumUrl) &&
+            (identical(other.thumbnailLargeUrl, thumbnailLargeUrl) ||
+                other.thumbnailLargeUrl == thumbnailLargeUrl) &&
+            (identical(other.fileRecordId, fileRecordId) ||
+                other.fileRecordId == fileRecordId) &&
             (identical(other.isDelivered, isDelivered) ||
                 other.isDelivered == isDelivered) &&
             (identical(other.isRead, isRead) || other.isRead == isRead) &&
@@ -378,28 +544,45 @@ class _$MessageEntityImpl implements _MessageEntity {
             (identical(other.isEdited, isEdited) ||
                 other.isEdited == isEdited) &&
             const DeepCollectionEquality()
-                .equals(other._reactions, _reactions));
+                .equals(other._reactions, _reactions) &&
+            (identical(other.threadParentId, threadParentId) ||
+                other.threadParentId == threadParentId) &&
+            (identical(other.threadReplyCount, threadReplyCount) ||
+                other.threadReplyCount == threadReplyCount) &&
+            const DeepCollectionEquality().equals(
+                other._threadLastReplierAvatars, _threadLastReplierAvatars) &&
+            (identical(other.topicId, topicId) || other.topicId == topicId));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      conversationId,
-      senderId,
-      senderName,
-      content,
-      sentAt,
-      fileUrl,
-      fileName,
-      fileSize,
-      fileType,
-      isDelivered,
-      isRead,
-      isSystem,
-      isEdited,
-      const DeepCollectionEquality().hash(_reactions));
+  int get hashCode => Object.hashAll([
+        runtimeType,
+        id,
+        conversationId,
+        senderId,
+        senderName,
+        content,
+        sentAt,
+        fileUrl,
+        fileName,
+        fileSize,
+        fileType,
+        s3Key,
+        thumbnailSmallUrl,
+        thumbnailMediumUrl,
+        thumbnailLargeUrl,
+        fileRecordId,
+        isDelivered,
+        isRead,
+        isSystem,
+        isEdited,
+        const DeepCollectionEquality().hash(_reactions),
+        threadParentId,
+        threadReplyCount,
+        const DeepCollectionEquality().hash(_threadLastReplierAvatars),
+        topicId
+      ]);
 
   @JsonKey(ignore: true)
   @override
@@ -427,11 +610,20 @@ abstract class _MessageEntity implements MessageEntity {
       final String? fileName,
       final int? fileSize,
       final String? fileType,
+      final String? s3Key,
+      final String? thumbnailSmallUrl,
+      final String? thumbnailMediumUrl,
+      final String? thumbnailLargeUrl,
+      final String? fileRecordId,
       final bool isDelivered,
       final bool isRead,
       final bool isSystem,
       final bool isEdited,
-      final List<Map<String, dynamic>> reactions}) = _$MessageEntityImpl;
+      final List<Map<String, dynamic>> reactions,
+      final String? threadParentId,
+      final int threadReplyCount,
+      final List<String>? threadLastReplierAvatars,
+      final String? topicId}) = _$MessageEntityImpl;
 
   factory _MessageEntity.fromJson(Map<String, dynamic> json) =
       _$MessageEntityImpl.fromJson;
@@ -457,6 +649,16 @@ abstract class _MessageEntity implements MessageEntity {
   @override
   String? get fileType;
   @override
+  String? get s3Key;
+  @override
+  String? get thumbnailSmallUrl;
+  @override
+  String? get thumbnailMediumUrl;
+  @override
+  String? get thumbnailLargeUrl;
+  @override
+  String? get fileRecordId;
+  @override
   bool get isDelivered;
   @override
   bool get isRead;
@@ -466,6 +668,14 @@ abstract class _MessageEntity implements MessageEntity {
   bool get isEdited;
   @override
   List<Map<String, dynamic>> get reactions;
+  @override
+  String? get threadParentId;
+  @override
+  int get threadReplyCount;
+  @override
+  List<String>? get threadLastReplierAvatars;
+  @override
+  String? get topicId;
   @override
   @JsonKey(ignore: true)
   _$$MessageEntityImplCopyWith<_$MessageEntityImpl> get copyWith =>

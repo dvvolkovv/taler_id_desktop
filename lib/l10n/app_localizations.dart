@@ -1016,6 +1016,66 @@ abstract class AppLocalizations {
   /// **'Notifications'**
   String get notifications;
 
+  /// No description provided for @permissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions'**
+  String get permissions;
+
+  /// No description provided for @permissionNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Push Notifications'**
+  String get permissionNotifications;
+
+  /// No description provided for @permissionNotificationsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls, messages, statuses'**
+  String get permissionNotificationsDesc;
+
+  /// No description provided for @permissionMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get permissionMicrophone;
+
+  /// No description provided for @permissionMicrophoneDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls and voice assistant'**
+  String get permissionMicrophoneDesc;
+
+  /// No description provided for @permissionCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get permissionCamera;
+
+  /// No description provided for @permissionCameraDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Video calls and verification'**
+  String get permissionCameraDesc;
+
+  /// No description provided for @permissionLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get permissionLocation;
+
+  /// No description provided for @permissionLocationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Used for verification'**
+  String get permissionLocationDesc;
+
+  /// No description provided for @permissionOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'To revoke a permission, open system settings'**
+  String get permissionOpenSettings;
+
   /// No description provided for @pushKycStatus.
   ///
   /// In en, this message translates to:
@@ -1544,6 +1604,18 @@ abstract class AppLocalizations {
   /// **'Messages'**
   String get tabMessenger;
 
+  /// No description provided for @tabCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get tabCalls;
+
+  /// No description provided for @tabCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get tabCalendar;
+
   /// No description provided for @appearance.
   ///
   /// In en, this message translates to:
@@ -2030,6 +2102,138 @@ abstract class AppLocalizations {
   /// **'Arabic'**
   String get translatorLangAr;
 
+  /// No description provided for @translatorLangPl.
+  ///
+  /// In en, this message translates to:
+  /// **'Polish'**
+  String get translatorLangPl;
+
+  /// No description provided for @translatorLangSk.
+  ///
+  /// In en, this message translates to:
+  /// **'Slovak'**
+  String get translatorLangSk;
+
+  /// No description provided for @translatorLangCs.
+  ///
+  /// In en, this message translates to:
+  /// **'Czech'**
+  String get translatorLangCs;
+
+  /// No description provided for @translatorLangNl.
+  ///
+  /// In en, this message translates to:
+  /// **'Dutch'**
+  String get translatorLangNl;
+
+  /// No description provided for @translatorLangSv.
+  ///
+  /// In en, this message translates to:
+  /// **'Swedish'**
+  String get translatorLangSv;
+
+  /// No description provided for @translatorLangDa.
+  ///
+  /// In en, this message translates to:
+  /// **'Danish'**
+  String get translatorLangDa;
+
+  /// No description provided for @translatorLangNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Norwegian'**
+  String get translatorLangNo;
+
+  /// No description provided for @translatorLangFi.
+  ///
+  /// In en, this message translates to:
+  /// **'Finnish'**
+  String get translatorLangFi;
+
+  /// No description provided for @translatorLangUk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ukrainian'**
+  String get translatorLangUk;
+
+  /// No description provided for @translatorLangEl.
+  ///
+  /// In en, this message translates to:
+  /// **'Greek'**
+  String get translatorLangEl;
+
+  /// No description provided for @translatorLangRo.
+  ///
+  /// In en, this message translates to:
+  /// **'Romanian'**
+  String get translatorLangRo;
+
+  /// No description provided for @translatorLangHu.
+  ///
+  /// In en, this message translates to:
+  /// **'Hungarian'**
+  String get translatorLangHu;
+
+  /// No description provided for @translatorLangBg.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulgarian'**
+  String get translatorLangBg;
+
+  /// No description provided for @translatorLangHr.
+  ///
+  /// In en, this message translates to:
+  /// **'Croatian'**
+  String get translatorLangHr;
+
+  /// No description provided for @translatorLangSr.
+  ///
+  /// In en, this message translates to:
+  /// **'Serbian'**
+  String get translatorLangSr;
+
+  /// No description provided for @translatorLangHi.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindi'**
+  String get translatorLangHi;
+
+  /// No description provided for @translatorLangTh.
+  ///
+  /// In en, this message translates to:
+  /// **'Thai'**
+  String get translatorLangTh;
+
+  /// No description provided for @translatorLangVi.
+  ///
+  /// In en, this message translates to:
+  /// **'Vietnamese'**
+  String get translatorLangVi;
+
+  /// No description provided for @translatorLangId.
+  ///
+  /// In en, this message translates to:
+  /// **'Indonesian'**
+  String get translatorLangId;
+
+  /// No description provided for @translatorLangMs.
+  ///
+  /// In en, this message translates to:
+  /// **'Malay'**
+  String get translatorLangMs;
+
+  /// No description provided for @translatorLangHe.
+  ///
+  /// In en, this message translates to:
+  /// **'Hebrew'**
+  String get translatorLangHe;
+
+  /// No description provided for @translatorLangFa.
+  ///
+  /// In en, this message translates to:
+  /// **'Persian'**
+  String get translatorLangFa;
+
   /// No description provided for @callInProgress.
   ///
   /// In en, this message translates to:
@@ -2077,6 +2281,3288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Yesterday'**
   String get yesterday;
+
+  /// No description provided for @errorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out. Check your internet connection.'**
+  String get errorTimeout;
+
+  /// No description provided for @errorNoConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection.'**
+  String get errorNoConnection;
+
+  /// No description provided for @errorGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred. Please try again.'**
+  String get errorGeneral;
+
+  /// No description provided for @errorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {message}'**
+  String errorWithMessage(String message);
+
+  /// No description provided for @notifChannelMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get notifChannelMessages;
+
+  /// No description provided for @notifChannelMessagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'New message notifications'**
+  String get notifChannelMessagesDesc;
+
+  /// No description provided for @notifChannelMissedCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed calls'**
+  String get notifChannelMissedCalls;
+
+  /// No description provided for @notifChannelMissedCallsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed call notifications'**
+  String get notifChannelMissedCallsDesc;
+
+  /// No description provided for @notifMissedCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed call'**
+  String get notifMissedCall;
+
+  /// No description provided for @notifAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get notifAccept;
+
+  /// No description provided for @notifDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get notifDecline;
+
+  /// No description provided for @notifIncomingCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming call'**
+  String get notifIncomingCall;
+
+  /// No description provided for @notifIncomingCallChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming call'**
+  String get notifIncomingCallChannel;
+
+  /// No description provided for @notifMissedCallChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed call'**
+  String get notifMissedCallChannel;
+
+  /// No description provided for @notifUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get notifUnknown;
+
+  /// No description provided for @effectNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No background'**
+  String get effectNone;
+
+  /// No description provided for @effectBlur.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur'**
+  String get effectBlur;
+
+  /// No description provided for @effectOffice.
+  ///
+  /// In en, this message translates to:
+  /// **'Office'**
+  String get effectOffice;
+
+  /// No description provided for @effectNature.
+  ///
+  /// In en, this message translates to:
+  /// **'Nature'**
+  String get effectNature;
+
+  /// No description provided for @effectGradient.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradient'**
+  String get effectGradient;
+
+  /// No description provided for @effectLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get effectLibrary;
+
+  /// No description provided for @effectCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get effectCity;
+
+  /// No description provided for @effectMinimalism.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimalism'**
+  String get effectMinimalism;
+
+  /// No description provided for @voiceParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Participant'**
+  String get voiceParticipant;
+
+  /// No description provided for @voiceInvitesToRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'invites you to the room'**
+  String get voiceInvitesToRoom;
+
+  /// No description provided for @voiceRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get voiceRoom;
+
+  /// No description provided for @voicePasswordProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Password protected'**
+  String get voicePasswordProtected;
+
+  /// No description provided for @voicePasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get voicePasswordHint;
+
+  /// No description provided for @voiceEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get voiceEnter;
+
+  /// No description provided for @voiceJoinRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the room'**
+  String get voiceJoinRoom;
+
+  /// No description provided for @voiceYourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get voiceYourName;
+
+  /// No description provided for @voiceInvitationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation sent to {name}'**
+  String voiceInvitationSent(String name);
+
+  /// No description provided for @voiceNoActiveRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'No active room'**
+  String get voiceNoActiveRoom;
+
+  /// No description provided for @voiceCameraPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow camera access in Settings → Privacy → Camera → TalerID'**
+  String get voiceCameraPermission;
+
+  /// No description provided for @voiceOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get voiceOpenSettings;
+
+  /// No description provided for @voiceCameraError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to enable camera: {error}'**
+  String voiceCameraError(String error);
+
+  /// No description provided for @voiceAllAgreedRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'All agreed. Recording started.'**
+  String get voiceAllAgreedRecording;
+
+  /// No description provided for @voiceNewParticipantAgreed.
+  ///
+  /// In en, this message translates to:
+  /// **'New participant agreed to recording.'**
+  String get voiceNewParticipantAgreed;
+
+  /// No description provided for @voiceDeclinedRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'You declined recording. Leaving the call.'**
+  String get voiceDeclinedRecording;
+
+  /// No description provided for @voiceRecordingEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording ended'**
+  String get voiceRecordingEnded;
+
+  /// No description provided for @voiceRecordingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording in progress'**
+  String get voiceRecordingInProgress;
+
+  /// No description provided for @voiceTranscriptionRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription request'**
+  String get voiceTranscriptionRequest;
+
+  /// No description provided for @voiceRecordingRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording request'**
+  String get voiceRecordingRequest;
+
+  /// No description provided for @voiceAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree'**
+  String get voiceAgree;
+
+  /// No description provided for @voiceDeclineAndLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline and leave'**
+  String get voiceDeclineAndLeave;
+
+  /// No description provided for @voiceAudioOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio output'**
+  String get voiceAudioOutput;
+
+  /// No description provided for @voiceAudioPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get voiceAudioPhone;
+
+  /// No description provided for @voiceAudioSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker'**
+  String get voiceAudioSpeaker;
+
+  /// No description provided for @voiceAudioBluetooth.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth'**
+  String get voiceAudioBluetooth;
+
+  /// No description provided for @voiceAudioHeadphones.
+  ///
+  /// In en, this message translates to:
+  /// **'Headphones'**
+  String get voiceAudioHeadphones;
+
+  /// No description provided for @voiceLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get voiceLinkCopied;
+
+  /// No description provided for @voiceTranslateTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate to'**
+  String get voiceTranslateTo;
+
+  /// No description provided for @voiceSearchLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Search language...'**
+  String get voiceSearchLanguage;
+
+  /// No description provided for @voiceRoomWithCreator.
+  ///
+  /// In en, this message translates to:
+  /// **'Room {name}'**
+  String voiceRoomWithCreator(String name);
+
+  /// No description provided for @voiceVoiceCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice call'**
+  String get voiceVoiceCall;
+
+  /// No description provided for @voiceOnHold.
+  ///
+  /// In en, this message translates to:
+  /// **'On hold'**
+  String get voiceOnHold;
+
+  /// No description provided for @voiceActiveCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get voiceActiveCall;
+
+  /// No description provided for @voiceEndAllCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'End all calls'**
+  String get voiceEndAllCalls;
+
+  /// No description provided for @voiceEndThisCall.
+  ///
+  /// In en, this message translates to:
+  /// **'End this call'**
+  String get voiceEndThisCall;
+
+  /// No description provided for @voiceCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get voiceCopyLink;
+
+  /// No description provided for @voiceAddParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Add participant'**
+  String get voiceAddParticipant;
+
+  /// No description provided for @voiceReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting...'**
+  String get voiceReconnecting;
+
+  /// No description provided for @voiceConnectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error'**
+  String get voiceConnectionError;
+
+  /// No description provided for @voiceClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get voiceClose;
+
+  /// No description provided for @voiceCalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Calling...'**
+  String get voiceCalling;
+
+  /// No description provided for @voiceCallActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Call active'**
+  String get voiceCallActive;
+
+  /// No description provided for @voiceWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get voiceWaiting;
+
+  /// No description provided for @voiceWaitingUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'WAITING'**
+  String get voiceWaitingUpper;
+
+  /// No description provided for @voiceRec.
+  ///
+  /// In en, this message translates to:
+  /// **'REC'**
+  String get voiceRec;
+
+  /// No description provided for @voiceStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get voiceStop;
+
+  /// No description provided for @voiceRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording'**
+  String get voiceRecord;
+
+  /// No description provided for @voiceTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get voiceTranslation;
+
+  /// No description provided for @voiceAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get voiceAudio;
+
+  /// No description provided for @voiceFlipCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Flip'**
+  String get voiceFlipCamera;
+
+  /// No description provided for @voiceBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get voiceBackground;
+
+  /// No description provided for @voiceAssistantSpeakingStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant speaking...'**
+  String get voiceAssistantSpeakingStatus;
+
+  /// No description provided for @voiceAssistantListeningStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant listening...'**
+  String get voiceAssistantListeningStatus;
+
+  /// No description provided for @voiceUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get voiceUnmute;
+
+  /// No description provided for @voiceMic.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get voiceMic;
+
+  /// No description provided for @voiceAssistantLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get voiceAssistantLabel;
+
+  /// No description provided for @voiceCameraOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera on'**
+  String get voiceCameraOn;
+
+  /// No description provided for @voiceCameraLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get voiceCameraLabel;
+
+  /// No description provided for @voiceEndCall.
+  ///
+  /// In en, this message translates to:
+  /// **'End call'**
+  String get voiceEndCall;
+
+  /// No description provided for @voiceWaitingParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for participants...'**
+  String get voiceWaitingParticipants;
+
+  /// No description provided for @voiceYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get voiceYou;
+
+  /// No description provided for @voiceAiAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant'**
+  String get voiceAiAssistant;
+
+  /// No description provided for @voiceVideoUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Video unavailable'**
+  String get voiceVideoUnavailable;
+
+  /// No description provided for @voiceSearchNickname.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by nickname...'**
+  String get voiceSearchNickname;
+
+  /// No description provided for @voiceTranscriptionWord.
+  ///
+  /// In en, this message translates to:
+  /// **'transcription'**
+  String get voiceTranscriptionWord;
+
+  /// No description provided for @voiceRecordingWord.
+  ///
+  /// In en, this message translates to:
+  /// **'recording'**
+  String get voiceRecordingWord;
+
+  /// No description provided for @voiceConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting...'**
+  String get voiceConnecting;
+
+  /// No description provided for @voiceVideoBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Video background'**
+  String get voiceVideoBackground;
+
+  /// No description provided for @voiceCallSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Call settings'**
+  String get voiceCallSettings;
+
+  /// No description provided for @voiceEnableAI.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable AI assistant'**
+  String get voiceEnableAI;
+
+  /// No description provided for @voiceAIParticipating.
+  ///
+  /// In en, this message translates to:
+  /// **'AI will participate in the conversation'**
+  String get voiceAIParticipating;
+
+  /// No description provided for @voiceNormalCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal call without AI'**
+  String get voiceNormalCall;
+
+  /// No description provided for @voiceCallConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a call?'**
+  String get voiceCallConfirm;
+
+  /// No description provided for @chatAlreadyInCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in a call'**
+  String get chatAlreadyInCall;
+
+  /// No description provided for @chatCallError.
+  ///
+  /// In en, this message translates to:
+  /// **'Call error: {error}'**
+  String chatCallError(String error);
+
+  /// No description provided for @chatPhotoVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo / Video'**
+  String get chatPhotoVideo;
+
+  /// No description provided for @chatCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get chatCamera;
+
+  /// No description provided for @chatFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get chatFile;
+
+  /// No description provided for @chatContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get chatContact;
+
+  /// No description provided for @chatSelectContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a contact'**
+  String get chatSelectContact;
+
+  /// No description provided for @chatNoContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts'**
+  String get chatNoContacts;
+
+  /// No description provided for @chatUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get chatUser;
+
+  /// No description provided for @chatFileAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'📎 File'**
+  String get chatFileAttachment;
+
+  /// No description provided for @chatFileUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'File upload error: {error}'**
+  String chatFileUploadError(String error);
+
+  /// No description provided for @chatVoiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'🎤 Voice message'**
+  String get chatVoiceMessage;
+
+  /// No description provided for @chatGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get chatGroup;
+
+  /// No description provided for @chatDialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Dialog'**
+  String get chatDialog;
+
+  /// No description provided for @chatCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get chatCall;
+
+  /// No description provided for @chatStartConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation'**
+  String get chatStartConversation;
+
+  /// No description provided for @chatYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get chatYou;
+
+  /// No description provided for @chatIsTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'is typing...'**
+  String get chatIsTyping;
+
+  /// No description provided for @chatUserIsTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing...'**
+  String chatUserIsTyping(String name);
+
+  /// No description provided for @chatUsersAreTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'{names} are typing...'**
+  String chatUsersAreTyping(String names);
+
+  /// No description provided for @chatPreparingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing file…'**
+  String get chatPreparingFile;
+
+  /// No description provided for @chatUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading… {progress}%'**
+  String chatUploading(int progress);
+
+  /// No description provided for @chatEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited'**
+  String get chatEdited;
+
+  /// No description provided for @chatReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get chatReply;
+
+  /// No description provided for @chatEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get chatEdit;
+
+  /// No description provided for @chatCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get chatCopy;
+
+  /// No description provided for @chatCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get chatCopied;
+
+  /// No description provided for @chatSaveMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get chatSaveMedia;
+
+  /// No description provided for @chatForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get chatForward;
+
+  /// No description provided for @chatSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get chatSaving;
+
+  /// No description provided for @chatSavedToGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to gallery'**
+  String get chatSavedToGallery;
+
+  /// No description provided for @chatNoSavePermission.
+  ///
+  /// In en, this message translates to:
+  /// **'No permission to save. Check settings.'**
+  String get chatNoSavePermission;
+
+  /// No description provided for @chatFileSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'File save error'**
+  String get chatFileSaveError;
+
+  /// No description provided for @chatDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete message'**
+  String get chatDeleteMessage;
+
+  /// No description provided for @chatDeleteForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for me'**
+  String get chatDeleteForMe;
+
+  /// No description provided for @chatDeleteForEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for everyone'**
+  String get chatDeleteForEveryone;
+
+  /// No description provided for @chatMessageForwarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Message forwarded'**
+  String get chatMessageForwarded;
+
+  /// No description provided for @chatContactTapToOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact · tap to open'**
+  String get chatContactTapToOpen;
+
+  /// No description provided for @chatForwardTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward to...'**
+  String get chatForwardTo;
+
+  /// No description provided for @chatSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search...'**
+  String get chatSearchHint;
+
+  /// No description provided for @chatRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording...'**
+  String get chatRecording;
+
+  /// No description provided for @chatMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message...'**
+  String get chatMessageHint;
+
+  /// No description provided for @chatHideKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide keyboard'**
+  String get chatHideKeyboard;
+
+  /// No description provided for @chatEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing'**
+  String get chatEditing;
+
+  /// No description provided for @chatFileDownloadError.
+  ///
+  /// In en, this message translates to:
+  /// **'File download error'**
+  String get chatFileDownloadError;
+
+  /// No description provided for @chatVoiceMessageShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice message'**
+  String get chatVoiceMessageShort;
+
+  /// No description provided for @chatVideoSavedToGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Video saved to gallery'**
+  String get chatVideoSavedToGallery;
+
+  /// No description provided for @chatSavingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving error'**
+  String get chatSavingError;
+
+  /// No description provided for @convSetNickname.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a nickname'**
+  String get convSetNickname;
+
+  /// No description provided for @convNicknameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'A nickname is required to use the messenger. Other users can find you by it.'**
+  String get convNicknameRequired;
+
+  /// No description provided for @convNicknameRules.
+  ///
+  /// In en, this message translates to:
+  /// **'3–30 characters: letters, digits, _'**
+  String get convNicknameRules;
+
+  /// No description provided for @convNicknameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname already taken'**
+  String get convNicknameTaken;
+
+  /// No description provided for @convSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Save error'**
+  String get convSaveError;
+
+  /// No description provided for @convContactsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get convContactsLabel;
+
+  /// No description provided for @convDefaultUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get convDefaultUser;
+
+  /// No description provided for @convNoDialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations'**
+  String get convNoDialogs;
+
+  /// No description provided for @convFindUserToChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a user to start chatting'**
+  String get convFindUserToChat;
+
+  /// No description provided for @convDefaultContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get convDefaultContact;
+
+  /// No description provided for @dashboardUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get dashboardUser;
+
+  /// No description provided for @dashboardIncomingCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming call'**
+  String get dashboardIncomingCall;
+
+  /// No description provided for @dashboardDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get dashboardDecline;
+
+  /// No description provided for @dashboardAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get dashboardAccept;
+
+  /// No description provided for @dashboardActiveCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Active call — tap to return'**
+  String get dashboardActiveCall;
+
+  /// No description provided for @dashboardUpdateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available {version}'**
+  String dashboardUpdateAvailable(String version);
+
+  /// No description provided for @dashboardUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get dashboardUpdate;
+
+  /// No description provided for @contactRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get contactRequestsTitle;
+
+  /// No description provided for @messengerContactRequestsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact requests'**
+  String get messengerContactRequestsSection;
+
+  /// No description provided for @messengerContactRequestsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 new request} other{{count} new requests}}'**
+  String messengerContactRequestsCount(int count);
+
+  /// No description provided for @contactRequestsSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get contactRequestsSearch;
+
+  /// No description provided for @contactRequestsIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming'**
+  String get contactRequestsIncoming;
+
+  /// No description provided for @contactRequestsSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get contactRequestsSent;
+
+  /// No description provided for @contactRequestsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname or email'**
+  String get contactRequestsSearchHint;
+
+  /// No description provided for @contactRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get contactRequestSent;
+
+  /// No description provided for @contactRequestsNoUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get contactRequestsNoUsers;
+
+  /// No description provided for @contactRequestsSearchHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter exact nickname or email\nand press search'**
+  String get contactRequestsSearchHelp;
+
+  /// No description provided for @contactRequestsSendTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get contactRequestsSendTooltip;
+
+  /// No description provided for @contactRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact request'**
+  String get contactRequestTitle;
+
+  /// No description provided for @contactRequestConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Send contact request to {name}?'**
+  String contactRequestConfirm(String name);
+
+  /// No description provided for @contactRequestSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get contactRequestSend;
+
+  /// No description provided for @contactRequestsNoIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'No incoming requests'**
+  String get contactRequestsNoIncoming;
+
+  /// No description provided for @contactRequestsNoSent.
+  ///
+  /// In en, this message translates to:
+  /// **'No sent requests'**
+  String get contactRequestsNoSent;
+
+  /// No description provided for @contactRequestStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting response'**
+  String get contactRequestStatusPending;
+
+  /// No description provided for @contactRequestStatusAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get contactRequestStatusAccepted;
+
+  /// No description provided for @contactRequestStatusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get contactRequestStatusRejected;
+
+  /// No description provided for @userSearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find user'**
+  String get userSearchTitle;
+
+  /// No description provided for @userSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname, phone or email'**
+  String get userSearchHint;
+
+  /// No description provided for @userSearchHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter @nickname, email or name to search'**
+  String get userSearchHelper;
+
+  /// No description provided for @userSearchNoUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get userSearchNoUsers;
+
+  /// No description provided for @userProfileShareContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Share contact'**
+  String get userProfileShareContact;
+
+  /// No description provided for @userProfileShareContactDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Send contact link'**
+  String get userProfileShareContactDesc;
+
+  /// No description provided for @userProfileCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get userProfileCopyLink;
+
+  /// No description provided for @userProfileCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get userProfileCopied;
+
+  /// No description provided for @userProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get userProfileTitle;
+
+  /// No description provided for @userProfileLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile load error'**
+  String get userProfileLoadError;
+
+  /// No description provided for @userProfileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get userProfileMessage;
+
+  /// No description provided for @userProfileCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get userProfileCall;
+
+  /// No description provided for @userProfileRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get userProfileRequestSent;
+
+  /// No description provided for @userProfileAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get userProfileAccept;
+
+  /// No description provided for @userProfileDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get userProfileDecline;
+
+  /// No description provided for @userProfileAddToContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to contacts'**
+  String get userProfileAddToContacts;
+
+  /// No description provided for @userProfileMediaTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get userProfileMediaTab;
+
+  /// No description provided for @userProfileFilesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get userProfileFilesTab;
+
+  /// No description provided for @userProfileLinksTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get userProfileLinksTab;
+
+  /// No description provided for @userProfileRecordingsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings'**
+  String get userProfileRecordingsTab;
+
+  /// No description provided for @userProfileSummariesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Summaries'**
+  String get userProfileSummariesTab;
+
+  /// No description provided for @userProfileNoMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'No media files'**
+  String get userProfileNoMedia;
+
+  /// No description provided for @userProfileNoFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'No files'**
+  String get userProfileNoFiles;
+
+  /// No description provided for @userProfileNoLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'No links'**
+  String get userProfileNoLinks;
+
+  /// No description provided for @userProfileNoRecordings.
+  ///
+  /// In en, this message translates to:
+  /// **'No recordings'**
+  String get userProfileNoRecordings;
+
+  /// No description provided for @userProfileNoSummaries.
+  ///
+  /// In en, this message translates to:
+  /// **'No summaries'**
+  String get userProfileNoSummaries;
+
+  /// No description provided for @userProfileMeetingSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting summary'**
+  String get userProfileMeetingSummary;
+
+  /// No description provided for @userProfileFailedOpenChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open chat'**
+  String get userProfileFailedOpenChat;
+
+  /// No description provided for @sharedMediaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Media and files'**
+  String get sharedMediaTitle;
+
+  /// No description provided for @sharedMediaTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get sharedMediaTab;
+
+  /// No description provided for @sharedFilesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get sharedFilesTab;
+
+  /// No description provided for @sharedLinksTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get sharedLinksTab;
+
+  /// No description provided for @sharedNoMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'No media files'**
+  String get sharedNoMedia;
+
+  /// No description provided for @sharedNoFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'No files'**
+  String get sharedNoFiles;
+
+  /// No description provided for @sharedNoLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'No links'**
+  String get sharedNoLinks;
+
+  /// No description provided for @shareToChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward to chat'**
+  String get shareToChat;
+
+  /// No description provided for @shareSelectChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Select chat'**
+  String get shareSelectChat;
+
+  /// No description provided for @shareNoChats.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats'**
+  String get shareNoChats;
+
+  /// No description provided for @shareFilesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} files'**
+  String shareFilesCount(int count);
+
+  /// No description provided for @contactsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get contactsTitle;
+
+  /// No description provided for @contactsAddTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get contactsAddTooltip;
+
+  /// No description provided for @contactsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contacts...'**
+  String get contactsSearchHint;
+
+  /// No description provided for @contactsNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing found'**
+  String get contactsNotFound;
+
+  /// No description provided for @contactsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts'**
+  String get contactsEmpty;
+
+  /// No description provided for @contactsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get contactsAdd;
+
+  /// No description provided for @contactsPendingConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting confirmation'**
+  String get contactsPendingConfirmation;
+
+  /// No description provided for @contactsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get contactsMessage;
+
+  /// No description provided for @contactsCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get contactsCall;
+
+  /// No description provided for @contactsResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend request'**
+  String get contactsResend;
+
+  /// No description provided for @contactsResendTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry in 24h'**
+  String get contactsResendTimeout;
+
+  /// No description provided for @contactsResent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request resent'**
+  String get contactsResent;
+
+  /// No description provided for @contactsWantsToConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Wants to connect with you'**
+  String get contactsWantsToConnect;
+
+  /// No description provided for @contactsSearchPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Find people'**
+  String get contactsSearchPeople;
+
+  /// No description provided for @notesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notesTitle;
+
+  /// No description provided for @notesAssistantSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant speaking...'**
+  String get notesAssistantSpeaking;
+
+  /// No description provided for @notesListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get notesListening;
+
+  /// No description provided for @notesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No notes'**
+  String get notesEmpty;
+
+  /// No description provided for @notesEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Press mic for dictation\nor + for manual entry'**
+  String get notesEmptyHint;
+
+  /// No description provided for @notesDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete note?'**
+  String get notesDeleteConfirm;
+
+  /// No description provided for @notesNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New note'**
+  String get notesNew;
+
+  /// No description provided for @notesEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get notesEdit;
+
+  /// No description provided for @notesTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get notesTitleHint;
+
+  /// No description provided for @notesContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your thoughts...'**
+  String get notesContentHint;
+
+  /// No description provided for @calendarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get calendarTitle;
+
+  /// No description provided for @calendarStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get calendarStop;
+
+  /// No description provided for @calendarVoiceInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice input'**
+  String get calendarVoiceInput;
+
+  /// No description provided for @calendarNewEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'New event'**
+  String get calendarNewEvent;
+
+  /// No description provided for @calendarAssistantSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant speaking...'**
+  String get calendarAssistantSpeaking;
+
+  /// No description provided for @calendarListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get calendarListening;
+
+  /// No description provided for @calendarInvitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitations ({count})'**
+  String calendarInvitations(int count);
+
+  /// No description provided for @calendarNoEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No events'**
+  String get calendarNoEvents;
+
+  /// No description provided for @calendarDayMon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get calendarDayMon;
+
+  /// No description provided for @calendarDayTue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get calendarDayTue;
+
+  /// No description provided for @calendarDayWed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get calendarDayWed;
+
+  /// No description provided for @calendarDayThu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get calendarDayThu;
+
+  /// No description provided for @calendarDayFri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get calendarDayFri;
+
+  /// No description provided for @calendarDaySat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get calendarDaySat;
+
+  /// No description provided for @calendarDaySun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get calendarDaySun;
+
+  /// No description provided for @calendarEnterRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter room'**
+  String get calendarEnterRoom;
+
+  /// No description provided for @calendarMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting'**
+  String get calendarMeeting;
+
+  /// No description provided for @calendarLocationPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Location: {location}'**
+  String calendarLocationPrefix(String location);
+
+  /// No description provided for @calendarEditEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get calendarEditEvent;
+
+  /// No description provided for @calendarTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get calendarTitleHint;
+
+  /// No description provided for @calendarDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get calendarDescriptionHint;
+
+  /// No description provided for @calendarTypeEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get calendarTypeEvent;
+
+  /// No description provided for @calendarTypeMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting'**
+  String get calendarTypeMeeting;
+
+  /// No description provided for @calendarTypeReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get calendarTypeReminder;
+
+  /// No description provided for @calendarTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get calendarTypeLabel;
+
+  /// No description provided for @calendarMeetingLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting link'**
+  String get calendarMeetingLink;
+
+  /// No description provided for @calendarLocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get calendarLocationHint;
+
+  /// No description provided for @calendarDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get calendarDateLabel;
+
+  /// No description provided for @calendarTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get calendarTimeLabel;
+
+  /// No description provided for @calendarReminderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get calendarReminderLabel;
+
+  /// No description provided for @calendarReminderNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get calendarReminderNone;
+
+  /// No description provided for @calendarReminder15min.
+  ///
+  /// In en, this message translates to:
+  /// **'15 min before'**
+  String get calendarReminder15min;
+
+  /// No description provided for @calendarReminder30min.
+  ///
+  /// In en, this message translates to:
+  /// **'30 min before'**
+  String get calendarReminder30min;
+
+  /// No description provided for @calendarReminder1hour.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour before'**
+  String get calendarReminder1hour;
+
+  /// No description provided for @calendarRepeatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get calendarRepeatLabel;
+
+  /// No description provided for @calendarRepeatNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No repeat'**
+  String get calendarRepeatNone;
+
+  /// No description provided for @calendarRepeatDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get calendarRepeatDaily;
+
+  /// No description provided for @calendarRepeatWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every week'**
+  String get calendarRepeatWeekly;
+
+  /// No description provided for @calendarRepeatMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every month'**
+  String get calendarRepeatMonthly;
+
+  /// No description provided for @calendarRepeatYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every year'**
+  String get calendarRepeatYearly;
+
+  /// No description provided for @calendarParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants'**
+  String get calendarParticipants;
+
+  /// No description provided for @calendarAddParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get calendarAddParticipant;
+
+  /// No description provided for @calendarSearchContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contacts...'**
+  String get calendarSearchContacts;
+
+  /// No description provided for @calendarNoContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts'**
+  String get calendarNoContacts;
+
+  /// No description provided for @calendarStatusAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get calendarStatusAccepted;
+
+  /// No description provided for @calendarStatusDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get calendarStatusDeclined;
+
+  /// No description provided for @calendarStatusMaybe.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe'**
+  String get calendarStatusMaybe;
+
+  /// No description provided for @calendarStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get calendarStatusPending;
+
+  /// No description provided for @calendarEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'End time'**
+  String get calendarEndTime;
+
+  /// No description provided for @calendarYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer:'**
+  String get calendarYourAnswer;
+
+  /// No description provided for @calendarOrganizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer'**
+  String get calendarOrganizer;
+
+  /// No description provided for @calendarDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete: {error}'**
+  String calendarDeleteError(String error);
+
+  /// No description provided for @calendarRsvpAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get calendarRsvpAccept;
+
+  /// No description provided for @calendarRsvpMaybe.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe'**
+  String get calendarRsvpMaybe;
+
+  /// No description provided for @calendarRsvpDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get calendarRsvpDecline;
+
+  /// No description provided for @callHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get callHistoryTitle;
+
+  /// No description provided for @callHistoryTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Call history'**
+  String get callHistoryTab;
+
+  /// No description provided for @callHistoryTempMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary meeting'**
+  String get callHistoryTempMeeting;
+
+  /// No description provided for @callHistoryCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get callHistoryCopy;
+
+  /// No description provided for @callHistoryLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get callHistoryLinkCopied;
+
+  /// No description provided for @callHistoryShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get callHistoryShare;
+
+  /// No description provided for @callHistoryEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get callHistoryEnter;
+
+  /// No description provided for @callHistoryAlreadyInCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in a call'**
+  String get callHistoryAlreadyInCall;
+
+  /// No description provided for @callHistoryCouldNotDeterminePeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not determine the other party'**
+  String get callHistoryCouldNotDeterminePeer;
+
+  /// No description provided for @callHistoryContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get callHistoryContacts;
+
+  /// No description provided for @callHistoryFailedLoadRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load your room'**
+  String get callHistoryFailedLoadRoom;
+
+  /// No description provided for @callHistoryYourRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Your room'**
+  String get callHistoryYourRoom;
+
+  /// No description provided for @callHistoryCreateMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Create meeting'**
+  String get callHistoryCreateMeeting;
+
+  /// No description provided for @callHistoryMeetingSummaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting summaries'**
+  String get callHistoryMeetingSummaries;
+
+  /// No description provided for @callHistoryMeetingRecordings.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting recordings'**
+  String get callHistoryMeetingRecordings;
+
+  /// No description provided for @callHistoryNoCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'No calls'**
+  String get callHistoryNoCalls;
+
+  /// No description provided for @callHistoryMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed'**
+  String get callHistoryMissed;
+
+  /// No description provided for @callHistoryRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording'**
+  String get callHistoryRecording;
+
+  /// No description provided for @callHistorySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get callHistorySummary;
+
+  /// No description provided for @callHistoryCallAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Call again'**
+  String get callHistoryCallAgain;
+
+  /// No description provided for @callHistoryTodayTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Today, {time}'**
+  String callHistoryTodayTime(String time);
+
+  /// No description provided for @callHistoryYesterdayTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday, {time}'**
+  String callHistoryYesterdayTime(String time);
+
+  /// No description provided for @callHistoryUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get callHistoryUnknown;
+
+  /// No description provided for @callHistoryDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Call details'**
+  String get callHistoryDetails;
+
+  /// No description provided for @callHistoryOutgoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Outgoing call'**
+  String get callHistoryOutgoing;
+
+  /// No description provided for @callHistoryIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming call'**
+  String get callHistoryIncoming;
+
+  /// No description provided for @callHistoryDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration: {duration}'**
+  String callHistoryDuration(String duration);
+
+  /// No description provided for @callHistoryWithAI.
+  ///
+  /// In en, this message translates to:
+  /// **'With AI assistant'**
+  String get callHistoryWithAI;
+
+  /// No description provided for @callHistoryParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants'**
+  String get callHistoryParticipants;
+
+  /// No description provided for @callHistoryMeetingSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting summary'**
+  String get callHistoryMeetingSummary;
+
+  /// No description provided for @callHistoryMoreDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'More details'**
+  String get callHistoryMoreDetails;
+
+  /// No description provided for @callHistorySummaryProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary processing...'**
+  String get callHistorySummaryProcessing;
+
+  /// No description provided for @callHistoryMeetingRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting recording'**
+  String get callHistoryMeetingRecording;
+
+  /// No description provided for @callHistoryProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get callHistoryProcessing;
+
+  /// No description provided for @callHistoryCreateTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Create transcript'**
+  String get callHistoryCreateTranscript;
+
+  /// No description provided for @callHistoryNoSummaries.
+  ///
+  /// In en, this message translates to:
+  /// **'No summaries'**
+  String get callHistoryNoSummaries;
+
+  /// No description provided for @callHistoryRecordDuringCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Press \"Record\" during a call'**
+  String get callHistoryRecordDuringCall;
+
+  /// No description provided for @callHistoryMeetingTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting {time}'**
+  String callHistoryMeetingTime(String time);
+
+  /// No description provided for @callHistoryTranscribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribing and summarizing...'**
+  String get callHistoryTranscribing;
+
+  /// No description provided for @callHistoryTranscriptCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript created'**
+  String get callHistoryTranscriptCreated;
+
+  /// No description provided for @callHistoryNoRecordings.
+  ///
+  /// In en, this message translates to:
+  /// **'No recordings'**
+  String get callHistoryNoRecordings;
+
+  /// No description provided for @callHistoryRecordingDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording {date}'**
+  String callHistoryRecordingDate(String date);
+
+  /// No description provided for @callHistoryRecordingUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording unavailable'**
+  String get callHistoryRecordingUnavailable;
+
+  /// No description provided for @callHistoryTranscriptReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript ready'**
+  String get callHistoryTranscriptReady;
+
+  /// No description provided for @callHistoryTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript'**
+  String get callHistoryTranscript;
+
+  /// No description provided for @callHistoryKeyPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Key points'**
+  String get callHistoryKeyPoints;
+
+  /// No description provided for @callHistoryTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get callHistoryTasks;
+
+  /// No description provided for @callHistoryAssignedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to: {assignee}'**
+  String callHistoryAssignedTo(String assignee);
+
+  /// No description provided for @callHistoryDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions'**
+  String get callHistoryDecisions;
+
+  /// No description provided for @callHistoryShowTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full transcript'**
+  String get callHistoryShowTranscript;
+
+  /// No description provided for @profileScanQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR'**
+  String get profileScanQr;
+
+  /// No description provided for @profileMyQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'My QR code'**
+  String get profileMyQrCode;
+
+  /// No description provided for @profileAddMeShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Add me in Taler ID!\ntalerid://user/{userId}'**
+  String profileAddMeShare(String userId);
+
+  /// No description provided for @profileShowCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this code to add you'**
+  String get profileShowCode;
+
+  /// No description provided for @profileEditDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, surname, patronymic, date of birth'**
+  String get profileEditDesc;
+
+  /// No description provided for @profileAboutMe.
+  ///
+  /// In en, this message translates to:
+  /// **'About me'**
+  String get profileAboutMe;
+
+  /// No description provided for @profileAboutMeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Values, skills, interests and more'**
+  String get profileAboutMeDesc;
+
+  /// No description provided for @profileNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get profileNotes;
+
+  /// No description provided for @profileNotesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Thoughts, ideas and notes'**
+  String get profileNotesDesc;
+
+  /// No description provided for @profileAvatarUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar updated'**
+  String get profileAvatarUpdated;
+
+  /// No description provided for @profileNickname.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname'**
+  String get profileNickname;
+
+  /// No description provided for @profileNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get profileNotSet;
+
+  /// No description provided for @profileChangeNickname.
+  ///
+  /// In en, this message translates to:
+  /// **'Change nickname'**
+  String get profileChangeNickname;
+
+  /// No description provided for @profileNicknameUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname updated'**
+  String get profileNicknameUpdated;
+
+  /// No description provided for @profileShareLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get profileShareLabel;
+
+  /// No description provided for @profileScanQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code'**
+  String get profileScanQrCode;
+
+  /// No description provided for @profilePointCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Point camera at QR code'**
+  String get profilePointCamera;
+
+  /// No description provided for @profilePhotoCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get profilePhotoCamera;
+
+  /// No description provided for @profilePhotoGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get profilePhotoGallery;
+
+  /// No description provided for @editProfilePatronymic.
+  ///
+  /// In en, this message translates to:
+  /// **'Patronymic (optional)'**
+  String get editProfilePatronymic;
+
+  /// No description provided for @editProfileDateFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'DD.MM.YYYY'**
+  String get editProfileDateFormat;
+
+  /// No description provided for @aboutMeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About me'**
+  String get aboutMeTitle;
+
+  /// No description provided for @aboutMeClickToFill.
+  ///
+  /// In en, this message translates to:
+  /// **'Click to fill'**
+  String get aboutMeClickToFill;
+
+  /// No description provided for @aboutMeCoreValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Values'**
+  String get aboutMeCoreValues;
+
+  /// No description provided for @aboutMeWorldview.
+  ///
+  /// In en, this message translates to:
+  /// **'Worldview'**
+  String get aboutMeWorldview;
+
+  /// No description provided for @aboutMeSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get aboutMeSkills;
+
+  /// No description provided for @aboutMeInterests.
+  ///
+  /// In en, this message translates to:
+  /// **'Interests'**
+  String get aboutMeInterests;
+
+  /// No description provided for @aboutMeDesires.
+  ///
+  /// In en, this message translates to:
+  /// **'Desires'**
+  String get aboutMeDesires;
+
+  /// No description provided for @aboutMeBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get aboutMeBackground;
+
+  /// No description provided for @aboutMeLikes.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes'**
+  String get aboutMeLikes;
+
+  /// No description provided for @aboutMeDislikes.
+  ///
+  /// In en, this message translates to:
+  /// **'Dislikes'**
+  String get aboutMeDislikes;
+
+  /// No description provided for @aboutMeDeleteSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete section?'**
+  String get aboutMeDeleteSection;
+
+  /// No description provided for @aboutMeDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'All data in this section will be deleted.'**
+  String get aboutMeDeleteConfirm;
+
+  /// No description provided for @aboutMeConnectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error: {error}'**
+  String aboutMeConnectionError(String error);
+
+  /// No description provided for @aboutMeVisibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Visibility'**
+  String get aboutMeVisibility;
+
+  /// No description provided for @aboutMeTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get aboutMeTags;
+
+  /// No description provided for @aboutMeAddTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Add tag...'**
+  String get aboutMeAddTag;
+
+  /// No description provided for @aboutMeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get aboutMeDescription;
+
+  /// No description provided for @aboutMeDescribeLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us more...'**
+  String get aboutMeDescribeLong;
+
+  /// No description provided for @aboutMeVisibilityEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone'**
+  String get aboutMeVisibilityEveryone;
+
+  /// No description provided for @aboutMeVisibilityContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get aboutMeVisibilityContacts;
+
+  /// No description provided for @aboutMeVisibilityOnlyMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Only me'**
+  String get aboutMeVisibilityOnlyMe;
+
+  /// No description provided for @settingsProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get settingsProfileSubtitle;
+
+  /// No description provided for @settingsWallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper'**
+  String get settingsWallpaper;
+
+  /// No description provided for @settingsWallpaperDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Background image for the whole app'**
+  String get settingsWallpaperDesc;
+
+  /// No description provided for @settingsWallpaperNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get settingsWallpaperNone;
+
+  /// No description provided for @settingsAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsAccount;
+
+  /// No description provided for @settingsKycVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity Verification (KYC)'**
+  String get settingsKycVerification;
+
+  /// No description provided for @settingsOrganizations.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizations'**
+  String get settingsOrganizations;
+
+  /// No description provided for @incomingCallLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming call'**
+  String get incomingCallLabel;
+
+  /// No description provided for @incomingCallDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get incomingCallDecline;
+
+  /// No description provided for @incomingCallAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get incomingCallAccept;
+
+  /// No description provided for @groupCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get groupCamera;
+
+  /// No description provided for @groupGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get groupGallery;
+
+  /// No description provided for @groupAvatarUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Group avatar updated'**
+  String get groupAvatarUpdated;
+
+  /// No description provided for @groupNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get groupNameTitle;
+
+  /// No description provided for @groupEnterName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter name'**
+  String get groupEnterName;
+
+  /// No description provided for @groupDescriptionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group description'**
+  String get groupDescriptionTitle;
+
+  /// No description provided for @groupEnterDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter group description'**
+  String get groupEnterDescription;
+
+  /// No description provided for @groupChangeRoleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change role'**
+  String get groupChangeRoleTitle;
+
+  /// No description provided for @groupRemoveMemberTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove member'**
+  String get groupRemoveMemberTitle;
+
+  /// No description provided for @groupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get groupDescription;
+
+  /// No description provided for @groupAddDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add group description'**
+  String get groupAddDescription;
+
+  /// No description provided for @groupNoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No description'**
+  String get groupNoDescription;
+
+  /// No description provided for @groupMediaAndFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Media and files'**
+  String get groupMediaAndFiles;
+
+  /// No description provided for @groupMuteNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute notifications'**
+  String get groupMuteNotifications;
+
+  /// No description provided for @groupMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get groupMuted;
+
+  /// No description provided for @groupNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get groupNoResults;
+
+  /// No description provided for @authInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid code. Try again.'**
+  String get authInvalidCode;
+
+  /// No description provided for @loginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use email and password'**
+  String get loginSubtitle;
+
+  /// No description provided for @emailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter email'**
+  String get emailRequired;
+
+  /// No description provided for @emailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email'**
+  String get emailInvalid;
+
+  /// No description provided for @passwordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get passwordRequired;
+
+  /// No description provided for @registerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One account for the entire Taler ecosystem'**
+  String get registerSubtitle;
+
+  /// No description provided for @usernameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Username (optional)'**
+  String get usernameOptional;
+
+  /// No description provided for @usernameMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum 3 characters'**
+  String get usernameMinLength;
+
+  /// No description provided for @usernameMaxLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum 30 characters'**
+  String get usernameMaxLength;
+
+  /// No description provided for @usernameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Only letters, digits and _'**
+  String get usernameInvalid;
+
+  /// No description provided for @biometricLoginReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to Taler ID'**
+  String get biometricLoginReason;
+
+  /// No description provided for @docTypePassport.
+  ///
+  /// In en, this message translates to:
+  /// **'Passport'**
+  String get docTypePassport;
+
+  /// No description provided for @docTypeIdCard.
+  ///
+  /// In en, this message translates to:
+  /// **'ID Card'**
+  String get docTypeIdCard;
+
+  /// No description provided for @docTypeDriverLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver\'s License'**
+  String get docTypeDriverLicense;
+
+  /// No description provided for @docTypeResidencePermit.
+  ///
+  /// In en, this message translates to:
+  /// **'Residence Permit'**
+  String get docTypeResidencePermit;
+
+  /// No description provided for @addressApartment.
+  ///
+  /// In en, this message translates to:
+  /// **'apt. {number}'**
+  String addressApartment(String number);
+
+  /// No description provided for @failedToUpdateProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update profile'**
+  String get failedToUpdateProfile;
+
+  /// No description provided for @failedToStartKyb.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start KYB verification'**
+  String get failedToStartKyb;
+
+  /// No description provided for @orgUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization updated'**
+  String get orgUpdated;
+
+  /// No description provided for @failedToUpdateOrg.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update organization'**
+  String get failedToUpdateOrg;
+
+  /// No description provided for @failedToChangeRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to change role'**
+  String get failedToChangeRole;
+
+  /// No description provided for @failedToRemoveMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove member'**
+  String get failedToRemoveMember;
+
+  /// No description provided for @capabilityMessagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get capabilityMessagesTitle;
+
+  /// No description provided for @capabilityMessagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Check messages or write to someone. For example: \"Write to Viktor: will be there in an hour\"'**
+  String get capabilityMessagesDesc;
+
+  /// No description provided for @capabilityCallsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get capabilityCallsTitle;
+
+  /// No description provided for @capabilityCallsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Call any contact by voice. For example: \"Call Viktor Viktorov\"'**
+  String get capabilityCallsDesc;
+
+  /// No description provided for @capabilityChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat History'**
+  String get capabilityChatTitle;
+
+  /// No description provided for @capabilityChatDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ll analyze the chat history. For example: \"What did we discuss with Viktor?\"'**
+  String get capabilityChatDesc;
+
+  /// No description provided for @capabilityProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get capabilityProfileTitle;
+
+  /// No description provided for @capabilityProfileDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ll show or update your profile. For example: \"Show my profile\"'**
+  String get capabilityProfileDesc;
+
+  /// No description provided for @capabilityCoachingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Coaching'**
+  String get capabilityCoachingTitle;
+
+  /// No description provided for @capabilityCoachingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Modes: ICF coaching, psychologist, HR consultation. Say: \"Let\'s do coaching\"'**
+  String get capabilityCoachingDesc;
+
+  /// No description provided for @capabilityCalendarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get capabilityCalendarTitle;
+
+  /// No description provided for @capabilityCalendarDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule a meeting or set a reminder. For example: \"Schedule a meeting with Viktor for tomorrow at 15:00\"'**
+  String get capabilityCalendarDesc;
+
+  /// No description provided for @capabilityNotesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get capabilityNotesTitle;
+
+  /// No description provided for @capabilityNotesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a thought or read recent notes. For example: \"Write down an idea...\" or \"Read recent notes\"'**
+  String get capabilityNotesDesc;
+
+  /// No description provided for @assistantCallConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a call?'**
+  String get assistantCallConfirm;
+
+  /// No description provided for @callNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer'**
+  String get callNoAnswer;
+
+  /// No description provided for @contactDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove contact'**
+  String get contactDelete;
+
+  /// No description provided for @contactDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove contact'**
+  String get contactDeleteTitle;
+
+  /// No description provided for @contactDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure? This contact will be removed.'**
+  String get contactDeleteConfirm;
+
+  /// No description provided for @contactBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get contactBlock;
+
+  /// No description provided for @contactBlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block user'**
+  String get contactBlockTitle;
+
+  /// No description provided for @contactBlockConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This user will not be able to message or call you.'**
+  String get contactBlockConfirm;
+
+  /// No description provided for @contactUnblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get contactUnblock;
+
+  /// No description provided for @contactBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get contactBlocked;
+
+  /// No description provided for @contactYouAreBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This user has blocked you'**
+  String get contactYouAreBlocked;
+
+  /// No description provided for @chatBlockedByYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You have blocked this user'**
+  String get chatBlockedByYou;
+
+  /// No description provided for @chatYouAreBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'You have been blocked by this user'**
+  String get chatYouAreBlocked;
+
+  /// No description provided for @chatNotContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Add this user to contacts to message them'**
+  String get chatNotContacts;
+
+  /// No description provided for @contactRevokeRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke request'**
+  String get contactRevokeRequest;
+
+  /// No description provided for @messengerPoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Poll'**
+  String get messengerPoll;
+
+  /// No description provided for @messengerCreatePoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Poll'**
+  String get messengerCreatePoll;
+
+  /// No description provided for @messengerPollQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get messengerPollQuestion;
+
+  /// No description provided for @messengerPollOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Option {number}'**
+  String messengerPollOption(int number);
+
+  /// No description provided for @messengerPollAddOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add option'**
+  String get messengerPollAddOption;
+
+  /// No description provided for @messengerPollAnonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous voting'**
+  String get messengerPollAnonymous;
+
+  /// No description provided for @messengerPollMultiple.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple choice'**
+  String get messengerPollMultiple;
+
+  /// No description provided for @messengerPollCreateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create poll'**
+  String get messengerPollCreateError;
+
+  /// No description provided for @messengerPollUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Poll unavailable'**
+  String get messengerPollUnavailable;
+
+  /// No description provided for @messengerPollMultipleNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You can select multiple'**
+  String get messengerPollMultipleNote;
+
+  /// No description provided for @messengerPollVotes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} votes'**
+  String messengerPollVotes(int count);
+
+  /// No description provided for @messengerVideoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Video message'**
+  String get messengerVideoMessage;
+
+  /// No description provided for @messengerVideoRecordError.
+  ///
+  /// In en, this message translates to:
+  /// **'Video recording error'**
+  String get messengerVideoRecordError;
+
+  /// No description provided for @messengerVideoPlaybackError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not play video'**
+  String get messengerVideoPlaybackError;
+
+  /// No description provided for @messengerGalleryAccessError.
+  ///
+  /// In en, this message translates to:
+  /// **'No access to gallery'**
+  String get messengerGalleryAccessError;
+
+  /// No description provided for @messengerSearchInChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in chat...'**
+  String get messengerSearchInChat;
+
+  /// No description provided for @messengerSaveToFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to favorites'**
+  String get messengerSaveToFavorites;
+
+  /// No description provided for @messengerSavedToFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to favorites'**
+  String get messengerSavedToFavorites;
+
+  /// No description provided for @messengerSearchInMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in messages...'**
+  String get messengerSearchInMessages;
+
+  /// No description provided for @messengerFoundInMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Found in messages ({count})'**
+  String messengerFoundInMessages(int count);
+
+  /// No description provided for @messengerGroupDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get messengerGroupDefault;
+
+  /// No description provided for @messengerUserDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get messengerUserDefault;
+
+  /// No description provided for @messengerPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get messengerPin;
+
+  /// No description provided for @messengerUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get messengerUnpin;
+
+  /// No description provided for @messengerArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get messengerArchive;
+
+  /// No description provided for @messengerUnarchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive'**
+  String get messengerUnarchive;
+
+  /// No description provided for @messengerDeleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat'**
+  String get messengerDeleteChat;
+
+  /// No description provided for @messengerDeleteChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat?'**
+  String get messengerDeleteChatTitle;
+
+  /// No description provided for @messengerDeleteChatConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat with {name}? This cannot be undone.'**
+  String messengerDeleteChatConfirm(String name);
+
+  /// No description provided for @messengerNewChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'New Channel'**
+  String get messengerNewChannel;
+
+  /// No description provided for @messengerCreateChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Channel'**
+  String get messengerCreateChannel;
+
+  /// No description provided for @messengerChannelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get messengerChannelName;
+
+  /// No description provided for @messengerChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get messengerChannelDescription;
+
+  /// No description provided for @messengerChannelCreateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create channel'**
+  String get messengerChannelCreateError;
+
+  /// No description provided for @messengerFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get messengerFilterAll;
+
+  /// No description provided for @messengerFilterUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get messengerFilterUnread;
+
+  /// No description provided for @messengerFilterPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get messengerFilterPersonal;
+
+  /// No description provided for @messengerFilterGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get messengerFilterGroups;
+
+  /// No description provided for @messengerFilterChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get messengerFilterChannels;
+
+  /// No description provided for @messengerArchivedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get messengerArchivedSection;
+
+  /// No description provided for @messengerSavedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get messengerSavedSection;
+
+  /// No description provided for @messengerSavedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to memory'**
+  String get messengerSavedSubtitle;
+
+  /// No description provided for @messengerArchiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive ({count})'**
+  String messengerArchiveTitle(int count);
+
+  /// No description provided for @messengerArchiveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive is empty'**
+  String get messengerArchiveEmpty;
+
+  /// No description provided for @messengerYouPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'You: {message}'**
+  String messengerYouPrefix(String message);
+
+  /// No description provided for @messengerMissedCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed call'**
+  String get messengerMissedCall;
+
+  /// No description provided for @messengerSavedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get messengerSavedTitle;
+
+  /// No description provided for @messengerNoSavedMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved messages'**
+  String get messengerNoSavedMessages;
+
+  /// No description provided for @messengerSavedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Long press a message → \"Save to favorites\"'**
+  String get messengerSavedHint;
+
+  /// No description provided for @messengerDefaultFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get messengerDefaultFile;
+
+  /// No description provided for @messengerTopicDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get messengerTopicDefault;
+
+  /// No description provided for @messengerTopicNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New Topic'**
+  String get messengerTopicNew;
+
+  /// No description provided for @messengerTopicNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic name'**
+  String get messengerTopicNameHint;
+
+  /// No description provided for @messengerTopicIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get messengerTopicIcon;
+
+  /// No description provided for @messengerTopicCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} topics'**
+  String messengerTopicCount(int count);
+
+  /// No description provided for @messengerNoTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'No topics'**
+  String get messengerNoTopics;
+
+  /// No description provided for @messengerNoMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages'**
+  String get messengerNoMessages;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
+
+  /// No description provided for @messengerThread.
+  ///
+  /// In en, this message translates to:
+  /// **'Thread'**
+  String get messengerThread;
+
+  /// No description provided for @messengerThreadReply.
+  ///
+  /// In en, this message translates to:
+  /// **'reply'**
+  String get messengerThreadReply;
+
+  /// No description provided for @messengerThreadReplies.
+  ///
+  /// In en, this message translates to:
+  /// **'replies'**
+  String get messengerThreadReplies;
+
+  /// No description provided for @messengerThreadReplyCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {word}'**
+  String messengerThreadReplyCount(int count, String word);
+
+  /// No description provided for @messengerNoReplies.
+  ///
+  /// In en, this message translates to:
+  /// **'No replies'**
+  String get messengerNoReplies;
+
+  /// No description provided for @messengerReplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply to thread...'**
+  String get messengerReplyHint;
+
+  /// No description provided for @messengerContactName.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact name'**
+  String get messengerContactName;
+
+  /// No description provided for @messengerOriginalName.
+  ///
+  /// In en, this message translates to:
+  /// **'Original name: {name}'**
+  String messengerOriginalName(String name);
+
+  /// No description provided for @messengerDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get messengerDisplayName;
+
+  /// No description provided for @messengerShareContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact in Taler ID: {name}'**
+  String messengerShareContact(String name);
+
+  /// No description provided for @messengerAutoDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-delete messages'**
+  String get messengerAutoDelete;
+
+  /// No description provided for @messengerAutoDeleteOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get messengerAutoDeleteOff;
+
+  /// No description provided for @messengerAutoDelete7d.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days'**
+  String get messengerAutoDelete7d;
+
+  /// No description provided for @messengerAutoDelete30d.
+  ///
+  /// In en, this message translates to:
+  /// **'30 days'**
+  String get messengerAutoDelete30d;
+
+  /// No description provided for @messengerAutoDelete90d.
+  ///
+  /// In en, this message translates to:
+  /// **'90 days'**
+  String get messengerAutoDelete90d;
+
+  /// No description provided for @messengerAutoDeleteDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String messengerAutoDeleteDays(int count);
+
+  /// No description provided for @messengerSettingsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get messengerSettingsHeader;
+
+  /// No description provided for @messengerAdminOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin-only posting'**
+  String get messengerAdminOnly;
+
+  /// No description provided for @messengerAdminOnlyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Members can only read'**
+  String get messengerAdminOnlyDesc;
+
+  /// No description provided for @messengerTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics'**
+  String get messengerTopics;
+
+  /// No description provided for @messengerTopicsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Split chat into topics'**
+  String get messengerTopicsDesc;
 }
 
 class _AppLocalizationsDelegate

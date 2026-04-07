@@ -33,6 +33,12 @@ class SendMessage extends MessengerEvent {
   final String? fileName;
   final int? fileSize;
   final String? fileType;
+  final String? s3Key;
+  final String? thumbnailSmallUrl;
+  final String? thumbnailMediumUrl;
+  final String? thumbnailLargeUrl;
+  final String? fileRecordId;
+  final String? topicId;
   const SendMessage(
     this.conversationId,
     this.content, {
@@ -40,6 +46,12 @@ class SendMessage extends MessengerEvent {
     this.fileName,
     this.fileSize,
     this.fileType,
+    this.s3Key,
+    this.thumbnailSmallUrl,
+    this.thumbnailMediumUrl,
+    this.thumbnailLargeUrl,
+    this.fileRecordId,
+    this.topicId,
   });
   @override
   List<Object?> get props => [conversationId, content, fileUrl, fileName];
@@ -200,6 +212,21 @@ class DeleteGroup extends MessengerEvent {
   List<Object?> get props => [conversationId];
 }
 
+class UpdateGroupSettings extends MessengerEvent {
+  final String conversationId;
+  final bool? slowMode;
+  final bool? topicsEnabled;
+  final int? autoDeleteDays;
+  const UpdateGroupSettings({
+    required this.conversationId,
+    this.slowMode,
+    this.topicsEnabled,
+    this.autoDeleteDays,
+  });
+  @override
+  List<Object?> get props => [conversationId, slowMode, topicsEnabled, autoDeleteDays];
+}
+
 class ForwardMessage extends MessengerEvent {
   final MessageEntity message;
   final String targetConversationId;
@@ -332,4 +359,30 @@ class ContactRequestAccepted extends MessengerEvent {
   const ContactRequestAccepted(this.data);
   @override
   List<Object?> get props => [data];
+}
+
+class LoadSentContactRequests extends MessengerEvent {}
+
+class LoadBadgeCounts extends MessengerEvent {}
+
+class UpdateBadgeCounts extends MessengerEvent {
+  final int? missedCallsCount;
+  final int? pendingCalendarInvites;
+  final int? pendingContactRequests;
+  const UpdateBadgeCounts({this.missedCallsCount, this.pendingCalendarInvites, this.pendingContactRequests});
+  @override
+  List<Object?> get props => [missedCallsCount, pendingCalendarInvites, pendingContactRequests];
+}
+
+class SocketErrorReceived extends MessengerEvent {
+  final String message;
+  const SocketErrorReceived(this.message);
+  @override
+  List<Object?> get props => [message];
+}
+
+class ClearSocketError extends MessengerEvent {
+  const ClearSocketError();
+  @override
+  List<Object?> get props => [];
 }

@@ -19,7 +19,12 @@ class MessengerState extends Equatable {
   final Map<String, String> activeGroupCalls; // conversationId → roomName
   final Map<String, Map<String, String>> typingUsers; // conversationId → {userId: userName}
   final List<Map<String, dynamic>> contactRequests;
+  final List<Map<String, dynamic>> sentContactRequests;
   final String? contactRequestSent; // receiverId if request just sent
+  final int missedCallsCount;
+  final int pendingCalendarInvites;
+  final int pendingContactRequests;
+  final String? socketError;
 
   const MessengerState({
     this.conversations = const [],
@@ -36,7 +41,12 @@ class MessengerState extends Equatable {
     this.activeGroupCalls = const {},
     this.typingUsers = const {},
     this.contactRequests = const [],
+    this.sentContactRequests = const [],
     this.contactRequestSent,
+    this.missedCallsCount = 0,
+    this.pendingCalendarInvites = 0,
+    this.pendingContactRequests = 0,
+    this.socketError,
   });
 
   MessengerState copyWith({
@@ -54,11 +64,17 @@ class MessengerState extends Equatable {
     Map<String, String>? activeGroupCalls,
     Map<String, Map<String, String>>? typingUsers,
     List<Map<String, dynamic>>? contactRequests,
+    List<Map<String, dynamic>>? sentContactRequests,
     String? contactRequestSent,
+    int? missedCallsCount,
+    int? pendingCalendarInvites,
+    int? pendingContactRequests,
+    String? socketError,
     bool clearError = false,
     bool clearNewConversation = false,
     bool clearCallInvite = false,
     bool clearContactRequestSent = false,
+    bool clearSocketError = false,
   }) {
     return MessengerState(
       conversations: conversations ?? this.conversations,
@@ -78,7 +94,12 @@ class MessengerState extends Equatable {
       activeGroupCalls: activeGroupCalls ?? this.activeGroupCalls,
       typingUsers: typingUsers ?? this.typingUsers,
       contactRequests: contactRequests ?? this.contactRequests,
+      sentContactRequests: sentContactRequests ?? this.sentContactRequests,
       contactRequestSent: clearContactRequestSent ? null : (contactRequestSent ?? this.contactRequestSent),
+      missedCallsCount: missedCallsCount ?? this.missedCallsCount,
+      pendingCalendarInvites: pendingCalendarInvites ?? this.pendingCalendarInvites,
+      pendingContactRequests: pendingContactRequests ?? this.pendingContactRequests,
+      socketError: clearSocketError ? null : (socketError ?? this.socketError),
     );
   }
 
@@ -98,6 +119,11 @@ class MessengerState extends Equatable {
         activeGroupCalls,
         typingUsers,
         contactRequests,
+        sentContactRequests,
         contactRequestSent,
+        missedCallsCount,
+        pendingCalendarInvites,
+        pendingContactRequests,
+        socketError,
       ];
 }

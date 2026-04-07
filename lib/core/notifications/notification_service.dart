@@ -11,11 +11,82 @@ import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/dio_client.dart';
 import '../di/service_locator.dart';
 import '../storage/secure_storage_service.dart';
-import '../utils/platform_utils.dart';
 import '../../firebase_options.dart';
+
+/// Notification strings resolved by locale (no BuildContext needed).
+class _NotifStrings {
+  final String channelMessages;
+  final String channelMessagesDesc;
+  final String channelMissedCalls;
+  final String channelMissedCallsDesc;
+  final String missedCall;
+  final String incomingCall;
+  final String incomingCallChannel;
+  final String missedCallChannel;
+  final String unknown;
+  final String accept;
+  final String decline;
+
+  const _NotifStrings({
+    required this.channelMessages,
+    required this.channelMessagesDesc,
+    required this.channelMissedCalls,
+    required this.channelMissedCallsDesc,
+    required this.missedCall,
+    required this.incomingCall,
+    required this.incomingCallChannel,
+    required this.missedCallChannel,
+    required this.unknown,
+    required this.accept,
+    required this.decline,
+  });
+}
+
+const _ruStrings = _NotifStrings(
+  channelMessages: 'Сообщения',
+  channelMessagesDesc: 'Уведомления о новых сообщениях',
+  channelMissedCalls: 'Пропущенные звонки',
+  channelMissedCallsDesc: 'Уведомления о пропущенных звонках',
+  missedCall: 'Пропущенный звонок',
+  incomingCall: 'Входящий звонок',
+  incomingCallChannel: 'Входящий звонок',
+  missedCallChannel: 'Пропущенный звонок',
+  unknown: 'Неизвестный',
+  accept: 'Принять',
+  decline: 'Отклонить',
+);
+
+const _enStrings = _NotifStrings(
+  channelMessages: 'Messages',
+  channelMessagesDesc: 'New message notifications',
+  channelMissedCalls: 'Missed calls',
+  channelMissedCallsDesc: 'Missed call notifications',
+  missedCall: 'Missed call',
+  incomingCall: 'Incoming call',
+  incomingCallChannel: 'Incoming call',
+  missedCallChannel: 'Missed call',
+  unknown: 'Unknown',
+  accept: 'Accept',
+  decline: 'Decline',
+);
+
+/// Detect locale from saved preference or platform, return notification strings.
+Future<_NotifStrings> _notifStrings() async {
+  String? lang;
+  try {
+    const storage = FlutterSecureStorage(
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
+      iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+    );
+    lang = await storage.read(key: 'app_language');
+  } catch (_) {}
+  lang ??= (!kIsWeb ? Platform.localeName : 'en').split('_').first;
+  return lang == 'ru' ? _ruStrings : _enStrings;
+}
 
 final _localNotifications = FlutterLocalNotificationsPlugin();
 
@@ -36,10 +107,11 @@ Future<void> _showLocalNotification({
   required String body,
   required String conversationId,
 }) async {
-  const androidDetails = AndroidNotificationDetails(
+  final s = await _notifStrings();
+  final androidDetails = AndroidNotificationDetails(
     'messages',
-    'Сообщения',
-    channelDescription: 'Уведомления о новых сообщениях',
+    s.channelMessages,
+    channelDescription: s.channelMessagesDesc,
     importance: Importance.high,
     priority: Priority.high,
     playSound: true,
@@ -50,8 +122,28 @@ Future<void> _showLocalNotification({
     conversationId.hashCode,
     title,
     body,
-    const NotificationDetails(android: androidDetails, iOS: iosDetails),
+    NotificationDetails(android: androidDetails, iOS: iosDetails),
     payload: conversationId,
+  );
+}
+
+Future<void> _showMissedCallNotification({required String fromName}) async {
+  final s = await _notifStrings();
+  final androidDetails = AndroidNotificationDetails(
+    'missed_calls',
+    s.channelMissedCalls,
+    channelDescription: s.channelMissedCallsDesc,
+    importance: Importance.high,
+    priority: Priority.high,
+    playSound: true,
+    icon: '@drawable/ic_notification',
+  );
+  const iosDetails = DarwinNotificationDetails(sound: 'default');
+  await _localNotifications.show(
+    DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    s.missedCall,
+    fromName,
+    NotificationDetails(android: androidDetails, iOS: iosDetails),
   );
 }
 
@@ -84,28 +176,34 @@ Future<void> showCallkitIncoming({
   required String roomName,
   required String fromName,
   required String convId,
+  String? fromAvatar,
 }) async {
-  if (!isMobilePlatform) return;
   if (_isIosSimulator) return;
+  final s = await _notifStrings();
   await FlutterCallkitIncoming.showCallkitIncoming(CallKitParams(
     id: toCallkitId(roomName),
     nameCaller: fromName,
     appName: 'Taler ID',
     type: 0,
-    textAccept: 'Принять',
-    textDecline: 'Отклонить',
+    textAccept: s.accept,
+    textDecline: s.decline,
     duration: 60000,
-    extra: <String, dynamic>{'roomName': roomName, 'conversationId': convId},
-    android: const AndroidParams(
+    extra: <String, dynamic>{
+      'roomName': roomName,
+      'conversationId': convId,
+      if (fromName.isNotEmpty) 'callerName': fromName,
+      if (fromAvatar != null && fromAvatar.isNotEmpty) 'callerAvatar': fromAvatar,
+    },
+    android: AndroidParams(
       isCustomNotification: true,
       isShowLogo: false,
       isShowFullLockedScreen: true,
-      ringtonePath: 'system_ringtone_default',
+      ringtonePath: 'bumer_ringtone',
       backgroundColor: '#0A1628',
       actionColor: '#167EF2',
       textColor: '#FFFFFF',
-      incomingCallNotificationChannelName: 'Входящий звонок',
-      missedCallNotificationChannelName: 'Пропущенный звонок',
+      incomingCallNotificationChannelName: s.incomingCallChannel,
+      missedCallNotificationChannelName: s.missedCallChannel,
       isShowCallID: false,
     ),
     ios: const IOSParams(
@@ -121,7 +219,7 @@ Future<void> showCallkitIncoming({
       supportsHolding: false,
       supportsGrouping: false,
       supportsUngrouping: false,
-      ringtonePath: 'system_ringtone_default',
+      ringtonePath: 'bumer_ringtone.caf',
     ),
   ));
 }
@@ -135,18 +233,29 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (type == 'call_invite') {
     await showCallkitIncoming(
       roomName: message.data['roomName'] ?? '',
-      fromName: message.data['fromName'] ?? 'Входящий звонок',
+      fromName: message.data['fromName'] ?? (await _notifStrings()).incomingCall,
       convId: message.data['conversationId'] ?? '',
+      fromAvatar: message.data['fromAvatar'] as String?,
     );
   } else if (type == 'call_cancelled') {
     // Caller hung up before answer — dismiss CallKit UI
     await FlutterCallkitIncoming.endAllCalls();
+    await _initLocalNotifications();
+    await _showMissedCallNotification(
+      fromName: message.data['fromName'] ?? (await _notifStrings()).unknown,
+    );
   }
 }
 
 class NotificationService {
   static final _fcm = FirebaseMessaging.instance;
   static String? _currentToken;
+  static VoidCallback? _onCalendarUpdated;
+  static void setCalendarUpdateCallback(VoidCallback? cb) => _onCalendarUpdated = cb;
+  static VoidCallback? _onCalendarInvite;
+  static void setCalendarInviteCallback(VoidCallback? cb) => _onCalendarInvite = cb;
+  static VoidCallback? _onMissedCall;
+  static void setMissedCallCallback(VoidCallback? cb) => _onMissedCall = cb;
 
   // Pending voice call route to handle CallKit accept across all app states
   static String? _pendingCallRoute;
@@ -171,7 +280,6 @@ class NotificationService {
   static void addCallEvent(CallEvent? event) => _callEventController.add(event);
 
   static Future<void> init() async {
-    if (!isMobilePlatform) return;
     // Register background handler — must be registered synchronously before any isolate runs.
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -249,7 +357,6 @@ class NotificationService {
   /// Call this after the user logs in to ensure FCM token is registered.
   /// Needed because init() runs before login and the PUT /profile call fails with 401.
   static Future<void> refreshToken() async {
-    if (!isMobilePlatform) return;
     try {
       final token = _currentToken ?? await _fcm.getToken();
       if (token != null) {
@@ -280,7 +387,6 @@ class NotificationService {
   /// Set up foreground notification tap handlers
   /// Call this after GoRouter is initialized
   static void setupForegroundHandlers({required Function(RemoteMessage) onTap}) {
-    if (!isMobilePlatform) return;
     // Foreground FCM messages.
     // - call_invite: handled by WebSocket (in-app dialog) — skip to avoid double ringing.
     // - new_message: show local notification (Android won't auto-show FCM when app is open).
@@ -294,7 +400,25 @@ class NotificationService {
           _showLocalNotification(title: title, body: body, conversationId: convId);
         }
       }
+      if (type == 'contact_request') {
+        final title = message.notification?.title ?? 'Запрос на общение';
+        final body = message.notification?.body ?? 'Новый запрос на добавление в контакты';
+        _showLocalNotification(title: title, body: body, conversationId: '');
+      }
+      if (type == 'calendar_updated' || type == 'calendar_invite' || type == 'calendar_reminder') {
+        _onCalendarUpdated?.call();
+      }
+      if (type == 'calendar_invite') {
+        _onCalendarInvite?.call();
+      }
       // call_invite is intentionally ignored here — socket handles it.
+      if (type == 'call_cancelled') {
+        FlutterCallkitIncoming.endAllCalls();
+        _notifStrings().then((s) => _showMissedCallNotification(
+          fromName: message.data['fromName'] ?? s.unknown,
+        ));
+        _onMissedCall?.call();
+      }
     });
 
     // App opened from background notification tap
@@ -302,10 +426,8 @@ class NotificationService {
   }
 
   /// Check if app was opened from a notification (terminated state)
-  static Future<RemoteMessage?> getInitialMessage() async {
-    if (!isMobilePlatform) return null;
-    return _fcm.getInitialMessage();
-  }
+  static Future<RemoteMessage?> getInitialMessage() =>
+      _fcm.getInitialMessage();
 
   static String? get token => _currentToken;
 }
@@ -330,8 +452,12 @@ String? notificationToRoute(RemoteMessage message) {
       final convId = data['conversationId'] as String?;
       if (roomName != null && convId != null) {
         final e2eeKey = data['e2eeKey'] as String?;
+        final fromName = data['fromName'] as String? ?? '';
+        final fromAvatar = data['fromAvatar'] as String? ?? '';
         final e2eeParam = e2eeKey != null ? '&e2ee=${Uri.encodeComponent(e2eeKey)}' : '';
-        return '/dashboard/voice?room=$roomName&convId=$convId&incoming=1$e2eeParam';
+        final calleeParam = fromName.isNotEmpty ? '&callee=${Uri.encodeComponent(fromName)}' : '';
+        final avatarParam = fromAvatar.isNotEmpty ? '&calleeAvatar=${Uri.encodeComponent(fromAvatar)}' : '';
+        return '/dashboard/voice?room=$roomName&convId=$convId&incoming=1$e2eeParam$calleeParam$avatarParam';
       }
       return null;
     case 'new_message':
@@ -339,6 +465,18 @@ String? notificationToRoute(RemoteMessage message) {
       return convId != null
           ? '/dashboard/messenger/$convId'
           : '/dashboard/messenger';
+    case 'contact_request':
+      return '/dashboard/messenger/contacts?tab=incoming';
+    case 'calendar_invite':
+      final inviteEventId = data['eventId'] as String?;
+      return inviteEventId != null
+          ? '/dashboard/calendar?eventId=$inviteEventId'
+          : '/dashboard/calendar?invites=1';
+    case 'calendar_reminder':
+      final eventId = data['eventId'] as String?;
+      return eventId != null
+          ? '/dashboard/calendar?eventId=$eventId'
+          : '/dashboard/calendar';
     default:
       return null;
   }

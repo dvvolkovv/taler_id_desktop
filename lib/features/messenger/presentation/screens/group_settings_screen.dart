@@ -67,12 +67,12 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
             const SizedBox(height: 16),
             ListTile(
               leading: Icon(Icons.camera_alt_rounded, color: AppColors.of(context).primary),
-              title: Text('Камера', style: TextStyle(color: AppColors.of(context).textPrimary)),
+              title: Text(AppLocalizations.of(context)!.groupCamera, style: TextStyle(color: AppColors.of(context).textPrimary)),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: Icon(Icons.photo_library_rounded, color: AppColors.of(context).primary),
-              title: Text('Галерея', style: TextStyle(color: AppColors.of(context).textPrimary)),
+              title: Text(AppLocalizations.of(context)!.groupGallery, style: TextStyle(color: AppColors.of(context).textPrimary)),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -104,12 +104,12 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
         avatarUrl: fileUrl,
       ));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Аватар группы обновлён'), backgroundColor: Colors.green),
+        SnackBar(content: Text(AppLocalizations.of(context)!.groupAvatarUpdated), backgroundColor: Colors.green),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.of(context).error),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorWithMessage(e.toString())), backgroundColor: AppColors.of(context).error),
       );
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
@@ -122,20 +122,20 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.of(context).card,
-        title: Text('Название группы', style: TextStyle(color: AppColors.of(context).textPrimary)),
+        title: Text(AppLocalizations.of(context)!.groupNameTitle, style: TextStyle(color: AppColors.of(context).textPrimary)),
         content: TextField(
           controller: controller,
           autofocus: true,
           style: TextStyle(color: AppColors.of(context).textPrimary),
           decoration: InputDecoration(
-            hintText: 'Введите название',
+            hintText: AppLocalizations.of(context)!.groupEnterName,
             hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -148,7 +148,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: Text('Сохранить'),
+            child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
       ),
@@ -162,14 +162,14 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.of(context).card,
-        title: Text('Описание группы', style: TextStyle(color: AppColors.of(context).textPrimary)),
+        title: Text(AppLocalizations.of(context)!.groupDescriptionTitle, style: TextStyle(color: AppColors.of(context).textPrimary)),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLines: 4,
           style: TextStyle(color: AppColors.of(context).textPrimary),
           decoration: InputDecoration(
-            hintText: 'Введите описание группы',
+            hintText: AppLocalizations.of(context)!.groupEnterDescription,
             hintStyle: TextStyle(color: AppColors.of(context).textSecondary),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -177,7 +177,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -188,7 +188,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
               ));
               Navigator.pop(ctx);
             },
-            child: Text('Сохранить'),
+            child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
       ),
@@ -290,6 +290,45 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
             child: Text(l10n.delete, style: TextStyle(color: AppColors.of(context).error)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAutoDeletePicker(BuildContext context) {
+    final colors = AppColors.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Text(AppLocalizations.of(context)!.messengerAutoDelete, style: TextStyle(
+              color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            for (final option in [
+              (null, AppLocalizations.of(context)!.messengerAutoDeleteOff),
+              (7, AppLocalizations.of(context)!.messengerAutoDelete7d),
+              (30, AppLocalizations.of(context)!.messengerAutoDelete30d),
+              (90, AppLocalizations.of(context)!.messengerAutoDelete90d),
+            ])
+              ListTile(
+                title: Text(option.$2, style: TextStyle(color: colors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.read<MessengerBloc>().add(UpdateGroupSettings(
+                    conversationId: widget.conversationId,
+                    autoDeleteDays: option.$1 ?? 0,
+                  ));
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -449,7 +488,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Text('Описание',
+                                  Text(l10n.groupDescription,
                                       style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
                                   const Spacer(),
                                   if (canManage)
@@ -467,7 +506,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  canManage ? 'Добавить описание группы' : 'Нет описания',
+                                  canManage ? l10n.groupAddDescription : l10n.groupNoDescription,
                                   style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 15),
                                 ),
                               ),
@@ -501,6 +540,14 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
               // Member list
               ...members.map((m) => _buildMemberTile(m, myRole, state.currentUserId, l10n)),
               const Divider(height: 32),
+              // Shared media
+              ListTile(
+                leading: Icon(Icons.perm_media_outlined, color: AppColors.of(context).textPrimary),
+                title: Text(l10n.groupMediaAndFiles, style: TextStyle(color: AppColors.of(context).textPrimary)),
+                trailing: Icon(Icons.chevron_right, color: AppColors.of(context).textSecondary),
+                onTap: null,
+              ),
+              const Divider(height: 32),
               // Mute notifications
               SwitchListTile(
                 secondary: Icon(
@@ -523,6 +570,50 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                   }
                 },
               ),
+              // Group settings (OWNER/ADMIN only)
+              if (myRole == 'OWNER' || myRole == 'ADMIN') ...[
+                const Divider(height: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Text(AppLocalizations.of(context)!.messengerSettingsHeader, style: TextStyle(
+                    color: AppColors.of(context).textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                ),
+                SwitchListTile(
+                  secondary: Icon(Icons.admin_panel_settings_outlined, color: AppColors.of(context).textPrimary),
+                  title: Text(AppLocalizations.of(context)!.messengerAdminOnly, style: TextStyle(color: AppColors.of(context).textPrimary)),
+                  subtitle: Text(AppLocalizations.of(context)!.messengerAdminOnlyDesc, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)),
+                  value: conv?.slowMode ?? false,
+                  activeColor: AppColors.of(context).primary,
+                  onChanged: (val) {
+                    context.read<MessengerBloc>().add(UpdateGroupSettings(
+                      conversationId: widget.conversationId,
+                      slowMode: val,
+                    ));
+                  },
+                ),
+                SwitchListTile(
+                  secondary: Icon(Icons.forum_outlined, color: AppColors.of(context).textPrimary),
+                  title: Text(AppLocalizations.of(context)!.messengerTopics, style: TextStyle(color: AppColors.of(context).textPrimary)),
+                  subtitle: Text(AppLocalizations.of(context)!.messengerTopicsDesc, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12)),
+                  value: conv?.topicsEnabled ?? false,
+                  activeColor: AppColors.of(context).primary,
+                  onChanged: (val) {
+                    context.read<MessengerBloc>().add(UpdateGroupSettings(
+                      conversationId: widget.conversationId,
+                      topicsEnabled: val,
+                    ));
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.timer_outlined, color: AppColors.of(context).textPrimary),
+                  title: Text(AppLocalizations.of(context)!.messengerAutoDelete, style: TextStyle(color: AppColors.of(context).textPrimary)),
+                  subtitle: Text(
+                    conv?.autoDeleteDays != null ? AppLocalizations.of(context)!.messengerAutoDeleteDays(conv!.autoDeleteDays!) : AppLocalizations.of(context)!.messengerAutoDeleteOff,
+                    style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
+                  ),
+                  onTap: () => _showAutoDeletePicker(context),
+                ),
+              ],
               const Divider(height: 32),
               // Leave group
               ListTile(

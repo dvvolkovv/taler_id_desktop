@@ -1,13 +1,24 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/message_entity.dart';
+import '../../domain/entities/conversation_entity.dart';
 import '../../domain/entities/group_member_entity.dart';
+import '../../data/datasources/messenger_remote_datasource.dart';
 import '../../domain/repositories/i_messenger_repository.dart';
+import '../../../../core/services/messenger_cache_service.dart';
+import '../../../../core/services/pending_message_service.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/storage/secure_storage_service.dart';
+import '../../../../core/di/service_locator.dart';
 import 'messenger_event.dart';
 import 'messenger_state.dart';
 
 class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   final IMessengerRepository _repo;
+  final MessengerCacheService _cache = sl<MessengerCacheService>();
+  final PendingMessageService _pending = sl<PendingMessageService>();
   StreamSubscription? _msgSub;
   StreamSubscription? _callSub;
   StreamSubscription? _msgUpdatedSub;
@@ -25,6 +36,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   StreamSubscription? _contactReqSub;
   StreamSubscription? _contactAccSub;
   StreamSubscription? _reactionSub;
+  StreamSubscription? _socketErrorSub;
+  StreamSubscription? _reconnectSub;
   final Map<String, Timer> _typingTimers = {}; // auto-clear typing after timeout
 
   MessengerBloc({required IMessengerRepository repo})
@@ -40,10 +53,17 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<StartConversationWith>(_onStartConversationWith);
     on<ClearNewConversation>((_, emit) =>
         emit(state.copyWith(clearNewConversation: true)));
-    on<CallInviteReceived>(
-        (event, emit) => emit(state.copyWith(pendingCallInvite: event.data)));
-    on<DismissCallInvite>(
-        (_, emit) => emit(state.copyWith(clearCallInvite: true)));
+    on<CallInviteReceived>(_onCallInviteReceived);
+    on<DismissCallInvite>((_, emit) {
+      // Also remove any locally-injected call_invite_* system rows from
+      // conversation histories — the user has acted on them (accepted,
+      // rejected, or timed out).
+      final cleaned = <String, List<MessageEntity>>{};
+      state.messages.forEach((convId, msgs) {
+        cleaned[convId] = msgs.where((m) => !m.id.startsWith('call_invite_')).toList();
+      });
+      emit(state.copyWith(clearCallInvite: true, messages: cleaned));
+    });
     on<MessageUpdated>(_onMessageUpdated);
     on<MessagesRead>(_onMessagesRead);
     on<MarkConversationRead>(_onMarkConversationRead);
@@ -56,6 +76,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<UpdateGroupInfo>(_onUpdateGroupInfo);
     on<LeaveGroup>(_onLeaveGroup);
     on<DeleteGroup>(_onDeleteGroup);
+    on<UpdateGroupSettings>(_onUpdateGroupSettings);
     on<GroupEventReceived>(_onGroupEventReceived);
     on<MuteConversation>(_onMuteConversation);
     on<UnmuteConversation>(_onUnmuteConversation);
@@ -73,13 +94,25 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     on<RejectContactRequest>(_onRejectContactRequest);
     on<ContactRequestReceived>(_onContactRequestReceived);
     on<ContactRequestAccepted>(_onContactRequestAccepted);
+    on<LoadSentContactRequests>(_onLoadSentContactRequests);
     on<ReactToMessage>(_onReactToMessage);
     on<ReactionUpdated>(_onReactionUpdated);
+    on<LoadBadgeCounts>(_onLoadBadgeCounts);
+    on<UpdateBadgeCounts>(_onUpdateBadgeCounts);
+    on<SocketErrorReceived>((event, emit) => emit(state.copyWith(socketError: event.message)));
+    on<ClearSocketError>((_, emit) => emit(state.copyWith(clearSocketError: true)));
   }
 
   Future<void> _onConnect(
       ConnectMessenger event, Emitter<MessengerState> emit) async {
     await _repo.connect(event.accessToken);
+    // Flush any pending messages (queued while offline) now that we're connected.
+    _resendPending();
+    // Re-send on each reconnect too.
+    _reconnectSub?.cancel();
+    _reconnectSub = sl<MessengerRemoteDataSource>().reconnectStream.listen((_) {
+      _resendPending();
+    });
     _msgSub?.cancel();
     _msgSub = _repo.messageStream.listen((msg) => add(MessageReceived(msg)));
     _callSub?.cancel();
@@ -175,6 +208,8 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _contactAccSub = _repo.contactAcceptedStream.listen((data) {
       add(ContactRequestAccepted(data));
     });
+    _socketErrorSub?.cancel();
+    _socketErrorSub = _repo.socketErrorStream.listen((msg) => add(SocketErrorReceived(msg)));
     _reactionSub?.cancel();
     _reactionSub = _repo.reactionUpdatedStream.listen((data) {
       final msgId = data['messageId'] as String?;
@@ -192,38 +227,77 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     ));
     add(LoadConversations());
     add(LoadContactRequests());
+    add(LoadBadgeCounts());
   }
 
   Future<void> _onLoadConversations(
       LoadConversations event, Emitter<MessengerState> emit) async {
-    emit(state.copyWith(isLoading: true));
+    // 1. Load from cache instantly
+    final cached = _cache.getConversations();
+    if (cached != null && cached.isNotEmpty && state.conversations.isEmpty) {
+      try {
+        final cachedConvs = cached.map((e) => ConversationEntity.fromJson(e)).toList();
+        _sortConversations(cachedConvs);
+        emit(state.copyWith(conversations: cachedConvs, isLoading: true));
+      } catch (_) {}
+    } else {
+      emit(state.copyWith(isLoading: true));
+    }
+
+    // 2. Fetch from server and merge
     try {
       final convs = await _repo.getConversations();
-      convs.sort((a, b) {
-        final aTime = a.lastMessageAt;
-        final bTime = b.lastMessageAt;
-        if (aTime == null && bTime == null) return 0;
-        if (aTime == null) return 1;
-        if (bTime == null) return -1;
-        return bTime.compareTo(aTime);
-      });
-      // Initialize active group calls from conversation data
+      _sortConversations(convs);
       final activeCalls = Map<String, String>.from(state.activeGroupCalls);
       for (final c in convs) {
         if (c.activeCallRoomName != null) {
           activeCalls[c.id] = c.activeCallRoomName!;
         }
       }
-      emit(state.copyWith(conversations: convs, isLoading: false, activeGroupCalls: activeCalls));
+      emit(state.copyWith(conversations: convs, isLoading: false, activeGroupCalls: activeCalls, clearError: true));
+      // Save to cache (fire-and-forget)
+      _cache.saveConversations(convs.map((c) => c.toJson()).toList());
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      // If cache was shown, just stop loading; otherwise show error
+      if (state.conversations.isNotEmpty) {
+        emit(state.copyWith(isLoading: false));
+      } else {
+        emit(state.copyWith(isLoading: false, error: e.toString()));
+      }
     }
+  }
+
+  void _sortConversations(List<ConversationEntity> convs) {
+    convs.sort((a, b) {
+      final aTime = a.lastMessageAt;
+      final bTime = b.lastMessageAt;
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return bTime.compareTo(aTime);
+    });
   }
 
   Future<void> _onOpenConversation(
       OpenConversation event, Emitter<MessengerState> emit) async {
     _repo.joinConversation(event.conversationId);
-    emit(state.copyWith(isLoading: true));
+
+    // 1. Load from cache instantly
+    final cachedMsgs = _cache.getMessages(event.conversationId);
+    if (cachedMsgs != null && cachedMsgs.isNotEmpty && (state.messages[event.conversationId]?.isEmpty ?? true)) {
+      try {
+        final msgs = cachedMsgs.map((e) => MessageEntity.fromJson(e)).toList();
+        final newMessages = Map<String, List<MessageEntity>>.from(state.messages);
+        newMessages[event.conversationId] = msgs;
+        emit(state.copyWith(messages: newMessages, isLoading: true));
+      } catch (_) {
+        emit(state.copyWith(isLoading: true));
+      }
+    } else {
+      emit(state.copyWith(isLoading: true));
+    }
+
+    // 2. Fetch from server and merge
     try {
       final result = await _repo.getMessages(event.conversationId);
       final rawMessages = result['messages'] as List? ?? [];
@@ -245,14 +319,126 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
       final nextCursor = result['nextCursor'] as String?;
       final newMessages =
           Map<String, List<MessageEntity>>.from(state.messages);
-      newMessages[event.conversationId] = msgs.reversed.toList();
+      final serverList = msgs.reversed.toList();
+      // Preserve any locally-injected live call invite cards — they aren't
+      // persisted server-side but should stay visible until the invite is
+      // handled.
+      for (final m in state.messages[event.conversationId] ?? <MessageEntity>[]) {
+        if (m.id.startsWith('call_invite_') && m.isSystem) {
+          serverList.add(m);
+        }
+      }
+      // Re-append any unsent pending messages for this conversation so the
+      // user sees them with a clock icon.
+      final pendingMaps = _pending.getForConversation(event.conversationId);
+      for (final p in pendingMaps) {
+        final tempId = p['id'] as String? ?? '';
+        if (tempId.isEmpty) continue;
+        // Skip if the server already returned a message with the same content.
+        final dup = serverList.any((m) =>
+            m.senderId == (p['senderId'] as String? ?? '') &&
+            m.content == (p['content'] as String? ?? ''));
+        if (dup) continue;
+        serverList.add(MessageEntity(
+          id: tempId,
+          conversationId: event.conversationId,
+          senderId: p['senderId'] as String? ?? state.currentUserId ?? 'me',
+          content: p['content'] as String? ?? '',
+          sentAt: DateTime.tryParse(p['sentAt'] as String? ?? '') ?? DateTime.now(),
+          fileUrl: p['fileUrl'] as String?,
+          fileName: p['fileName'] as String?,
+          fileSize: p['fileSize'] as int?,
+          fileType: p['fileType'] as String?,
+          s3Key: p['s3Key'] as String?,
+          thumbnailSmallUrl: p['thumbnailSmallUrl'] as String?,
+          thumbnailMediumUrl: p['thumbnailMediumUrl'] as String?,
+          thumbnailLargeUrl: p['thumbnailLargeUrl'] as String?,
+          fileRecordId: p['fileRecordId'] as String?,
+          topicId: p['topicId'] as String?,
+        ));
+      }
+      newMessages[event.conversationId] = serverList;
       final newCursors = Map<String, String?>.from(state.nextCursors);
       newCursors[event.conversationId] = nextCursor;
       emit(state.copyWith(
           messages: newMessages, nextCursors: newCursors, isLoading: false));
+      // Save to cache (fire-and-forget)
+      _cache.saveMessages(event.conversationId,
+          newMessages[event.conversationId]!.map((m) => m.toJson()).toList());
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      // If cache was shown, just stop loading
+      if (state.messages[event.conversationId]?.isNotEmpty ?? false) {
+        emit(state.copyWith(isLoading: false));
+      } else {
+        emit(state.copyWith(isLoading: false, error: e.toString()));
+      }
     }
+  }
+
+  /// Re-emit all persisted pending messages over the socket. Safe to call
+  /// multiple times — if the server has already received a duplicate, the
+  /// `MessageReceived` handler will clear the temp row regardless.
+  void _resendPending() {
+    final items = _pending.getAll();
+    for (final m in items) {
+      final convId = m['conversationId'] as String?;
+      final content = m['content'] as String?;
+      if (convId == null || content == null) continue;
+      _repo.sendMessage(
+        convId,
+        content,
+        fileUrl: m['fileUrl'] as String?,
+        fileName: m['fileName'] as String?,
+        fileSize: m['fileSize'] as int?,
+        fileType: m['fileType'] as String?,
+        s3Key: m['s3Key'] as String?,
+        thumbnailSmallUrl: m['thumbnailSmallUrl'] as String?,
+        thumbnailMediumUrl: m['thumbnailMediumUrl'] as String?,
+        thumbnailLargeUrl: m['thumbnailLargeUrl'] as String?,
+        fileRecordId: m['fileRecordId'] as String?,
+        topicId: m['topicId'] as String?,
+        clientTempId: m['id'] as String?,
+      );
+    }
+  }
+
+  void _onCallInviteReceived(CallInviteReceived event, Emitter<MessengerState> emit) {
+    // Keep the existing standard incoming-call flow (CallKit / dialog).
+    emit(state.copyWith(pendingCallInvite: event.data));
+
+    // Additionally inject a local "call invite" message into the conversation
+    // so the user can accept/reject it from the chat as well. The message is
+    // not persisted to the server — it disappears on next server sync once
+    // the real missed/accepted-call system message arrives.
+    final convId = event.data['conversationId'] as String?;
+    if (convId == null || convId.isEmpty) return;
+    final roomName = event.data['roomName'] as String? ?? '';
+    final fromName = event.data['fromUserName'] as String? ?? '';
+    final fromId = event.data['fromUserId'] as String? ?? '';
+    final e2eeKey = event.data['e2eeKey'] as String?;
+    final tempId = 'call_invite_$roomName';
+    final payload = {
+      'action': 'call_invite',
+      'roomName': roomName,
+      'fromUserId': fromId,
+      'fromUserName': fromName,
+      if (e2eeKey != null) 'e2eeKey': e2eeKey,
+    };
+    final msg = MessageEntity(
+      id: tempId,
+      conversationId: convId,
+      senderId: fromId,
+      senderName: fromName.isNotEmpty ? fromName : null,
+      content: jsonEncode(payload),
+      sentAt: DateTime.now(),
+      isSystem: true,
+    );
+    final existing = List<MessageEntity>.from(state.messages[convId] ?? []);
+    existing.removeWhere((m) => m.id == tempId);
+    existing.add(msg);
+    final newMessages = Map<String, List<MessageEntity>>.from(state.messages);
+    newMessages[convId] = existing;
+    emit(state.copyWith(messages: newMessages));
   }
 
   void _onSendMessage(SendMessage event, Emitter<MessengerState> emit) {
@@ -267,6 +453,12 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
       fileName: event.fileName,
       fileSize: event.fileSize,
       fileType: event.fileType,
+      s3Key: event.s3Key,
+      thumbnailSmallUrl: event.thumbnailSmallUrl,
+      thumbnailMediumUrl: event.thumbnailMediumUrl,
+      thumbnailLargeUrl: event.thumbnailLargeUrl,
+      fileRecordId: event.fileRecordId,
+      topicId: event.topicId,
     );
     final existing =
         List<MessageEntity>.from(state.messages[event.conversationId] ?? []);
@@ -275,6 +467,25 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
         Map<String, List<MessageEntity>>.from(state.messages);
     newMessages[event.conversationId] = existing;
     emit(state.copyWith(messages: newMessages));
+
+    // Persist to local pending queue so it survives app restarts / offline.
+    _pending.save(tempId, {
+      'conversationId': event.conversationId,
+      'content': event.content,
+      'fileUrl': event.fileUrl,
+      'fileName': event.fileName,
+      'fileSize': event.fileSize,
+      'fileType': event.fileType,
+      's3Key': event.s3Key,
+      'thumbnailSmallUrl': event.thumbnailSmallUrl,
+      'thumbnailMediumUrl': event.thumbnailMediumUrl,
+      'thumbnailLargeUrl': event.thumbnailLargeUrl,
+      'fileRecordId': event.fileRecordId,
+      'topicId': event.topicId,
+      'sentAt': tempMsg.sentAt.toIso8601String(),
+      'senderId': tempMsg.senderId,
+    });
+
     _repo.sendMessage(
       event.conversationId,
       event.content,
@@ -282,24 +493,45 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
       fileName: event.fileName,
       fileSize: event.fileSize,
       fileType: event.fileType,
+      s3Key: event.s3Key,
+      thumbnailSmallUrl: event.thumbnailSmallUrl,
+      thumbnailMediumUrl: event.thumbnailMediumUrl,
+      thumbnailLargeUrl: event.thumbnailLargeUrl,
+      fileRecordId: event.fileRecordId,
+      topicId: event.topicId,
+      clientTempId: tempId,
     );
   }
 
   void _onMessageReceived(
       MessageReceived event, Emitter<MessengerState> emit) {
     final msg = event.message;
+    debugPrint('[MessengerBloc] MessageReceived: id=${msg.id} convId=${msg.conversationId} content=${msg.content?.substring(0, (msg.content?.length ?? 0).clamp(0, 30))}');
     final existing =
         List<MessageEntity>.from(state.messages[msg.conversationId] ?? []);
-    if (existing.any((m) => m.id == msg.id)) return;
-    existing.removeWhere((m) =>
-        m.id.startsWith('temp_') &&
-        m.senderId == msg.senderId &&
-        m.content == msg.content);
+    if (existing.any((m) => m.id == msg.id)) {
+      debugPrint('[MessengerBloc] Duplicate message, skipping');
+      return;
+    }
+    final removed = <String>[];
+    existing.removeWhere((m) {
+      final match = m.id.startsWith('temp_') &&
+          m.senderId == msg.senderId &&
+          m.content == msg.content;
+      if (match) removed.add(m.id);
+      return match;
+    });
+    // Clear these from the persistent pending queue — server has acknowledged.
+    for (final tempId in removed) {
+      _pending.remove(tempId);
+    }
     existing.add(msg);
     final newMessages =
         Map<String, List<MessageEntity>>.from(state.messages);
     newMessages[msg.conversationId] = existing;
     emit(state.copyWith(messages: newMessages));
+    // Cache the new message
+    _cache.appendMessage(msg.conversationId, msg.toJson());
     add(LoadConversations());
   }
 
@@ -339,7 +571,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     emit(state.copyWith(isLoading: true));
     try {
       final results = await _repo.searchUsers(event.query);
-      emit(state.copyWith(searchResults: results, isLoading: false));
+      emit(state.copyWith(searchResults: results, isLoading: false, clearError: true));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
@@ -468,6 +700,18 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     } catch (_) {}
   }
 
+  Future<void> _onUpdateGroupSettings(UpdateGroupSettings event, Emitter<MessengerState> emit) async {
+    try {
+      await _repo.updateGroupInfo(
+        event.conversationId,
+        slowMode: event.slowMode,
+        topicsEnabled: event.topicsEnabled,
+        autoDeleteDays: event.autoDeleteDays,
+      );
+      add(LoadConversations());
+    } catch (_) {}
+  }
+
   void _onGroupEventReceived(GroupEventReceived event, Emitter<MessengerState> emit) {
     add(LoadConversations());
     final convId = event.data['conversationId'] as String?;
@@ -531,42 +775,74 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
   Future<void> _onLoadContactRequests(LoadContactRequests event, Emitter<MessengerState> emit) async {
     try {
       final requests = await _repo.getContactRequests();
-      emit(state.copyWith(contactRequests: requests));
-    } catch (_) {}
+      final pending = requests.where((r) =>
+          (r['status'] as String? ?? 'PENDING') == 'PENDING').length;
+      emit(state.copyWith(
+        contactRequests: requests,
+        pendingContactRequests: pending,
+      ));
+    } catch (e) {
+      debugPrint('[MessengerBloc] LoadContactRequests error: $e');
+    }
   }
 
   Future<void> _onAcceptContactRequest(AcceptContactRequest event, Emitter<MessengerState> emit) async {
+    // Optimistic: drop the row immediately so the UI reacts without waiting
+    // for the server round-trip.
+    final optimistic = state.contactRequests.where((r) => r['id'] != event.requestId).toList();
+    final pending = optimistic.where((r) =>
+        (r['status'] as String? ?? 'PENDING') == 'PENDING').length;
+    emit(state.copyWith(contactRequests: optimistic, pendingContactRequests: pending));
     try {
       final result = await _repo.acceptContactRequest(event.requestId);
-      // Remove from pending list
-      final updated = state.contactRequests.where((r) => r['id'] != event.requestId).toList();
-      emit(state.copyWith(contactRequests: updated));
-      // Navigate to the new conversation
       final convId = result['conversationId'] as String?;
       if (convId != null) {
         emit(state.copyWith(newConversationId: convId));
         add(LoadConversations());
       }
-    } catch (_) {}
+    } catch (_) {
+      // If the server rejects the accept, leave the optimistic update in
+      // place — user will see the entry disappear regardless. A later
+      // LoadContactRequests sync would restore it if still pending.
+    }
   }
 
   Future<void> _onRejectContactRequest(RejectContactRequest event, Emitter<MessengerState> emit) async {
+    final optimistic = state.contactRequests.where((r) => r['id'] != event.requestId).toList();
+    final pending = optimistic.where((r) =>
+        (r['status'] as String? ?? 'PENDING') == 'PENDING').length;
+    emit(state.copyWith(contactRequests: optimistic, pendingContactRequests: pending));
     try {
       await _repo.rejectContactRequest(event.requestId);
-      final updated = state.contactRequests.where((r) => r['id'] != event.requestId).toList();
-      emit(state.copyWith(contactRequests: updated));
     } catch (_) {}
   }
 
   void _onContactRequestReceived(ContactRequestReceived event, Emitter<MessengerState> emit) {
-    final updated = [event.data, ...state.contactRequests];
-    emit(state.copyWith(contactRequests: updated));
+    // Avoid duplicates if the same request arrives via both socket and a
+    // subsequent LoadContactRequests refresh.
+    final id = event.data['id'];
+    final filtered = state.contactRequests.where((r) => r['id'] != id).toList();
+    final updated = [event.data, ...filtered];
+    final pending = updated.where((r) =>
+        (r['status'] as String? ?? 'PENDING') == 'PENDING').length;
+    emit(state.copyWith(
+      contactRequests: updated,
+      pendingContactRequests: pending,
+    ));
   }
 
   void _onContactRequestAccepted(ContactRequestAccepted event, Emitter<MessengerState> emit) {
-    // Refresh conversations to show the new chat
+    // Refresh conversations and sent requests to update profile screen state
     add(LoadConversations());
+    add(LoadSentContactRequests());
     emit(state.copyWith(clearContactRequestSent: true));
+  }
+
+  Future<void> _onLoadSentContactRequests(LoadSentContactRequests event, Emitter<MessengerState> emit) async {
+    try {
+      final requests = await _repo.getSentContactRequests();
+      emit(state.copyWith(sentContactRequests: requests, clearContactRequestSent: true));
+    } catch (_) {}
   }
 
   @override
@@ -588,6 +864,7 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     _contactReqSub?.cancel();
     _contactAccSub?.cancel();
     _reactionSub?.cancel();
+    _reconnectSub?.cancel();
     for (final timer in _typingTimers.values) { timer.cancel(); }
     _repo.dispose();
     return super.close();
@@ -638,7 +915,20 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
 
   Future<void> _onForwardMessage(ForwardMessage event, Emitter<MessengerState> emit) async {
     try {
-      _repo.sendMessage(event.targetConversationId, event.message.content);
+      final msg = event.message;
+      _repo.sendMessage(
+        event.targetConversationId,
+        msg.content,
+        fileUrl: msg.fileUrl,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        fileType: msg.fileType,
+        s3Key: msg.s3Key,
+        thumbnailSmallUrl: msg.thumbnailSmallUrl,
+        thumbnailMediumUrl: msg.thumbnailMediumUrl,
+        thumbnailLargeUrl: msg.thumbnailLargeUrl,
+        fileRecordId: msg.fileRecordId,
+      );
     } catch (_) {}
   }
 
@@ -690,5 +980,79 @@ class MessengerBloc extends Bloc<MessengerEvent, MessengerState> {
     allMessages[event.conversationId] = msgs;
     emit(state.copyWith(messages: allMessages));
     add(LoadConversations());
+  }
+
+  Future<void> _onLoadBadgeCounts(LoadBadgeCounts event, Emitter<MessengerState> emit) async {
+    try {
+      final client = sl<DioClient>();
+      // Load missed calls
+      int missedCalls = 0;
+      try {
+        final callData = await client.get<dynamic>(
+          '/voice/call-history',
+          queryParameters: {'page': 0, 'limit': 50},
+        );
+        final items = callData as List? ?? [];
+        missedCalls = items.where((e) {
+          final m = e as Map<String, dynamic>;
+          return m['isMissed'] == true;
+        }).length;
+      } catch (_) {}
+
+      // Load pending calendar invites
+      int calendarInvites = 0;
+      try {
+        final invData = await client.get<dynamic>('/calendar/invites');
+        final invites = invData as List? ?? [];
+        calendarInvites = invites.where((e) {
+          final m = e as Map<String, dynamic>;
+          return (m['status'] as String? ?? 'PENDING') == 'PENDING';
+        }).length;
+      } catch (_) {}
+
+      // Pending contact requests count
+      final pendingContacts = state.contactRequests.where((r) =>
+        (r['status'] as String? ?? 'PENDING') == 'PENDING'
+      ).length;
+
+      // Compare with persisted "seen" counts — only show badge for NEW items
+      final storage = sl<SecureStorageService>();
+      final seenMissed = await storage.getSeenMissedCalls();
+      final seenInvites = await storage.getSeenCalendarInvites();
+      final newMissed = missedCalls > seenMissed ? missedCalls - seenMissed : 0;
+      final newInvites = calendarInvites > seenInvites ? calendarInvites - seenInvites : 0;
+
+      emit(state.copyWith(
+        missedCallsCount: newMissed.toInt(),
+        pendingCalendarInvites: newInvites.toInt(),
+        pendingContactRequests: pendingContacts,
+      ));
+    } catch (_) {}
+  }
+
+  Future<void> _onUpdateBadgeCounts(UpdateBadgeCounts event, Emitter<MessengerState> emit) async {
+    final storage = sl<SecureStorageService>();
+    // When clearing badges (user opened tab), save current total as "seen"
+    if (event.missedCallsCount == 0) {
+      try {
+        final client = sl<DioClient>();
+        final callData = await client.get<dynamic>('/voice/call-history', queryParameters: {'page': 0, 'limit': 50});
+        final total = (callData as List? ?? []).where((e) => (e as Map<String, dynamic>)['isMissed'] == true).length;
+        await storage.setSeenMissedCalls(total);
+      } catch (_) {}
+    }
+    if (event.pendingCalendarInvites == 0) {
+      try {
+        final client = sl<DioClient>();
+        final invData = await client.get<dynamic>('/calendar/invites');
+        final total = (invData as List? ?? []).where((e) => ((e as Map<String, dynamic>)['status'] as String? ?? 'PENDING') == 'PENDING').length;
+        await storage.setSeenCalendarInvites(total);
+      } catch (_) {}
+    }
+    emit(state.copyWith(
+      missedCallsCount: event.missedCallsCount,
+      pendingCalendarInvites: event.pendingCalendarInvites,
+      pendingContactRequests: event.pendingContactRequests,
+    ));
   }
 }

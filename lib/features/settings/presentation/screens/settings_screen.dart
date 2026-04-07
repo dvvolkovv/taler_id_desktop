@@ -1,9 +1,13 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taler_id_mobile/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_messaging/firebase_messaging.dart' show FirebaseMessaging, AuthorizationStatus;
+import '../../../../core/utils/platform_utils.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/widgets.dart';
 import '../../../../core/storage/secure_storage_service.dart';
@@ -22,19 +26,102 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
+  // Cache across navigations so Security section doesn't jump on re-entry
+  static bool? _cachedBiometricAvailable;
+
   bool _biometricEnabled = false;
-  bool _biometricAvailable = false;
+  bool _biometricAvailable = _cachedBiometricAvailable ?? false;
   bool _pinEnabled = false;
   String _currentLang = 'ru';
   String _currentTheme = 'light';
   String _appVersion = '';
+  bool _permNotifications = false;
+  bool _permMicrophone = false;
+  bool _permCamera = false;
+  bool _permLocation = false;
   final _storage = sl<SecureStorageService>();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSettings();
+    _loadPermissions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadPermissions();
+    }
+  }
+
+  Future<void> _loadPermissions() async {
+    if (kIsWeb || isDesktopPlatform) return;
+    bool notif = false;
+    if (isMobilePlatform) {
+      try {
+        final settings = await FirebaseMessaging.instance.getNotificationSettings();
+        notif = settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+      } catch (_) {}
+    }
+    final mic = await Permission.microphone.status;
+    final cam = await Permission.camera.status;
+    final loc = await Permission.locationWhenInUse.status;
+    if (!mounted) return;
+    setState(() {
+      _permNotifications = notif;
+      _permMicrophone = mic.isGranted || mic.isLimited;
+      _permCamera = cam.isGranted || cam.isLimited;
+      _permLocation = loc.isGranted || loc.isLimited;
+    });
+  }
+
+  Future<void> _togglePermission(bool currentlyGranted, Future<PermissionStatus> Function() requestFn) async {
+    if (currentlyGranted) {
+      // Can't revoke programmatically — open system settings
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.permissionOpenSettings),
+          backgroundColor: AppColors.of(context).primary,
+        ),
+      );
+      await openAppSettings();
+    } else {
+      await requestFn();
+    }
+    await _loadPermissions();
+  }
+
+  Future<void> _toggleNotifications(bool currentlyGranted) async {
+    if (currentlyGranted) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.permissionOpenSettings),
+          backgroundColor: AppColors.of(context).primary,
+        ),
+      );
+      await openAppSettings();
+    } else {
+      if (isMobilePlatform) {
+        try {
+          await FirebaseMessaging.instance.requestPermission(
+            alert: true, badge: true, sound: true,
+          );
+        } catch (_) {}
+      }
+    }
+    await _loadPermissions();
   }
 
   Future<void> _loadSettings() async {
@@ -55,6 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {
       available = false;
     }
+    _cachedBiometricAvailable = available;
     if (!mounted) return;
     setState(() {
       _biometricEnabled = biometricEnabled;
@@ -106,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(title: Text(l10n.settings)),
+      appBar: AppBar(centerTitle: true, title: Text(l10n.settings)),
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoggedOut) {
@@ -116,34 +204,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Profile section
-            _sectionHeader(l10n.profile),
-            AppCard(
-              child: _navTile(
-                icon: Icons.person_outline,
-                iconColor: AppColors.of(context).primary,
-                title: l10n.editProfile,
-                onTap: () => context.push(RouteConstants.profile),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Identity & Organizations section
-            _sectionHeader('Аккаунт'),
+            _sectionHeader(l10n.settingsAccount),
             AppCard(
               child: Column(
                 children: [
                   _navTile(
                     icon: Icons.verified_user_outlined,
                     iconColor: AppColors.of(context).primary,
-                    title: 'Верификация личности (KYC)',
+                    title: l10n.settingsKycVerification,
                     onTap: () => context.push(RouteConstants.kyc),
                   ),
                   Divider(color: AppColors.of(context).border, height: 1),
                   _navTile(
                     icon: Icons.business_outlined,
                     iconColor: AppColors.of(context).primary,
-                    title: 'Организации',
+                    title: l10n.settingsOrganizations,
                     onTap: () => context.push(RouteConstants.organization),
                   ),
                 ],
@@ -183,17 +259,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   Divider(color: AppColors.of(context).border, height: 1),
                   _navTile(
-                    icon: Icons.security_outlined,
-                    iconColor: AppColors.of(context).secondary,
-                    title: l10n.twoFactorAuth,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Coming soon'), backgroundColor: AppColors.of(context).warning),
-                      );
-                    },
-                  ),
-                  Divider(color: AppColors.of(context).border, height: 1),
-                  _navTile(
                     icon: Icons.devices_outlined,
                     iconColor: AppColors.of(context).secondary,
                     title: l10n.sessions,
@@ -204,31 +269,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Notifications section
-            _sectionHeader(l10n.notifications),
-            AppCard(
-              child: Column(
-                children: [
-                  _switchTile(
-                    icon: Icons.notifications_outlined,
-                    iconColor: AppColors.of(context).warning,
-                    title: l10n.pushKycStatus,
-                    subtitle: l10n.pushKycStatusDesc,
-                    value: true,
-                    onChanged: (v) {},
-                  ),
-                  Divider(color: AppColors.of(context).border, height: 1),
-                  _switchTile(
-                    icon: Icons.login_outlined,
-                    iconColor: AppColors.of(context).warning,
-                    title: l10n.pushLogins,
-                    subtitle: l10n.pushLoginsDesc,
-                    value: true,
-                    onChanged: (v) {},
-                  ),
-                ],
+            // Permissions section (mobile only — permission_handler not supported on desktop)
+            if (!isDesktopPlatform) ...[
+              _sectionHeader(l10n.permissions),
+              AppCard(
+                child: Column(
+                  children: [
+                    _switchTile(
+                      icon: Icons.notifications_active_outlined,
+                      iconColor: AppColors.of(context).warning,
+                      title: l10n.permissionNotifications,
+                      subtitle: l10n.permissionNotificationsDesc,
+                      value: _permNotifications,
+                      onChanged: (_) => _toggleNotifications(_permNotifications),
+                    ),
+                    Divider(color: AppColors.of(context).border, height: 1),
+                    _switchTile(
+                      icon: Icons.mic_outlined,
+                      iconColor: AppColors.of(context).primary,
+                      title: l10n.permissionMicrophone,
+                      subtitle: l10n.permissionMicrophoneDesc,
+                      value: _permMicrophone,
+                      onChanged: (_) => _togglePermission(
+                        _permMicrophone,
+                        () => Permission.microphone.request(),
+                      ),
+                    ),
+                    Divider(color: AppColors.of(context).border, height: 1),
+                    _switchTile(
+                      icon: Icons.camera_alt_outlined,
+                      iconColor: AppColors.of(context).primary,
+                      title: l10n.permissionCamera,
+                      subtitle: l10n.permissionCameraDesc,
+                      value: _permCamera,
+                      onChanged: (_) => _togglePermission(
+                        _permCamera,
+                        () => Permission.camera.request(),
+                      ),
+                    ),
+                    Divider(color: AppColors.of(context).border, height: 1),
+                    _switchTile(
+                      icon: Icons.location_on_outlined,
+                      iconColor: AppColors.of(context).secondary,
+                      title: l10n.permissionLocation,
+                      subtitle: l10n.permissionLocationDesc,
+                      value: _permLocation,
+                      onChanged: (_) => _togglePermission(
+                        _permLocation,
+                        () => Permission.locationWhenInUse.request(),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 16),
 
             // Account section
@@ -253,6 +347,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   Divider(color: AppColors.of(context).border, height: 1),
                   _navTile(
+                    icon: Icons.wallpaper_rounded,
+                    iconColor: const Color(0xFFA855F7),
+                    title: l10n.settingsWallpaper,
+                    onTap: () => context.push(RouteConstants.wallpaper),
+                  ),
+                  Divider(color: AppColors.of(context).border, height: 1),
+                  _navTile(
                     icon: Icons.delete_forever_outlined,
                     iconColor: AppColors.of(context).error,
                     title: l10n.deleteAccount,
@@ -265,17 +366,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             // Logout
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: Icon(Icons.logout, color: AppColors.of(context).error),
-                label: Text(l10n.logout, style: TextStyle(color: AppColors.of(context).error, fontSize: 16)),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  side: BorderSide(color: AppColors.of(context).error),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            GestureDetector(
+              onTap: () => _confirmLogout(context),
+              child: Container(
+                width: double.infinity,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.of(context).error.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                onPressed: () => _confirmLogout(context),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.logout, color: Colors.white, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      l10n.logout,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -296,9 +423,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _sectionHeader(String title) => Padding(
         padding: const EdgeInsets.only(left: 4, bottom: 8),
-        child: Text(title,
-            style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12,
-                fontWeight: FontWeight.w500, letterSpacing: 0.5)),
+        child: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 14,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.of(context).primary,
+                    AppColors.of(context).accent,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(title,
+                style: TextStyle(
+                  color: AppColors.of(context).textPrimary.withValues(alpha: 0.85),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
+                )),
+          ],
+        ),
+      );
+
+  BoxDecoration _iconDecoration(Color c) => BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color.lerp(c, Colors.white, 0.15)!,
+            c,
+            Color.lerp(c, Colors.black, 0.25)!,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          stops: const [0.0, 0.5, 1.0],
+        ),
+        borderRadius: BorderRadius.circular(9),
+        boxShadow: [
+          BoxShadow(
+            color: c.withValues(alpha: 0.45),
+            blurRadius: 8,
+            spreadRadius: 0,
+          ),
+        ],
       );
 
   Widget _switchTile({
@@ -315,8 +487,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Container(
               width: 36, height: 36,
-              decoration: BoxDecoration(color: iconColor.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: iconColor, size: 18),
+              decoration: _iconDecoration(iconColor),
+              child: Icon(icon, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -354,8 +526,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: iconColor.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: iconColor, size: 18),
+                decoration: _iconDecoration(iconColor),
+                child: Icon(icon, color: Colors.white, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -400,59 +572,118 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showChangePasswordSheet(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colors = AppColors.of(context);
     final oldCtrl = TextEditingController();
     final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
+    bool showOld = false;
+    bool showNew = false;
+    bool showConfirm = false;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.of(context).card,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 24, right: 24, top: 24,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.changePassword,
-                style: TextStyle(color: AppColors.of(context).textPrimary, fontSize: 20, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 20),
-            TextField(controller: oldCtrl, obscureText: true,
-                style: TextStyle(color: AppColors.of(context).textPrimary),
-                decoration: InputDecoration(labelText: l10n.currentPassword)),
-            const SizedBox(height: 12),
-            TextField(controller: newCtrl, obscureText: true,
-                style: TextStyle(color: AppColors.of(context).textPrimary),
-                decoration: InputDecoration(labelText: l10n.newPassword)),
-            const SizedBox(height: 12),
-            TextField(controller: confirmCtrl, obscureText: true,
-                style: TextStyle(color: AppColors.of(context).textPrimary),
-                decoration: InputDecoration(labelText: l10n.confirmNewPassword)),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                      if (newCtrl.text.isEmpty || confirmCtrl.text.isEmpty || oldCtrl.text.isEmpty) return;
-                      if (newCtrl.text != confirmCtrl.text) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.pinMismatch), backgroundColor: AppColors.of(context).error),
-                        );
-                        return;
-                      }
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Coming soon'), backgroundColor: AppColors.of(context).warning),
-                      );
-                    },
-                child: Text(l10n.save),
-              ),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Container(
+            decoration: BoxDecoration(
+              color: colors.card,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
-          ],
-        ),
+            padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
+            child: SingleChildScrollView(
+              child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40, height: 4,
+                          decoration: BoxDecoration(color: colors.border, borderRadius: BorderRadius.circular(2)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Container(
+                            width: 44, height: 44,
+                            decoration: BoxDecoration(
+                              color: colors.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.lock_outline_rounded, color: colors.primary, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            l10n.changePassword,
+                            style: TextStyle(color: colors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _PasswordField(
+                        controller: oldCtrl,
+                        label: l10n.currentPassword,
+                        icon: Icons.lock_person_outlined,
+                        colors: colors,
+                        obscure: !showOld,
+                        onToggle: () => setSheetState(() => showOld = !showOld),
+                      ),
+                      const SizedBox(height: 12),
+                      _PasswordField(
+                        controller: newCtrl,
+                        label: l10n.newPassword,
+                        icon: Icons.lock_reset_rounded,
+                        colors: colors,
+                        obscure: !showNew,
+                        onToggle: () => setSheetState(() => showNew = !showNew),
+                      ),
+                      const SizedBox(height: 12),
+                      _PasswordField(
+                        controller: confirmCtrl,
+                        label: l10n.confirmNewPassword,
+                        icon: Icons.check_circle_outline_rounded,
+                        colors: colors,
+                        obscure: !showConfirm,
+                        onToggle: () => setSheetState(() => showConfirm = !showConfirm),
+                      ),
+                      const SizedBox(height: 24),
+                      GestureDetector(
+                        onTap: () {
+                          if (oldCtrl.text.isEmpty || newCtrl.text.isEmpty || confirmCtrl.text.isEmpty) return;
+                          if (newCtrl.text != confirmCtrl.text) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.pinMismatch), backgroundColor: colors.error),
+                            );
+                            return;
+                          }
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: const Text('Coming soon'), backgroundColor: colors.warning),
+                          );
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [colors.primary, Color.lerp(colors.primary, Colors.black, 0.15)!],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [BoxShadow(color: colors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                          ),
+                          child: Center(
+                            child: Text(l10n.save, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -589,6 +820,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(l10n.delete, style: TextStyle(color: AppColors.of(context).error)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PasswordField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final AppColorsExtension colors;
+  final bool obscure;
+  final VoidCallback onToggle;
+
+  const _PasswordField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    required this.colors,
+    required this.obscure,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      style: TextStyle(color: colors.textPrimary, fontSize: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: colors.textSecondary, fontSize: 13),
+        prefixIcon: Icon(icon, color: colors.textSecondary, size: 18),
+        suffixIcon: GestureDetector(
+          onTap: onToggle,
+          child: Icon(
+            obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+            color: colors.textSecondary,
+            size: 18,
+          ),
+        ),
+        filled: true,
+        fillColor: colors.surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.primary, width: 1.5)),
       ),
     );
   }
