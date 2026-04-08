@@ -2579,25 +2579,37 @@ class _MessageBubbleState extends State<_MessageBubble> {
       );
 
       if (fileType == 'image' || fileType == 'video') {
-        // Download to temp, then save to gallery
-        final dir = await getTemporaryDirectory();
         final ext = fileType == 'image' ? '.jpg' : '.mp4';
         final fileName = widget.message.fileName ?? 'taler_${DateTime.now().millisecondsSinceEpoch}$ext';
         final safeName = fileName.replaceAll(RegExp(r'[^\w\.\-]'), '_');
-        final filePath = '${dir.path}/save_$safeName';
-        await Dio().download(url, filePath);
 
-        if (fileType == 'image') {
-          await Gal.putImage(filePath);
+        if (isDesktopPlatform) {
+          // Desktop: "Save As" dialog
+          final savePath = await FilePicker.platform.saveFile(
+            dialogTitle: l10n.chatSaving,
+            fileName: safeName,
+          );
+          if (savePath != null) {
+            await Dio().download(url, savePath);
+            messenger.showSnackBar(
+              SnackBar(content: Text(l10n.chatSavedToGallery), duration: const Duration(seconds: 2)),
+            );
+          }
         } else {
-          await Gal.putVideo(filePath);
+          // Mobile: save to gallery
+          final dir = await getTemporaryDirectory();
+          final filePath = '${dir.path}/save_$safeName';
+          await Dio().download(url, filePath);
+          if (fileType == 'image') {
+            await Gal.putImage(filePath);
+          } else {
+            await Gal.putVideo(filePath);
+          }
+          try { await File(filePath).delete(); } catch (_) {}
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.chatSavedToGallery), duration: const Duration(seconds: 2)),
+          );
         }
-        // Clean up temp file
-        try { await File(filePath).delete(); } catch (_) {}
-
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.chatSavedToGallery), duration: const Duration(seconds: 2)),
-        );
       } else {
         // Document / audio — download and open
         final dir = await getTemporaryDirectory();
@@ -4378,24 +4390,37 @@ class _FullScreenVideoPlayerState extends State<_FullScreenVideoPlayer> {
     setState(() => _savingVideo = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      // Request permission first
-      final hasAccess = await Gal.hasAccess(toAlbum: true);
-      if (!hasAccess) {
-        final granted = await Gal.requestAccess(toAlbum: true);
-        if (!granted) {
-          messenger.showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.messengerGalleryAccessError)),
-          );
+      final ext = widget.videoUrl.split('?').first.split('.').last;
+      final fileName = 'video_${DateTime.now().millisecondsSinceEpoch}.${ext.isNotEmpty ? ext : 'mp4'}';
+
+      if (isDesktopPlatform) {
+        final savePath = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save Video',
+          fileName: fileName,
+        );
+        if (savePath == null) {
           if (mounted) setState(() => _savingVideo = false);
           return;
         }
+        await Dio().download(widget.videoUrl, savePath);
+      } else {
+        final hasAccess = await Gal.hasAccess(toAlbum: true);
+        if (!hasAccess) {
+          final granted = await Gal.requestAccess(toAlbum: true);
+          if (!granted) {
+            messenger.showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context)!.messengerGalleryAccessError)),
+            );
+            if (mounted) setState(() => _savingVideo = false);
+            return;
+          }
+        }
+        final dir = await getTemporaryDirectory();
+        final filePath = '${dir.path}/save_$fileName';
+        await Dio().download(widget.videoUrl, filePath);
+        await Gal.putVideo(filePath);
+        try { await File(filePath).delete(); } catch (_) {}
       }
-      final dir = await getTemporaryDirectory();
-      final ext = widget.videoUrl.split('?').first.split('.').last;
-      final filePath = '${dir.path}/save_vid_${DateTime.now().millisecondsSinceEpoch}.${ext.isNotEmpty ? ext : 'mp4'}';
-      await Dio().download(widget.videoUrl, filePath);
-      await Gal.putVideo(filePath);
-      try { await File(filePath).delete(); } catch (_) {}
       messenger.showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.chatVideoSavedToGallery), duration: const Duration(seconds: 2)),
       );
