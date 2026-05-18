@@ -1,16 +1,19 @@
-# taler_id_mobile
+# taler_id_desktop (ARCHIVED)
 
-A new Flutter project.
+This repository has been merged into [taler_id_mobile](https://github.com/dvvolkovv/taler_id_mobile) as part of the unified-codebase migration completed 2026-05-15.
 
-## Getting Started
+The mobile repository now ships all 5 platforms — iOS, Android, macOS, Windows, Linux — from a single codebase, with platform-specific code gated through `lib/core/platform/` abstractions.
 
-This project is a starting point for a Flutter application.
+## Desktop releases
 
-A few resources to get you started if this is your first Flutter project:
+Download for macOS, Windows, or Linux at https://id.taler.tirol — first end-user desktop release shipped 2026-05-18 (v1.0.74+167).
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Source code
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+https://github.com/dvvolkovv/taler_id_mobile
+
+## Why archive
+
+This repo's last meaningful commit was at v1.0.48 (April 2026). Mobile had since shipped to v1.0.71 with substantial new features. Keeping two diverging codebases became unsustainable — every fix had to be applied twice or skipped. The unified-repo migration eliminated that drift.
+
+This repository is preserved in read-only mode for git history reference. No new commits will be merged here.
